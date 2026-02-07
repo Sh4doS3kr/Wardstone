@@ -1,0 +1,80 @@
+# CoreProtect - Mensajes
+# Todos los mensajes del plugin en espanol
+
+prefix: "&8[&bNucleos&8] "
+
+# Mensajes de la tienda
+shop:
+  title: "&8Tienda de Núcleos"
+  purchased: "&aHas comprado un &f{core} &apor &e${price}"
+  no-money: "&cNo tienes suficiente dinero. Necesitas &e${price}"
+  inventory-full: "&cTu inventario está lleno"
+
+# Mensajes de protección
+protection:
+  created: "&aProtección creada exitosamente"
+  creating: "&eCreando protección... espera la animación"
+  area-protected: "&cEsta área ya está protegida por otro jugador"
+  cannot-build: "&cNo puedes construir en esta zona protegida"
+  cannot-break: "&cNo puedes destruir bloques en esta zona protegida"
+  cannot-interact: "&cNo puedes interactuar en esta zona protegida"
+  removed: "&aProtección eliminada correctamente"
+  not-owner: "&cNo eres el propietario de esta protección"
+  no-protection: "&cNo hay ninguna protección en esta ubicación"
+  core-info: "&7Propietario: &f{owner} &8| &7Nivel: &f{level} &8| &7Área: &f{size}x{size}"
+
+# Mensajes de info
+info:
+  title: "&8&m--------&8[ &bTus Protecciones &8]&m--------"
+  entry: "&8- &f{world} &7({x}, {z}) &8| &7Nivel &f{level} &8| &f{size}x{size}"
+  no-protections: "&7No tienes ninguna protección activa"
+  footer: "&8&m---------------------------------"
+
+# Mensajes de comandos
+commands:
+  usage: "&7Uso: &f/cores [tienda|info|remove|add|kick]"
+  help:
+    - "&8&m--------&8[ &bNúcleos - Ayuda &8]&m--------"
+    - "&f/cores &8- &7Abrir la tienda de núcleos"
+    - "&f/cores info &8- &7Ver tus protecciones"
+    - "&f/cores remove &8- &7Eliminar protección actual"
+    - "&f/cores add <jugador> &8- &7Agregar miembro"
+    - "&f/cores kick <jugador> &8- &7Eliminar miembro"
+    - "&f/cores sethome &8- &7Establecer home en tu zona"
+    - "&f/cores home &8- &7Teletransportarte a tu núcleo"
+    - "&8&m---------------------------------"
+
+# Mensajes de mejoras
+upgrades:
+  purchased: "&a¡Mejora &f{upgrade} &acomprada exitosamente!"
+  leveled: "&aMejora &f{upgrade} &amejorada a nivel &e{level}"
+  upgrading: "&e⬆ Mejorando núcleo... &7¡Disfruta el espectáculo!"
+  upgraded: "&a¡Núcleo mejorado a nivel &e{level}&a! Ahora es un &f{core}"
+  max-level: "&cTu núcleo ya está al nivel máximo"
+  no-pvp-zone: "&c¡Esta es una zona de paz! No puedes atacar jugadores aquí"
+  visuals-on: "&a¡Visualización de zona activada! &7Puedes ver los bordes."
+  visuals-off: "&cVisualización de zona desactivada."
+
+# Mensajes de miembros extra
+members:
+  added: "&aJugador &f{player} &aagregado a la protección"
+  removed: "&aJugador &f{player} &aeliminado de la protección"
+  already-member: "&cEse jugador ya es miembro de esta protección"
+  not-member: "&cEse jugador no es miembro de esta protección"
+  player-not-found: "&cJugador no encontrado"
+  list: "&7Miembros: &f{members}"
+  invited-you: "&a¡&f{player} &ate ha invitado a su zona protegida!"
+
+# Mensajes de home
+home:
+  teleported: "&a¡Teletransportado a tu núcleo!"
+  set: "&a¡Home establecido en la zona de &f{owner}&a!"
+  no-home: "&cNo tienes un home establecido. Usa &f/cores sethome &cdentro de tu zona."
+  not-in-region: "&cDebes estar dentro de una zona protegida para establecer tu home."
+  not-member: "&cDebes ser dueño o miembro de esta zona para establecer tu home."
+
+# Mensajes de errores
+errors:
+  no-permission: "&cNo tienes permiso para hacer esto"
+  player-only: "&cEste comando solo puede ser usado por jugadores"
+  invalid-level: "&cNivel de núcleo inválido"

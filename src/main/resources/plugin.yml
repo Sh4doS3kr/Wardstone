@@ -1,0 +1,26 @@
+name: CoreProtect
+version: ${project.version}
+main: com.moonlight.coreprotect.CoreProtectPlugin
+api-version: 1.21
+description: Sistema de nucleos de proteccion con 20 niveles y animaciones de particulas
+author: MoonlightMC
+website: moonlightmc.xyz
+depend: [Vault]
+
+commands:
+  cores:
+    description: Comando principal del plugin de nucleos
+    usage: /<command> [tienda|info|remove|add|kick]
+    aliases: [core, nucleo, nucleos]
+  admincore:
+    description: Comandos de administracion
+    usage: /<command> [deleteprotection]
+    permission: coreprotect.admin
+
+permissions:
+  coreprotect.use:
+    description: Permite usar el sistema de nucleos
+    default: true
+  coreprotect.admin:
+    description: Permisos de administrador
+    default: op

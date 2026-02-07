@@ -1,0 +1,38 @@
+# Build output
+build/
+target/
+*.jar
+*.class
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+err.txt
+
+# Dependencies (downloaded locally)
+libs/
+org/
+
+# Gradle
+.gradle/
+build_output.log
+
+# Maven
+spigot-metadata.xml
+
+# Misc
+*.bak
+*.tmp

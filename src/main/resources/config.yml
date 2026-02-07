@@ -1,0 +1,115 @@
+# CoreProtect - Configuracion
+# Sistema de nucleos de proteccion
+
+# Configuracion general
+settings:
+  # Tiempo de animacion en ticks (20 ticks = 1 segundo)
+  animation-duration: 100
+  # Permitir que los nucleos se destruyan
+  allow-core-break: false
+  # Tiempo entre auto-guardados (en minutos)
+  auto-save-interval: 5
+
+# Niveles de nucleos
+# Formato: nivel, material, precio, tamaño de area
+levels:
+  1:
+    material: OAK_LOG
+    name: "Nucleo de Roble"
+    price: 1000
+    size: 10
+  2:
+    material: BIRCH_LOG
+    name: "Nucleo de Abedul"
+    price: 2500
+    size: 12
+  3:
+    material: STONE
+    name: "Nucleo de Piedra"
+    price: 5000
+    size: 14
+  4:
+    material: SMOOTH_STONE
+    name: "Nucleo de Piedra Lisa"
+    price: 8000
+    size: 16
+  5:
+    material: COAL_BLOCK
+    name: "Nucleo de Carbon"
+    price: 12000
+    size: 18
+  6:
+    material: IRON_BLOCK
+    name: "Nucleo de Hierro"
+    price: 20000
+    size: 22
+  7:
+    material: COPPER_BLOCK
+    name: "Nucleo de Cobre"
+    price: 30000
+    size: 26
+  8:
+    material: GOLD_BLOCK
+    name: "Nucleo de Oro"
+    price: 45000
+    size: 30
+  9:
+    material: LAPIS_BLOCK
+    name: "Nucleo de Lapislazuli"
+    price: 65000
+    size: 35
+  10:
+    material: REDSTONE_BLOCK
+    name: "Nucleo de Redstone"
+    price: 90000
+    size: 40
+  11:
+    material: AMETHYST_BLOCK
+    name: "Nucleo de Amatista"
+    price: 120000
+    size: 46
+  12:
+    material: EMERALD_BLOCK
+    name: "Nucleo de Esmeralda"
+    price: 160000
+    size: 52
+  13:
+    material: DIAMOND_BLOCK
+    name: "Nucleo de Diamante"
+    price: 220000
+    size: 60
+  14:
+    material: OBSIDIAN
+    name: "Nucleo de Obsidiana"
+    price: 300000
+    size: 70
+  15:
+    material: QUARTZ_BLOCK
+    name: "Nucleo de Cuarzo"
+    price: 400000
+    size: 80
+  16:
+    material: PRISMARINE
+    name: "Nucleo de Prismarina"
+    price: 550000
+    size: 92
+  17:
+    material: PURPUR_BLOCK
+    name: "Nucleo de Purpur"
+    price: 750000
+    size: 106
+  18:
+    material: CRYING_OBSIDIAN
+    name: "Nucleo Obsidiana Llorosa"
+    price: 1000000
+    size: 120
+  19:
+    material: NETHERITE_BLOCK
+    name: "Nucleo de Netherite"
+    price: 1500000
+    size: 140
+  20:
+    material: SEA_LANTERN
+    name: "Nucleo Estelar"
+    price: 2500000
+    size: 160
