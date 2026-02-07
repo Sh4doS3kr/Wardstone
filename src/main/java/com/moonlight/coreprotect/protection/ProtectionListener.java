@@ -212,6 +212,18 @@ public class ProtectionListener implements Listener {
             }
         }
 
+        // Block crop trampling (farmland + turtle eggs)
+        if (event.getAction() == org.bukkit.event.block.Action.PHYSICAL) {
+            Material blockType = event.getClickedBlock().getType();
+            if (blockType == Material.FARMLAND || blockType == Material.TURTLE_EGG) {
+                ProtectedRegion cropRegion = plugin.getProtectionManager().getRegionAt(event.getClickedBlock().getLocation());
+                if (cropRegion != null) {
+                    event.setCancelled(true);
+                    return;
+                }
+            }
+        }
+
         if (player.hasPermission("coreprotect.admin"))
             return;
 
