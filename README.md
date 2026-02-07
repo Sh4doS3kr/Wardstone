@@ -1,4 +1,4 @@
-# 🛡️ CoreProtect - Sistema de Núcleos de Protección
+# 🛡️ WardStone - Sistema de Núcleos de Protección
 
 Plugin de Minecraft (Spigot/Paper 1.21+) que permite a los jugadores proteger sus construcciones mediante **núcleos** con 20 niveles de progresión, mejoras comprables, gestión de miembros desde GUI, animaciones épicas y mucho más.
 
