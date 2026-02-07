@@ -265,17 +265,16 @@ public class ProtectionListener implements Listener {
             return;
         }
 
-        // Check if victim is in a noPvP zone
+        // Block PvP in any protected region
         ProtectedRegion victimRegion = plugin.getProtectionManager().getRegionAt(victim.getLocation());
-        if (victimRegion != null && victimRegion.isNoPvP()) {
+        if (victimRegion != null) {
             event.setCancelled(true);
             plugin.getMessageManager().send(attacker, "upgrades.no-pvp-zone");
             return;
         }
 
-        // Check if attacker is in a noPvP zone
         ProtectedRegion attackerRegion = plugin.getProtectionManager().getRegionAt(attacker.getLocation());
-        if (attackerRegion != null && attackerRegion.isNoPvP()) {
+        if (attackerRegion != null) {
             event.setCancelled(true);
             plugin.getMessageManager().send(attacker, "upgrades.no-pvp-zone");
             return;
