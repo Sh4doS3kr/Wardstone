@@ -17,7 +17,6 @@ Plugin de Minecraft (Spigot/Paper 1.21+) que permite a los jugadores proteger su
 - **Protección completa** — bloques, contenedores, explosiones, PvP, todo protegido desde Y mínima hasta Y máxima
 - **Las mejoras se conservan al mover el núcleo** — rompe y recoloca sin perder nada
 - **Persistencia total** — datos guardados en YAML con auto-guardado configurable
-- **Textos en español** — todos los mensajes con tildes y ñ correctas, personalizables en `messages.yml`
 
 ---
 
