@@ -417,6 +417,11 @@ public class GUIListener implements Listener {
         region.setSize(nextCoreLevel.getSize());
         plugin.getDataManager().saveData();
 
+        // Update BlueMap marker with new size
+        if (plugin.getBlueMapIntegration() != null) {
+            plugin.getBlueMapIntegration().updateAllMarkers();
+        }
+
         // Lock the core location during animation
         plugin.getProtectionManager().lockLocation(coreLoc);
 

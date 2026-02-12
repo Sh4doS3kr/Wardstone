@@ -32,6 +32,7 @@ if (Test-Path "$libDir\spigot-api.jar") {
 }
 
 $vaultJar = "$libDir\vault-api.jar"
+$bluemapJar = "$libDir\bluemap-api.jar"
 if (-not (Test-Path $vaultJar)) {
     Write-Host "Descargando Vault API..." -ForegroundColor Yellow
     $vaultUrl = "https://jitpack.io/com/github/MilkBowl/VaultAPI/1.7.1/VaultAPI-1.7.1.jar"
@@ -51,6 +52,20 @@ $javaFiles = Get-ChildItem -Path $srcDir -Filter "*.java" -Recurse | ForEach-Obj
 
 # Construir classpath
 $classpath = "$apiJar;$vaultJar"
+if (Test-Path $bluemapJar) {
+    $classpath += ";$bluemapJar"
+    Write-Host "BlueMap API encontrada: $bluemapJar" -ForegroundColor Green
+} else {
+    Write-Host "BlueMap API no encontrada (opcional). Descargando..." -ForegroundColor Yellow
+    $bluemapUrl = "https://repo.bluecolored.de/releases/de/bluecolored/bluemap-api/2.7.7/bluemap-api-2.7.7.jar"
+    try {
+        Invoke-WebRequest -Uri $bluemapUrl -OutFile $bluemapJar
+        $classpath += ";$bluemapJar"
+        Write-Host "BlueMap API descargada correctamente." -ForegroundColor Green
+    } catch {
+        Write-Host "No se pudo descargar BlueMap API. La integracion con BlueMap no estara disponible." -ForegroundColor Yellow
+    }
+}
 
 # Crear archivo de lista de fuentes (encoding ASCII para evitar BOM issues en javac list)
 $sourceListFile = "$buildDir\sources.txt"

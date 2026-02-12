@@ -8,11 +8,13 @@ import java.util.*;
 
 public class ProtectionManager {
 
+    private final CoreProtectPlugin plugin;
     private final Map<UUID, ProtectedRegion> regions;
     private final Set<Location> lockedLocations;
     private final Map<UUID, Integer> activeVisuals;
 
     public ProtectionManager(CoreProtectPlugin plugin) {
+        this.plugin = plugin;
         this.regions = new HashMap<>();
         this.lockedLocations = new HashSet<>();
         this.activeVisuals = new HashMap<>();
@@ -224,9 +226,16 @@ public class ProtectionManager {
 
     public void addRegion(ProtectedRegion region) {
         regions.put(region.getId(), region);
+        if (plugin.getBlueMapIntegration() != null) {
+            plugin.getBlueMapIntegration().addRegionMarker(region);
+        }
     }
 
     public void removeRegion(UUID regionId) {
+        ProtectedRegion region = regions.get(regionId);
+        if (region != null && plugin.getBlueMapIntegration() != null) {
+            plugin.getBlueMapIntegration().removeRegionMarker(region);
+        }
         regions.remove(regionId);
     }
 

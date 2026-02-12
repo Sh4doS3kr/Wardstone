@@ -6,6 +6,7 @@ import com.moonlight.coreprotect.gui.GUIListener;
 import com.moonlight.coreprotect.protection.CorePlaceListener;
 import com.moonlight.coreprotect.protection.ProtectionListener;
 import com.moonlight.coreprotect.protection.ProtectionManager;
+import com.moonlight.coreprotect.integrations.BlueMapIntegration;
 import com.moonlight.coreprotect.utils.MessageManager;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.plugin.RegisteredServiceProvider;
@@ -18,6 +19,7 @@ public class CoreProtectPlugin extends JavaPlugin {
     private ProtectionManager protectionManager;
     private DataManager dataManager;
     private MessageManager messageManager;
+    private BlueMapIntegration blueMapIntegration;
 
     @Override
     public void onEnable() {
@@ -66,6 +68,10 @@ public class CoreProtectPlugin extends JavaPlugin {
         int saveInterval = getConfig().getInt("settings.auto-save-interval", 5) * 60 * 20;
         getServer().getScheduler().runTaskTimer(this, () -> dataManager.saveData(), saveInterval, saveInterval);
 
+        // Integración BlueMap (opcional)
+        blueMapIntegration = new BlueMapIntegration(this);
+        blueMapIntegration.init();
+
         getLogger().info("CoreProtect habilitado correctamente");
     }
 
@@ -107,5 +113,9 @@ public class CoreProtectPlugin extends JavaPlugin {
 
     public MessageManager getMessageManager() {
         return messageManager;
+    }
+
+    public BlueMapIntegration getBlueMapIntegration() {
+        return blueMapIntegration;
     }
 }

@@ -6,6 +6,7 @@ description: Sistema de nucleos de proteccion con 20 niveles y animaciones de pa
 author: MoonlightMC
 website: moonlightmc.xyz
 depend: [Vault]
+softdepend: [BlueMap]
 
 commands:
   cores:
