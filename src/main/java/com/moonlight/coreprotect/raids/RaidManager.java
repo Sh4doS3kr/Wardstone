@@ -32,7 +32,7 @@ public class RaidManager implements Listener {
     }
 
     private void startRaidScheduler() {
-        // Boss bar always visible with countdown
+        // Boss bar only visible when inside your zone
         new BukkitRunnable() {
             private long tickCounter = 0;
             private long nextRaidTick = RAID_INTERVAL_TICKS;
@@ -51,21 +51,23 @@ public class RaidManager implements Listener {
 
                 long timeUntilRaid = nextRaidTick - tickCounter;
 
-                // Create bar on first tick
+                // Create bar on first tick (invisible until player enters zone)
                 if (countdownBar == null) {
                     countdownBar = Bukkit.createBossBar(
                             ChatColor.GRAY + "⚔ Próxima oleada en " + formatTime(timeUntilRaid) + " ⚔",
                             BarColor.GREEN, BarStyle.SEGMENTED_20);
                     countdownBar.setProgress(1.0);
-                    for (Player p : Bukkit.getOnlinePlayers()) {
-                        countdownBar.addPlayer(p);
-                    }
                 }
 
-                // Add newly joined players
+                // Only show to players inside a protected zone they have access to
                 for (Player p : Bukkit.getOnlinePlayers()) {
-                    if (!countdownBar.getPlayers().contains(p)) {
-                        countdownBar.addPlayer(p);
+                    ProtectedRegion region = plugin.getProtectionManager().getRegionAt(p.getLocation());
+                    if (region != null && region.canAccess(p.getUniqueId())) {
+                        if (!countdownBar.getPlayers().contains(p)) {
+                            countdownBar.addPlayer(p);
+                        }
+                    } else {
+                        countdownBar.removePlayer(p);
                     }
                 }
 
@@ -74,11 +76,9 @@ public class RaidManager implements Listener {
                 countdownBar.setProgress(progress);
 
                 if (timeUntilRaid > WARNING_TICKS) {
-                    // Normal state - green/yellow bar
                     countdownBar.setColor(progress > 0.5 ? BarColor.GREEN : BarColor.YELLOW);
                     countdownBar.setTitle(ChatColor.GRAY + "⚔ Próxima oleada en " + formatTime(timeUntilRaid) + " ⚔");
                 } else if (timeUntilRaid > 0) {
-                    // Warning state - red bar, bold text
                     countdownBar.setColor(BarColor.RED);
                     countdownBar.setTitle(ChatColor.RED + "" + ChatColor.BOLD + "⚔ ¡OLEADA EN " + formatTime(timeUntilRaid) + "! ⚔");
                 }
@@ -90,7 +90,6 @@ public class RaidManager implements Listener {
                     tickCounter = 0;
                     nextRaidTick = RAID_INTERVAL_TICKS;
 
-                    // Pick random regions to raid (1-3 depending on total)
                     List<ProtectedRegion> regionList = new ArrayList<>(allRegions);
                     Collections.shuffle(regionList);
                     int raidCount = Math.min(regionList.size(), random.nextInt(3) + 1);
@@ -99,7 +98,7 @@ public class RaidManager implements Listener {
                     }
                 }
             }
-        }.runTaskTimer(plugin, 20L * 60, 20L); // Start after 1 min, tick every second
+        }.runTaskTimer(plugin, 20L * 60, 20L);
     }
 
     private void startRaid(ProtectedRegion region) {
