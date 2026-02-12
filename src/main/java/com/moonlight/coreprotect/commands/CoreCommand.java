@@ -77,6 +77,10 @@ public class CoreCommand implements CommandExecutor, TabCompleter {
             case "setcasa":
                 setHome(player);
                 break;
+            case "tp":
+            case "teleport":
+                teleportToCores(player, args);
+                break;
             case "help":
             case "ayuda":
                 plugin.getMessageManager().sendList(player, "commands.help");
@@ -242,6 +246,48 @@ public class CoreCommand implements CommandExecutor, TabCompleter {
         plugin.getMessageManager().send(player, "home.set",
                 "{owner}", ownerName != null ? ownerName : "???");
         SoundManager.playGUIClick(player.getLocation());
+        plugin.getAchievementListener().onSetHome(player);
+    }
+
+    private void teleportToCores(Player player, String[] args) {
+        List<ProtectedRegion> regions = plugin.getProtectionManager().getRegionsByOwner(player.getUniqueId());
+        List<ProtectedRegion> tpRegions = new ArrayList<>();
+        for (ProtectedRegion r : regions) {
+            if (r.isCoreTeleport()) tpRegions.add(r);
+        }
+
+        if (tpRegions.isEmpty()) {
+            plugin.getMessageManager().send(player, "upgrades.no-teleport");
+            return;
+        }
+
+        if (args.length < 2) {
+            // List cores
+            plugin.getMessageManager().sendRaw(player, "info.title");
+            for (int i = 0; i < tpRegions.size(); i++) {
+                ProtectedRegion r = tpRegions.get(i);
+                player.sendMessage("\u00a78[\u00a7b" + (i + 1) + "\u00a78] \u00a7fNv." + r.getLevel()
+                        + " \u00a77(" + r.getCoreX() + ", " + r.getCoreZ() + ")");
+            }
+            player.sendMessage("\u00a77Usa \u00a7f/cores tp <n\u00famero> \u00a77para teletransportarte.");
+            return;
+        }
+
+        try {
+            int index = Integer.parseInt(args[1]) - 1;
+            if (index < 0 || index >= tpRegions.size()) {
+                plugin.getMessageManager().send(player, "errors.invalid-level");
+                return;
+            }
+            ProtectedRegion target = tpRegions.get(index);
+            Location tp = target.getCoreLocation().clone().add(0.5, 1, 0.5);
+            player.teleport(tp);
+            plugin.getMessageManager().send(player, "home.teleported");
+            SoundManager.playCorePlaced(tp);
+            plugin.getAchievementListener().onUseTp(player);
+        } catch (NumberFormatException e) {
+            plugin.getMessageManager().send(player, "commands.usage");
+        }
     }
 
     @Override
@@ -251,7 +297,7 @@ public class CoreCommand implements CommandExecutor, TabCompleter {
         }
 
         if (args.length == 1) {
-            List<String> completions = Arrays.asList("tienda", "info", "remove", "add", "kick", "home", "sethome", "help");
+            List<String> completions = Arrays.asList("tienda", "info", "remove", "add", "kick", "home", "sethome", "tp", "help");
             return completions.stream()
                     .filter(s -> s.toLowerCase().startsWith(args[0].toLowerCase()))
                     .collect(Collectors.toList());

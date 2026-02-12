@@ -30,6 +30,11 @@ public class ProtectedRegion {
     private boolean autoHeal;
     private boolean speedBoost;
     private boolean noFallDamage;
+    private boolean antiEnderman;
+    private boolean resourceGenerator;
+    private int fixedTime; // 0=off, 1=day, 2=night
+    private boolean coreTeleport;
+    private boolean noHunger;
 
     public ProtectedRegion(UUID owner, Location coreLocation, int level, int size) {
         this.id = UUID.randomUUID();
@@ -50,12 +55,19 @@ public class ProtectedRegion {
         this.autoHeal = false;
         this.speedBoost = false;
         this.noFallDamage = false;
+        this.antiEnderman = false;
+        this.resourceGenerator = false;
+        this.fixedTime = 0;
+        this.coreTeleport = false;
+        this.noHunger = false;
     }
 
     public ProtectedRegion(UUID id, UUID owner, String worldName, int coreX, int coreY, int coreZ,
             int level, int size, List<UUID> members, long createdAt,
             boolean noExplosion, boolean noPvP, int damageBoostLevel, int healthBoostLevel,
-            boolean noMobSpawn, boolean autoHeal, boolean speedBoost, boolean noFallDamage) {
+            boolean noMobSpawn, boolean autoHeal, boolean speedBoost, boolean noFallDamage,
+            boolean antiEnderman, boolean resourceGenerator, int fixedTime,
+            boolean coreTeleport, boolean noHunger) {
         this.id = id;
         this.owner = owner;
         this.worldName = worldName;
@@ -74,6 +86,11 @@ public class ProtectedRegion {
         this.autoHeal = autoHeal;
         this.speedBoost = speedBoost;
         this.noFallDamage = noFallDamage;
+        this.antiEnderman = antiEnderman;
+        this.resourceGenerator = resourceGenerator;
+        this.fixedTime = fixedTime;
+        this.coreTeleport = coreTeleport;
+        this.noHunger = noHunger;
     }
 
     public boolean contains(Location location) {
@@ -200,6 +217,22 @@ public class ProtectedRegion {
         this.noFallDamage = noFallDamage;
     }
 
+    // New upgrade getters/setters
+    public boolean isAntiEnderman() { return antiEnderman; }
+    public void setAntiEnderman(boolean antiEnderman) { this.antiEnderman = antiEnderman; }
+
+    public boolean isResourceGenerator() { return resourceGenerator; }
+    public void setResourceGenerator(boolean resourceGenerator) { this.resourceGenerator = resourceGenerator; }
+
+    public int getFixedTime() { return fixedTime; }
+    public void setFixedTime(int fixedTime) { this.fixedTime = fixedTime; }
+
+    public boolean isCoreTeleport() { return coreTeleport; }
+    public void setCoreTeleport(boolean coreTeleport) { this.coreTeleport = coreTeleport; }
+
+    public boolean isNoHunger() { return noHunger; }
+    public void setNoHunger(boolean noHunger) { this.noHunger = noHunger; }
+
     public int getActiveUpgradeCount() {
         int count = 0;
         if (noExplosion) count++;
@@ -210,6 +243,11 @@ public class ProtectedRegion {
         if (autoHeal) count++;
         if (speedBoost) count++;
         if (noFallDamage) count++;
+        if (antiEnderman) count++;
+        if (resourceGenerator) count++;
+        if (fixedTime > 0) count++;
+        if (coreTeleport) count++;
+        if (noHunger) count++;
         return count;
     }
 

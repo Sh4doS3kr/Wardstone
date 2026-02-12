@@ -6,7 +6,10 @@ import com.moonlight.coreprotect.gui.GUIListener;
 import com.moonlight.coreprotect.protection.CorePlaceListener;
 import com.moonlight.coreprotect.protection.ProtectionListener;
 import com.moonlight.coreprotect.protection.ProtectionManager;
+import com.moonlight.coreprotect.achievements.AchievementListener;
+import com.moonlight.coreprotect.achievements.AchievementManager;
 import com.moonlight.coreprotect.integrations.BlueMapIntegration;
+import com.moonlight.coreprotect.raids.RaidManager;
 import com.moonlight.coreprotect.utils.MessageManager;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.plugin.RegisteredServiceProvider;
@@ -20,6 +23,9 @@ public class CoreProtectPlugin extends JavaPlugin {
     private DataManager dataManager;
     private MessageManager messageManager;
     private BlueMapIntegration blueMapIntegration;
+    private AchievementManager achievementManager;
+    private AchievementListener achievementListener;
+    private RaidManager raidManager;
 
     @Override
     public void onEnable() {
@@ -52,10 +58,20 @@ public class CoreProtectPlugin extends JavaPlugin {
             return;
         }
 
+        // Inicializar achievements
+        achievementManager = new AchievementManager(this);
+        achievementManager.loadPlayerData();
+        achievementListener = new AchievementListener(this);
+
         // Registrar eventos
         getServer().getPluginManager().registerEvents(new GUIListener(this), this);
         getServer().getPluginManager().registerEvents(new ProtectionListener(this), this);
         getServer().getPluginManager().registerEvents(new CorePlaceListener(this), this);
+        getServer().getPluginManager().registerEvents(achievementListener, this);
+
+        // Inicializar raids
+        raidManager = new RaidManager(this);
+        getServer().getPluginManager().registerEvents(raidManager, this);
 
         // Registrar comandos
         // Registrar comandos
@@ -117,5 +133,17 @@ public class CoreProtectPlugin extends JavaPlugin {
 
     public BlueMapIntegration getBlueMapIntegration() {
         return blueMapIntegration;
+    }
+
+    public AchievementManager getAchievementManager() {
+        return achievementManager;
+    }
+
+    public AchievementListener getAchievementListener() {
+        return achievementListener;
+    }
+
+    public RaidManager getRaidManager() {
+        return raidManager;
     }
 }

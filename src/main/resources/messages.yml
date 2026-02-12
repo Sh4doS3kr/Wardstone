@@ -54,6 +54,7 @@ upgrades:
   no-pvp-zone: "&c¡Esta es una zona de paz! No puedes atacar jugadores aquí"
   visuals-on: "&a¡Visualización de zona activada! &7Puedes ver los bordes."
   visuals-off: "&cVisualización de zona desactivada."
+  no-teleport: "&cNo tienes núcleos con la mejora de Teletransporte. Cómprala en la tienda de mejoras."
 
 # Mensajes de miembros extra
 members:
@@ -72,6 +73,12 @@ home:
   no-home: "&cNo tienes un home establecido. Usa &f/cores sethome &cdentro de tu zona."
   not-in-region: "&cDebes estar dentro de una zona protegida para establecer tu home."
   not-member: "&cDebes ser dueño o miembro de esta zona para establecer tu home."
+
+# Mensajes de raids
+raids:
+  started: "&c&l⚔ ¡TU ZONA ESTÁ SIENDO ATACADA! &7¡Defiende tu núcleo!"
+  victory: "&a&l⚔ ¡OLEADA DERROTADA! &7¡Has defendido tu zona con éxito!"
+  timeout: "&e⚔ La oleada se ha retirado... por ahora."
 
 # Mensajes de errores
 errors:

@@ -106,6 +106,9 @@ public class ProtectionListener implements Listener {
             if (plugin.getProtectionManager().getRegion(coreRegion.getId()) != null) {
                 plugin.getProtectionManager().removeRegion(coreRegion.getId());
                 plugin.getMessageManager().send(player, "protection.removed");
+                if (player.isOnline()) {
+                    plugin.getAchievementListener().onCoreBreak(player);
+                }
 
                 com.moonlight.coreprotect.core.CoreLevel level = com.moonlight.coreprotect.core.CoreLevel
                         .fromConfig(plugin.getConfig(), coreRegion.getLevel());
@@ -129,7 +132,12 @@ public class ProtectionListener implements Listener {
                     data.append(coreRegion.isNoMobSpawn() ? "1" : "0").append(",");
                     data.append(coreRegion.isAutoHeal() ? "1" : "0").append(",");
                     data.append(coreRegion.isSpeedBoost() ? "1" : "0").append(",");
-                    data.append(coreRegion.isNoFallDamage() ? "1" : "0");
+                    data.append(coreRegion.isNoFallDamage() ? "1" : "0").append(",");
+                    data.append(coreRegion.isAntiEnderman() ? "1" : "0").append(",");
+                    data.append(coreRegion.isResourceGenerator() ? "1" : "0").append(",");
+                    data.append(coreRegion.getFixedTime()).append(",");
+                    data.append(coreRegion.isCoreTeleport() ? "1" : "0").append(",");
+                    data.append(coreRegion.isNoHunger() ? "1" : "0");
                     pdc.set(key, org.bukkit.persistence.PersistentDataType.STRING, data.toString());
 
                     // Store members
@@ -337,6 +345,30 @@ public class ProtectionListener implements Listener {
         ProtectedRegion region = plugin.getProtectionManager().getRegionAt(event.getLocation());
         if (region != null && region.isNoMobSpawn()) {
             event.setCancelled(true);
+        }
+    }
+
+    // === ANTI-ENDERMAN (block pickup/place) ===
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onEntityChangeBlock(org.bukkit.event.entity.EntityChangeBlockEvent event) {
+        if (event.getEntity() instanceof org.bukkit.entity.Enderman) {
+            ProtectedRegion region = plugin.getProtectionManager().getRegionAt(event.getBlock().getLocation());
+            if (region != null && region.isAntiEnderman()) {
+                event.setCancelled(true);
+            }
+        }
+    }
+
+    // === NO HUNGER ===
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onFoodLevelChange(org.bukkit.event.entity.FoodLevelChangeEvent event) {
+        if (!(event.getEntity() instanceof Player)) return;
+        Player player = (Player) event.getEntity();
+        if (event.getFoodLevel() < player.getFoodLevel()) {
+            ProtectedRegion region = plugin.getProtectionManager().getRegionAt(player.getLocation());
+            if (region != null && region.isNoHunger() && region.canAccess(player.getUniqueId())) {
+                event.setCancelled(true);
+            }
         }
     }
 

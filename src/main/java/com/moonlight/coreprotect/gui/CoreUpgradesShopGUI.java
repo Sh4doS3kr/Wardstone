@@ -17,7 +17,9 @@ import java.util.List;
 
 public class CoreUpgradesShopGUI {
 
-    public static final String GUI_TITLE = ChatColor.DARK_GRAY + "" + ChatColor.BOLD + "✦ Mejoras de Zona ✦";
+    public static final String GUI_TITLE_BASE = ChatColor.DARK_GRAY + "" + ChatColor.BOLD + "✦ Mejoras de Zona";
+    public static final String GUI_TITLE = GUI_TITLE_BASE + " ✦";
+    public static final String GUI_TITLE_P2 = GUI_TITLE_BASE + " (2) ✦";
     private static final int GUI_SIZE = 54;
 
     // Precios base (configurables via config)
@@ -29,6 +31,11 @@ public class CoreUpgradesShopGUI {
     public static final double PRICE_AUTO_HEAL = 80000;
     public static final double PRICE_SPEED_BOOST = 40000;
     public static final double PRICE_NO_FALL_DAMAGE = 30000;
+    public static final double PRICE_ANTI_ENDERMAN = 35000;
+    public static final double PRICE_RESOURCE_GEN = 250000;
+    public static final double PRICE_FIXED_TIME = 90000;
+    public static final double PRICE_CORE_TELEPORT = 120000;
+    public static final double PRICE_NO_HUNGER = 45000;
 
     private final CoreProtectPlugin plugin;
 
@@ -37,6 +44,14 @@ public class CoreUpgradesShopGUI {
     }
 
     public void open(Player player, ProtectedRegion region) {
+        open(player, region, 1);
+    }
+
+    public void open(Player player, ProtectedRegion region, int page) {
+        if (page == 2) {
+            openPage2(player, region);
+            return;
+        }
         Inventory inv = Bukkit.createInventory(null, GUI_SIZE, GUI_TITLE);
 
         // === BORDERS ===
@@ -165,8 +180,117 @@ public class CoreUpgradesShopGUI {
         infoItem.setItemMeta(infoMeta);
         inv.setItem(31, infoItem);
 
-        // === BACK BUTTON (slot 49) ===
+        // === NEXT PAGE (slot 50) ===
+        ItemStack nextBtn = new ItemStack(Material.ARROW);
+        ItemMeta nextMeta = nextBtn.getItemMeta();
+        nextMeta.setDisplayName(ChatColor.GREEN + "" + ChatColor.BOLD + "Página 2 ▶");
+        nextMeta.setLore(Arrays.asList("", ChatColor.GRAY + "Ver más mejoras"));
+        nextBtn.setItemMeta(nextMeta);
+        inv.setItem(50, nextBtn);
+
+        // === BACK BUTTON (slot 48) ===
         ItemStack backBtn = new ItemStack(Material.ARROW);
+        ItemMeta backMeta = backBtn.getItemMeta();
+        backMeta.setDisplayName(ChatColor.YELLOW + "" + ChatColor.BOLD + "◀ VOLVER");
+        backMeta.setLore(Arrays.asList("", ChatColor.GRAY + "Volver al panel principal"));
+        backBtn.setItemMeta(backMeta);
+        inv.setItem(49, backBtn);
+
+        player.openInventory(inv);
+    }
+
+    private void openPage2(Player player, ProtectedRegion region) {
+        Inventory inv = Bukkit.createInventory(null, GUI_SIZE, GUI_TITLE_P2);
+
+        ItemStack blackGlass = createGlass(Material.BLACK_STAINED_GLASS_PANE);
+        ItemStack purpleGlass = createGlass(Material.PURPLE_STAINED_GLASS_PANE);
+        ItemStack grayGlass = createGlass(Material.GRAY_STAINED_GLASS_PANE);
+
+        for (int i = 0; i < 9; i++) inv.setItem(i, blackGlass);
+        inv.setItem(3, purpleGlass);
+        inv.setItem(5, purpleGlass);
+        for (int row = 1; row < 5; row++) {
+            inv.setItem(row * 9, blackGlass);
+            inv.setItem(row * 9 + 8, blackGlass);
+        }
+        for (int i = 45; i < 54; i++) inv.setItem(i, blackGlass);
+        for (int i = 9; i < 45; i++) {
+            if (inv.getItem(i) == null) inv.setItem(i, grayGlass);
+        }
+
+        // Slot 10: Anti-Enderman
+        inv.setItem(10, createUpgradeItem(Material.ENDER_PEARL, "Anti-Enderman",
+                region.isAntiEnderman(), PRICE_ANTI_ENDERMAN,
+                Arrays.asList(
+                        ChatColor.GRAY + "Los Endermen no pueden",
+                        ChatColor.GRAY + "mover bloques en tu zona.",
+                        "",
+                        ChatColor.GRAY + "¡Tu terreno intacto!")));
+
+        // Slot 12: No Hunger
+        inv.setItem(12, createUpgradeItem(Material.COOKED_BEEF, "Sin Hambre",
+                region.isNoHunger(), PRICE_NO_HUNGER,
+                Arrays.asList(
+                        ChatColor.GRAY + "No pierdes hambre mientras",
+                        ChatColor.GRAY + "estés en tu zona.",
+                        "",
+                        ChatColor.GRAY + "¡Ahorra en comida!")));
+
+        // Slot 14: Fixed Time
+        boolean hasFixedTime = region.getFixedTime() > 0;
+        String timeLabel = hasFixedTime ? (region.getFixedTime() == 1 ? "Tiempo Fijo: Día" : "Tiempo Fijo: Noche") : "Tiempo Fijo";
+        inv.setItem(14, createUpgradeItem(Material.CLOCK, timeLabel,
+                hasFixedTime, PRICE_FIXED_TIME,
+                Arrays.asList(
+                        ChatColor.GRAY + "Fija la hora del día dentro",
+                        ChatColor.GRAY + "de tu zona protegida.",
+                        "",
+                        ChatColor.GRAY + "Click = Siempre de día",
+                        ChatColor.GRAY + "Ya comprado = Alterna día/noche")));
+
+        // Slot 16: Core Teleport
+        inv.setItem(16, createUpgradeItem(Material.ENDER_EYE, "Teletransporte",
+                region.isCoreTeleport(), PRICE_CORE_TELEPORT,
+                Arrays.asList(
+                        ChatColor.GRAY + "Permite usar /cores tp",
+                        ChatColor.GRAY + "para teletransportarte entre",
+                        ChatColor.GRAY + "tus núcleos directamente.",
+                        "",
+                        ChatColor.GRAY + "¡Viaja al instante!")));
+
+        // Slot 22: Resource Generator
+        inv.setItem(22, createUpgradeItem(Material.DIAMOND, "Generador de Recursos",
+                region.isResourceGenerator(), PRICE_RESOURCE_GEN,
+                Arrays.asList(
+                        ChatColor.GRAY + "Genera recursos automáticamente",
+                        ChatColor.GRAY + "en un cofre junto al núcleo.",
+                        "",
+                        ChatColor.GRAY + "Hierro, oro, diamantes...",
+                        ChatColor.GRAY + "¡Ingresos pasivos!")));
+
+        // Info
+        ItemStack infoItem = new ItemStack(Material.BOOK);
+        ItemMeta infoMeta = infoItem.getItemMeta();
+        infoMeta.setDisplayName(ChatColor.GOLD + "" + ChatColor.BOLD + "Información");
+        infoMeta.setLore(Arrays.asList("",
+                ChatColor.GRAY + "Mejoras adicionales para",
+                ChatColor.GRAY + "potenciar tu zona.",
+                "",
+                ChatColor.GREEN + "Verde" + ChatColor.GRAY + " = Ya comprado",
+                ChatColor.RED + "Rojo" + ChatColor.GRAY + " = Disponible"));
+        infoItem.setItemMeta(infoMeta);
+        inv.setItem(31, infoItem);
+
+        // Prev page
+        ItemStack prevBtn = new ItemStack(Material.ARROW);
+        ItemMeta prevMeta = prevBtn.getItemMeta();
+        prevMeta.setDisplayName(ChatColor.GREEN + "" + ChatColor.BOLD + "◀ Página 1");
+        prevMeta.setLore(Arrays.asList("", ChatColor.GRAY + "Volver a mejoras básicas"));
+        prevBtn.setItemMeta(prevMeta);
+        inv.setItem(48, prevBtn);
+
+        // Back to management
+        ItemStack backBtn = new ItemStack(Material.BARRIER);
         ItemMeta backMeta = backBtn.getItemMeta();
         backMeta.setDisplayName(ChatColor.YELLOW + "" + ChatColor.BOLD + "◀ VOLVER");
         backMeta.setLore(Arrays.asList("", ChatColor.GRAY + "Volver al panel principal"));
@@ -274,5 +398,10 @@ public class CoreUpgradesShopGUI {
 
     public static boolean isUpgradesShopGUI(String title) {
         return title.contains("Mejoras de Zona");
+    }
+
+    public static int getPageFromTitle(String title) {
+        if (title.contains("(2)")) return 2;
+        return 1;
     }
 }

@@ -180,15 +180,41 @@ public class GUIListener implements Listener {
         }
 
         int slot = event.getSlot();
-        Economy economy = plugin.getEconomy();
+        String title = event.getView().getTitle();
+        int page = CoreUpgradesShopGUI.getPageFromTitle(title);
 
-        // Slot 49: BACK
-        if (slot == 49 && clicked.getType() == Material.ARROW) {
+        // Page navigation
+        if (slot == 50 && page == 1 && clicked.getType() == Material.ARROW) {
             SoundManager.playGUIClick(player.getLocation());
-            new CoreManagementGUI(plugin).open(player, region);
+            new CoreUpgradesShopGUI(plugin).open(player, region, 2);
+            return;
+        }
+        if (slot == 48 && page == 2 && clicked.getType() == Material.ARROW) {
+            SoundManager.playGUIClick(player.getLocation());
+            new CoreUpgradesShopGUI(plugin).open(player, region, 1);
             return;
         }
 
+        // Back to management
+        if (slot == 49) {
+            if (clicked.getType() == Material.ARROW || clicked.getType() == Material.BARRIER) {
+                SoundManager.playGUIClick(player.getLocation());
+                new CoreManagementGUI(plugin).open(player, region);
+                return;
+            }
+        }
+
+        // === PAGE 1 UPGRADES ===
+        if (page == 1) {
+            handlePage1Upgrades(slot, player, region);
+        }
+        // === PAGE 2 UPGRADES ===
+        else if (page == 2) {
+            handlePage2Upgrades(slot, player, region);
+        }
+    }
+
+    private void handlePage1Upgrades(int slot, Player player, ProtectedRegion region) {
         // Slot 10: Anti-Explosion
         if (slot == 10 && !region.isNoExplosion()) {
             if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_NO_EXPLOSION)) {
@@ -196,72 +222,66 @@ public class GUIListener implements Listener {
                 plugin.getDataManager().saveData();
                 plugin.getMessageManager().send(player, "upgrades.purchased", "{upgrade}", "Anti-Explosión");
                 SoundManager.playUpgradePurchased(player.getLocation());
+                plugin.getAchievementListener().onUpgradePurchased(player, region, "noExplosion", CoreUpgradesShopGUI.PRICE_NO_EXPLOSION);
                 new CoreUpgradesShopGUI(plugin).open(player, region);
             }
             return;
         }
-
-        // Slot 12: Anti-PvP
         if (slot == 12 && !region.isNoPvP()) {
             if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_NO_PVP)) {
                 region.setNoPvP(true);
                 plugin.getDataManager().saveData();
                 plugin.getMessageManager().send(player, "upgrades.purchased", "{upgrade}", "Anti-PvP");
                 SoundManager.playUpgradePurchased(player.getLocation());
+                plugin.getAchievementListener().onUpgradePurchased(player, region, "noPvP", CoreUpgradesShopGUI.PRICE_NO_PVP);
                 new CoreUpgradesShopGUI(plugin).open(player, region);
             }
             return;
         }
-
-        // Slot 14: No Mob Spawn
         if (slot == 14 && !region.isNoMobSpawn()) {
             if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_NO_MOB_SPAWN)) {
                 region.setNoMobSpawn(true);
                 plugin.getDataManager().saveData();
                 plugin.getMessageManager().send(player, "upgrades.purchased", "{upgrade}", "Anti-Mobs");
                 SoundManager.playUpgradePurchased(player.getLocation());
+                plugin.getAchievementListener().onUpgradePurchased(player, region, "noMobSpawn", CoreUpgradesShopGUI.PRICE_NO_MOB_SPAWN);
                 new CoreUpgradesShopGUI(plugin).open(player, region);
             }
             return;
         }
-
-        // Slot 16: No Fall Damage
         if (slot == 16 && !region.isNoFallDamage()) {
             if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_NO_FALL_DAMAGE)) {
                 region.setNoFallDamage(true);
                 plugin.getDataManager().saveData();
                 plugin.getMessageManager().send(player, "upgrades.purchased", "{upgrade}", "Sin Caída");
                 SoundManager.playUpgradePurchased(player.getLocation());
+                plugin.getAchievementListener().onUpgradePurchased(player, region, "noFallDamage", CoreUpgradesShopGUI.PRICE_NO_FALL_DAMAGE);
                 new CoreUpgradesShopGUI(plugin).open(player, region);
             }
             return;
         }
-
-        // Slot 19: Auto Heal
         if (slot == 19 && !region.isAutoHeal()) {
             if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_AUTO_HEAL)) {
                 region.setAutoHeal(true);
                 plugin.getDataManager().saveData();
                 plugin.getMessageManager().send(player, "upgrades.purchased", "{upgrade}", "Auto-Curación");
                 SoundManager.playUpgradePurchased(player.getLocation());
+                plugin.getAchievementListener().onUpgradePurchased(player, region, "autoHeal", CoreUpgradesShopGUI.PRICE_AUTO_HEAL);
                 new CoreUpgradesShopGUI(plugin).open(player, region);
             }
             return;
         }
-
-        // Slot 21: Speed Boost
         if (slot == 21 && !region.isSpeedBoost()) {
             if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_SPEED_BOOST)) {
                 region.setSpeedBoost(true);
                 plugin.getDataManager().saveData();
                 plugin.getMessageManager().send(player, "upgrades.purchased", "{upgrade}", "Velocidad");
                 SoundManager.playUpgradePurchased(player.getLocation());
+                plugin.getAchievementListener().onUpgradePurchased(player, region, "speedBoost", CoreUpgradesShopGUI.PRICE_SPEED_BOOST);
                 new CoreUpgradesShopGUI(plugin).open(player, region);
             }
             return;
         }
-
-        // Slot 23: Damage Boost (leveled)
         if (slot == 23 && region.getDamageBoostLevel() < 5) {
             double price = CoreUpgradesShopGUI.PRICE_DAMAGE_BOOST * (region.getDamageBoostLevel() + 1);
             if (tryPurchase(player, price)) {
@@ -270,12 +290,11 @@ public class GUIListener implements Listener {
                 plugin.getMessageManager().send(player, "upgrades.leveled",
                         "{upgrade}", "Boost de Daño", "{level}", String.valueOf(region.getDamageBoostLevel()));
                 SoundManager.playUpgradePurchased(player.getLocation());
+                plugin.getAchievementListener().onUpgradePurchased(player, region, "damageBoost", price);
                 new CoreUpgradesShopGUI(plugin).open(player, region);
             }
             return;
         }
-
-        // Slot 25: Health Boost (leveled)
         if (slot == 25 && region.getHealthBoostLevel() < 5) {
             double price = CoreUpgradesShopGUI.PRICE_HEALTH_BOOST * (region.getHealthBoostLevel() + 1);
             if (tryPurchase(player, price)) {
@@ -284,7 +303,75 @@ public class GUIListener implements Listener {
                 plugin.getMessageManager().send(player, "upgrades.leveled",
                         "{upgrade}", "Boost de Vida", "{level}", String.valueOf(region.getHealthBoostLevel()));
                 SoundManager.playUpgradePurchased(player.getLocation());
+                plugin.getAchievementListener().onUpgradePurchased(player, region, "healthBoost", price);
                 new CoreUpgradesShopGUI(plugin).open(player, region);
+            }
+            return;
+        }
+    }
+
+    private void handlePage2Upgrades(int slot, Player player, ProtectedRegion region) {
+        if (slot == 10 && !region.isAntiEnderman()) {
+            if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_ANTI_ENDERMAN)) {
+                region.setAntiEnderman(true);
+                plugin.getDataManager().saveData();
+                plugin.getMessageManager().send(player, "upgrades.purchased", "{upgrade}", "Anti-Enderman");
+                SoundManager.playUpgradePurchased(player.getLocation());
+                plugin.getAchievementListener().onUpgradePurchased(player, region, "antiEnderman", CoreUpgradesShopGUI.PRICE_ANTI_ENDERMAN);
+                new CoreUpgradesShopGUI(plugin).open(player, region, 2);
+            }
+            return;
+        }
+        if (slot == 12 && !region.isNoHunger()) {
+            if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_NO_HUNGER)) {
+                region.setNoHunger(true);
+                plugin.getDataManager().saveData();
+                plugin.getMessageManager().send(player, "upgrades.purchased", "{upgrade}", "Sin Hambre");
+                SoundManager.playUpgradePurchased(player.getLocation());
+                plugin.getAchievementListener().onUpgradePurchased(player, region, "noHunger", CoreUpgradesShopGUI.PRICE_NO_HUNGER);
+                new CoreUpgradesShopGUI(plugin).open(player, region, 2);
+            }
+            return;
+        }
+        if (slot == 14) {
+            if (region.getFixedTime() == 0) {
+                if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_FIXED_TIME)) {
+                    region.setFixedTime(1);
+                    plugin.getDataManager().saveData();
+                    plugin.getMessageManager().send(player, "upgrades.purchased", "{upgrade}", "Tiempo Fijo (Día)");
+                    SoundManager.playUpgradePurchased(player.getLocation());
+                    plugin.getAchievementListener().onUpgradePurchased(player, region, "fixedTime", CoreUpgradesShopGUI.PRICE_FIXED_TIME);
+                    new CoreUpgradesShopGUI(plugin).open(player, region, 2);
+                }
+            } else {
+                region.setFixedTime(region.getFixedTime() == 1 ? 2 : 1);
+                plugin.getDataManager().saveData();
+                String mode = region.getFixedTime() == 1 ? "Día" : "Noche";
+                plugin.getMessageManager().send(player, "upgrades.purchased", "{upgrade}", "Tiempo Fijo (" + mode + ")");
+                SoundManager.playGUIClick(player.getLocation());
+                new CoreUpgradesShopGUI(plugin).open(player, region, 2);
+            }
+            return;
+        }
+        if (slot == 16 && !region.isCoreTeleport()) {
+            if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_CORE_TELEPORT)) {
+                region.setCoreTeleport(true);
+                plugin.getDataManager().saveData();
+                plugin.getMessageManager().send(player, "upgrades.purchased", "{upgrade}", "Teletransporte");
+                SoundManager.playUpgradePurchased(player.getLocation());
+                plugin.getAchievementListener().onUpgradePurchased(player, region, "coreTeleport", CoreUpgradesShopGUI.PRICE_CORE_TELEPORT);
+                new CoreUpgradesShopGUI(plugin).open(player, region, 2);
+            }
+            return;
+        }
+        if (slot == 22 && !region.isResourceGenerator()) {
+            if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_RESOURCE_GEN)) {
+                region.setResourceGenerator(true);
+                plugin.getDataManager().saveData();
+                plugin.getMessageManager().send(player, "upgrades.purchased", "{upgrade}", "Generador de Recursos");
+                SoundManager.playUpgradePurchased(player.getLocation());
+                plugin.getAchievementListener().onUpgradePurchased(player, region, "resourceGen", CoreUpgradesShopGUI.PRICE_RESOURCE_GEN);
+                new CoreUpgradesShopGUI(plugin).open(player, region, 2);
             }
             return;
         }
@@ -421,6 +508,9 @@ public class GUIListener implements Listener {
         if (plugin.getBlueMapIntegration() != null) {
             plugin.getBlueMapIntegration().updateAllMarkers();
         }
+
+        // Achievement trigger
+        plugin.getAchievementListener().onCoreUpgraded(player, region);
 
         // Lock the core location during animation
         plugin.getProtectionManager().lockLocation(coreLoc);

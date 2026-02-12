@@ -92,6 +92,13 @@ public class CorePlaceListener implements Listener {
                                 region.setSpeedBoost(parts[6].equals("1"));
                                 region.setNoFallDamage(parts[7].equals("1"));
                             }
+                            if (parts.length >= 13) {
+                                region.setAntiEnderman(parts[8].equals("1"));
+                                region.setResourceGenerator(parts[9].equals("1"));
+                                region.setFixedTime(Integer.parseInt(parts[10]));
+                                region.setCoreTeleport(parts[11].equals("1"));
+                                region.setNoHunger(parts[12].equals("1"));
+                            }
                         } catch (Exception ignored) {
                         }
                     }
@@ -111,6 +118,10 @@ public class CorePlaceListener implements Listener {
 
                     if (player.isOnline()) {
                         plugin.getMessageManager().send(player, "protection.created");
+                        plugin.getAchievementListener().onCorePlaced(player, region);
+                        if (upgradeData != null) {
+                            plugin.getAchievementListener().onCoreMoved(player);
+                        }
                     }
                 });
     }

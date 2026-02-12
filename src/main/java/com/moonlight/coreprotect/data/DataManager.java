@@ -81,11 +81,17 @@ public class DataManager {
                 boolean autoHeal = regionSection.getBoolean("upgrades.autoHeal", false);
                 boolean speedBoost = regionSection.getBoolean("upgrades.speedBoost", false);
                 boolean noFallDamage = regionSection.getBoolean("upgrades.noFallDamage", false);
+                boolean antiEnderman = regionSection.getBoolean("upgrades.antiEnderman", false);
+                boolean resourceGenerator = regionSection.getBoolean("upgrades.resourceGenerator", false);
+                int fixedTime = regionSection.getInt("upgrades.fixedTime", 0);
+                boolean coreTeleport = regionSection.getBoolean("upgrades.coreTeleport", false);
+                boolean noHunger = regionSection.getBoolean("upgrades.noHunger", false);
 
                 ProtectedRegion region = new ProtectedRegion(
                         id, owner, worldName, coreX, coreY, coreZ, level, size, members, createdAt,
                         noExplosion, noPvP, damageBoostLevel, healthBoostLevel,
-                        noMobSpawn, autoHeal, speedBoost, noFallDamage);
+                        noMobSpawn, autoHeal, speedBoost, noFallDamage,
+                        antiEnderman, resourceGenerator, fixedTime, coreTeleport, noHunger);
 
                 plugin.getProtectionManager().addRegion(region);
             } catch (Exception e) {
@@ -140,6 +146,11 @@ public class DataManager {
             dataConfig.set(path + ".upgrades.autoHeal", region.isAutoHeal());
             dataConfig.set(path + ".upgrades.speedBoost", region.isSpeedBoost());
             dataConfig.set(path + ".upgrades.noFallDamage", region.isNoFallDamage());
+            dataConfig.set(path + ".upgrades.antiEnderman", region.isAntiEnderman());
+            dataConfig.set(path + ".upgrades.resourceGenerator", region.isResourceGenerator());
+            dataConfig.set(path + ".upgrades.fixedTime", region.getFixedTime());
+            dataConfig.set(path + ".upgrades.coreTeleport", region.isCoreTeleport());
+            dataConfig.set(path + ".upgrades.noHunger", region.isNoHunger());
         }
 
         // Save homes

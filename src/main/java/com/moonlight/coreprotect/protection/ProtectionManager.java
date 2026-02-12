@@ -22,6 +22,8 @@ public class ProtectionManager {
         startAmbientTask(plugin);
         startActionBarTask(plugin);
         startBuffTask(plugin);
+        startFixedTimeTask(plugin);
+        startResourceGeneratorTask(plugin);
     }
 
     private void startAmbientTask(CoreProtectPlugin plugin) {
@@ -110,6 +112,70 @@ public class ProtectionManager {
                 }
             }
         }.runTaskTimer(plugin, 20L, 40L); // Every 2 seconds, effects last 5s = always overlap
+    }
+
+    private void startFixedTimeTask(CoreProtectPlugin plugin) {
+        new org.bukkit.scheduler.BukkitRunnable() {
+            @Override
+            public void run() {
+                for (org.bukkit.entity.Player player : org.bukkit.Bukkit.getOnlinePlayers()) {
+                    ProtectedRegion region = getRegionAt(player.getLocation());
+                    if (region != null && region.canAccess(player.getUniqueId()) && region.getFixedTime() > 0) {
+                        long time = region.getFixedTime() == 1 ? 6000L : 18000L;
+                        player.setPlayerTime(time, false);
+                    } else {
+                        if (player.isPlayerTimeRelative() == false) {
+                            player.resetPlayerTime();
+                        }
+                    }
+                }
+            }
+        }.runTaskTimer(plugin, 20L, 40L);
+    }
+
+    private void startResourceGeneratorTask(CoreProtectPlugin plugin) {
+        new org.bukkit.scheduler.BukkitRunnable() {
+            private final org.bukkit.Material[] RESOURCES = {
+                org.bukkit.Material.COAL, org.bukkit.Material.COAL, org.bukkit.Material.COAL,
+                org.bukkit.Material.RAW_IRON, org.bukkit.Material.RAW_IRON,
+                org.bukkit.Material.RAW_GOLD,
+                org.bukkit.Material.LAPIS_LAZULI,
+                org.bukkit.Material.REDSTONE,
+                org.bukkit.Material.DIAMOND,
+                org.bukkit.Material.EMERALD
+            };
+            private final java.util.Random random = new java.util.Random();
+
+            @Override
+            public void run() {
+                for (ProtectedRegion region : regions.values()) {
+                    if (!region.isResourceGenerator()) continue;
+                    Location coreLoc = region.getCoreLocation();
+                    if (coreLoc == null || coreLoc.getWorld() == null) continue;
+
+                    // Check for a chest adjacent to core (1 block in any cardinal direction)
+                    org.bukkit.block.Block[] adjacent = {
+                        coreLoc.getBlock().getRelative(org.bukkit.block.BlockFace.NORTH),
+                        coreLoc.getBlock().getRelative(org.bukkit.block.BlockFace.SOUTH),
+                        coreLoc.getBlock().getRelative(org.bukkit.block.BlockFace.EAST),
+                        coreLoc.getBlock().getRelative(org.bukkit.block.BlockFace.WEST),
+                        coreLoc.getBlock().getRelative(org.bukkit.block.BlockFace.UP)
+                    };
+
+                    for (org.bukkit.block.Block block : adjacent) {
+                        if (block.getType() == org.bukkit.Material.CHEST || block.getType() == org.bukkit.Material.BARREL) {
+                            org.bukkit.block.Container container = (org.bukkit.block.Container) block.getState();
+                            org.bukkit.inventory.Inventory inv = container.getInventory();
+                            if (inv.firstEmpty() != -1) {
+                                org.bukkit.Material resource = RESOURCES[random.nextInt(RESOURCES.length)];
+                                inv.addItem(new org.bukkit.inventory.ItemStack(resource, 1));
+                            }
+                            break; // Only fill the first chest found
+                        }
+                    }
+                }
+            }
+        }.runTaskTimer(plugin, 6000L, 6000L); // Every 5 minutes
     }
 
     private boolean isSpawn(Location loc) {
