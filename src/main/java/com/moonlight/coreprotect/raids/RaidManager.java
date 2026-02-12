@@ -32,12 +32,11 @@ public class RaidManager implements Listener {
     }
 
     private void startRaidScheduler() {
-        // Boss bar countdown task - runs every second
+        // Boss bar always visible with countdown
         new BukkitRunnable() {
             private long tickCounter = 0;
             private long nextRaidTick = RAID_INTERVAL_TICKS;
-            private boolean warningActive = false;
-            private BossBar warningBar = null;
+            private BossBar countdownBar = null;
 
             @Override
             public void run() {
@@ -46,44 +45,48 @@ public class RaidManager implements Listener {
                 Collection<ProtectedRegion> allRegions = plugin.getProtectionManager().getAllRegions();
                 if (allRegions.isEmpty()) {
                     tickCounter = 0;
+                    if (countdownBar != null) { countdownBar.removeAll(); countdownBar = null; }
                     return;
                 }
 
                 long timeUntilRaid = nextRaidTick - tickCounter;
 
-                // Show warning boss bar when 3 minutes remain
-                if (timeUntilRaid <= WARNING_TICKS && timeUntilRaid > 0 && !warningActive) {
-                    warningActive = true;
-                    warningBar = Bukkit.createBossBar(
-                            ChatColor.RED + "⚔ OLEADA DE MOBS EN " + formatTime(timeUntilRaid) + " ⚔",
-                            BarColor.RED, BarStyle.SEGMENTED_10);
-                    warningBar.setProgress(1.0);
+                // Create bar on first tick
+                if (countdownBar == null) {
+                    countdownBar = Bukkit.createBossBar(
+                            ChatColor.GRAY + "⚔ Próxima oleada en " + formatTime(timeUntilRaid) + " ⚔",
+                            BarColor.GREEN, BarStyle.SEGMENTED_20);
+                    countdownBar.setProgress(1.0);
                     for (Player p : Bukkit.getOnlinePlayers()) {
-                        warningBar.addPlayer(p);
+                        countdownBar.addPlayer(p);
                     }
                 }
 
-                // Update warning bar
-                if (warningActive && warningBar != null && timeUntilRaid > 0) {
-                    double progress = (double) timeUntilRaid / WARNING_TICKS;
-                    warningBar.setProgress(Math.max(0, Math.min(1, progress)));
-                    warningBar.setTitle(ChatColor.RED + "⚔ OLEADA DE MOBS EN " + formatTime(timeUntilRaid) + " ⚔");
-
-                    // Add newly joined players
-                    for (Player p : Bukkit.getOnlinePlayers()) {
-                        if (!warningBar.getPlayers().contains(p)) {
-                            warningBar.addPlayer(p);
-                        }
+                // Add newly joined players
+                for (Player p : Bukkit.getOnlinePlayers()) {
+                    if (!countdownBar.getPlayers().contains(p)) {
+                        countdownBar.addPlayer(p);
                     }
+                }
+
+                // Update bar appearance based on time remaining
+                double progress = Math.max(0, Math.min(1, (double) timeUntilRaid / nextRaidTick));
+                countdownBar.setProgress(progress);
+
+                if (timeUntilRaid > WARNING_TICKS) {
+                    // Normal state - green/yellow bar
+                    countdownBar.setColor(progress > 0.5 ? BarColor.GREEN : BarColor.YELLOW);
+                    countdownBar.setTitle(ChatColor.GRAY + "⚔ Próxima oleada en " + formatTime(timeUntilRaid) + " ⚔");
+                } else if (timeUntilRaid > 0) {
+                    // Warning state - red bar, bold text
+                    countdownBar.setColor(BarColor.RED);
+                    countdownBar.setTitle(ChatColor.RED + "" + ChatColor.BOLD + "⚔ ¡OLEADA EN " + formatTime(timeUntilRaid) + "! ⚔");
                 }
 
                 // Time to raid!
                 if (tickCounter >= nextRaidTick) {
-                    if (warningBar != null) {
-                        warningBar.removeAll();
-                        warningBar = null;
-                    }
-                    warningActive = false;
+                    countdownBar.removeAll();
+                    countdownBar = null;
                     tickCounter = 0;
                     nextRaidTick = RAID_INTERVAL_TICKS;
 
