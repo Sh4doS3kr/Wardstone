@@ -37,6 +37,7 @@ public class CoreProtectPlugin extends JavaPlugin {
     private AbilityRegistry abilityRegistry;
     private RPGCombatListener rpgCombatListener;
     private BossManager bossManager;
+    private RPGHudListener rpgHudListener;
 
     @Override
     public void onEnable() {
@@ -90,7 +91,7 @@ public class CoreProtectPlugin extends JavaPlugin {
         abilityRegistry.registerAll(this);
         rpgCombatListener = new RPGCombatListener(this);
         bossManager = new BossManager(this);
-        new RPGHudListener(this);
+        rpgHudListener = new RPGHudListener(this);
         getServer().getPluginManager().registerEvents(rpgCombatListener, this);
         getServer().getPluginManager().registerEvents(new RPGGUIListener(this), this);
         getServer().getPluginManager().registerEvents(bossManager, this);
@@ -129,8 +130,14 @@ public class CoreProtectPlugin extends JavaPlugin {
         if (dataManager != null) {
             dataManager.saveData();
         }
+        // Save RPG data on disable
         if (rpgManager != null) {
             rpgManager.saveAll();
+        }
+        
+        // Cleanup RPG HUD
+        if (rpgHudListener != null) {
+            rpgHudListener.cleanup();
         }
         if (achievementManager != null) {
             achievementManager.savePlayerData();
