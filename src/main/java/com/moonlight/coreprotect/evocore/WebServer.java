@@ -33,7 +33,7 @@ public class WebServer {
 
     public void start() {
         try {
-            server = HttpServer.create(new InetSocketAddress(port), 0);
+            server = HttpServer.create(new InetSocketAddress("0.0.0.0", port), 0);
             server.setExecutor(Executors.newFixedThreadPool(4));
 
             // API endpoints
