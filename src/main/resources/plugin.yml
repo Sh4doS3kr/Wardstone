@@ -17,6 +17,24 @@ commands:
     description: Comandos de administracion
     usage: /<command> [deleteprotection]
     permission: coreprotect.admin
+  rpg:
+    description: Ver tu perfil RPG
+    usage: /rpg
+  class:
+    description: Elegir tu clase RPG
+    usage: /class
+  stats:
+    description: Asignar puntos de estadistica
+    usage: /stats
+  skills:
+    description: Ver arbol de habilidades
+    usage: /skills
+  skill:
+    description: Usar una habilidad RPG
+    usage: /skill <nombre>
+  linkmc:
+    description: Vincular cuenta web con codigo
+    usage: /linkmc
 
 permissions:
   coreprotect.use:
