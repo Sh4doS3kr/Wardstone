@@ -26,6 +26,9 @@ if (Test-Path "$libDir\spigot-api.jar") {
 } elseif (Test-Path "$libDir\paper-api.jar") {
     $apiJar = "$libDir\paper-api.jar"
     Write-Host "Usando Paper API: $apiJar" -ForegroundColor Green
+} elseif (Test-Path "libs\paper-api-1.21.8.jar") {
+    $apiJar = "libs\paper-api-1.21.8.jar"
+    Write-Host "Usando Paper API 1.21.8: $apiJar" -ForegroundColor Green
 } else {
     Write-Host "Error: No se encuentra API JAR (spigot-api.jar o paper-api.jar)" -ForegroundColor Red
     exit 1
