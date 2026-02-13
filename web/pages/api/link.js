@@ -21,8 +21,8 @@ export default async function handler(req, res) {
     })
 
     // Ask the server to validate the link code
-    // The plugin should handle a command like: coreprotect:linkvalidate <code>
-    const response = await rcon.send(`coreprotect:linkvalidate ${code}`)
+    // The plugin should handle a command like: linkvalidate <code>
+    const response = await rcon.send(`linkvalidate ${code}`)
 
     await rcon.end()
 
