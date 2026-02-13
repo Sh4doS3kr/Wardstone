@@ -35,6 +35,10 @@ commands:
   linkmc:
     description: Vincular cuenta web con codigo
     usage: /linkmc
+  coreprotect:linkvalidate:
+    description: Validar codigo de vinculacion (RCON)
+    usage: /coreprotect:linkvalidate <code>
+    permission: coreprotect.admin
 
 permissions:
   coreprotect.use:

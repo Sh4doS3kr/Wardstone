@@ -111,6 +111,7 @@ public class CoreProtectPlugin extends JavaPlugin {
         getCommand("skill").setExecutor(rpgCmd);
         getCommand("skill").setTabCompleter(rpgCmd);
         getCommand("linkmc").setExecutor(rpgCmd);
+        getCommand("coreprotect:linkvalidate").setExecutor(new com.moonlight.coreprotect.commands.LinkValidateCommand(this));
 
         // Auto-guardado
         int saveInterval = getConfig().getInt("settings.auto-save-interval", 5) * 60 * 20;
