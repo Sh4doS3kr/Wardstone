@@ -10,6 +10,13 @@ settings:
   # Tiempo entre auto-guardados (en minutos)
   auto-save-interval: 5
 
+# EvoCore - Sistema de equilibrio dinámico
+evocore:
+  # Puerto del dashboard web
+  web-port: 8095
+  # URL de BlueMap para embeber en el dashboard
+  bluemap-url: "http://localhost:8100"
+
 # Niveles de nucleos
 # Formato: nivel, material, precio, tamaño de area
 levels:

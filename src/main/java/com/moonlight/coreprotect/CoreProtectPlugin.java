@@ -8,15 +8,9 @@ import com.moonlight.coreprotect.protection.ProtectionListener;
 import com.moonlight.coreprotect.protection.ProtectionManager;
 import com.moonlight.coreprotect.achievements.AchievementListener;
 import com.moonlight.coreprotect.achievements.AchievementManager;
+import com.moonlight.coreprotect.evocore.EvoCore;
 import com.moonlight.coreprotect.integrations.BlueMapIntegration;
 import com.moonlight.coreprotect.raids.RaidManager;
-import com.moonlight.coreprotect.rpg.RPGCombatListener;
-import com.moonlight.coreprotect.rpg.RPGCommand;
-import com.moonlight.coreprotect.rpg.RPGHudListener;
-import com.moonlight.coreprotect.rpg.RPGManager;
-import com.moonlight.coreprotect.rpg.abilities.AbilityRegistry;
-import com.moonlight.coreprotect.rpg.bosses.BossManager;
-import com.moonlight.coreprotect.rpg.gui.RPGGUIListener;
 import com.moonlight.coreprotect.utils.MessageManager;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.plugin.RegisteredServiceProvider;
@@ -33,11 +27,7 @@ public class CoreProtectPlugin extends JavaPlugin {
     private AchievementManager achievementManager;
     private AchievementListener achievementListener;
     private RaidManager raidManager;
-    private RPGManager rpgManager;
-    private AbilityRegistry abilityRegistry;
-    private RPGCombatListener rpgCombatListener;
-    private BossManager bossManager;
-    private RPGHudListener rpgHudListener;
+    private EvoCore evoCore;
 
     @Override
     public void onEnable() {
@@ -85,34 +75,12 @@ public class CoreProtectPlugin extends JavaPlugin {
         raidManager = new RaidManager(this);
         getServer().getPluginManager().registerEvents(raidManager, this);
 
-        // Inicializar RPG
-        rpgManager = new RPGManager(this);
-        abilityRegistry = new AbilityRegistry();
-        abilityRegistry.registerAll(this);
-        rpgCombatListener = new RPGCombatListener(this);
-        bossManager = new BossManager(this);
-        rpgHudListener = new RPGHudListener(this);
-        getServer().getPluginManager().registerEvents(rpgCombatListener, this);
-        getServer().getPluginManager().registerEvents(new RPGGUIListener(this), this);
-        getServer().getPluginManager().registerEvents(bossManager, this);
-
         // Registrar comandos
         // Registrar comandos
         getCommand("cores").setExecutor(new CoreCommand(this));
         getCommand("cores").setTabCompleter(new CoreCommand(this));
         getCommand("admincore").setExecutor(new com.moonlight.coreprotect.commands.AdminCommand(this));
         getCommand("admincore").setTabCompleter(new com.moonlight.coreprotect.commands.AdminCommand(this));
-
-        // RPG commands
-        RPGCommand rpgCmd = new RPGCommand(this);
-        getCommand("rpg").setExecutor(rpgCmd);
-        getCommand("class").setExecutor(rpgCmd);
-        getCommand("stats").setExecutor(rpgCmd);
-        getCommand("skills").setExecutor(rpgCmd);
-        getCommand("skill").setExecutor(rpgCmd);
-        getCommand("skill").setTabCompleter(rpgCmd);
-        getCommand("linkmc").setExecutor(rpgCmd);
-        getCommand("linkvalidate").setExecutor(new com.moonlight.coreprotect.commands.LinkValidateCommand(this));
 
         // Auto-guardado
         int saveInterval = getConfig().getInt("settings.auto-save-interval", 5) * 60 * 20;
@@ -122,25 +90,20 @@ public class CoreProtectPlugin extends JavaPlugin {
         blueMapIntegration = new BlueMapIntegration(this);
         blueMapIntegration.init();
 
+        // EvoCore - Sistema de equilibrio dinámico + web dashboard
+        evoCore = new EvoCore(this);
+        getServer().getPluginManager().registerEvents(evoCore.getDataCollector(), this);
+
         getLogger().info("CoreProtect habilitado correctamente");
     }
 
     @Override
     public void onDisable() {
+        if (evoCore != null) {
+            evoCore.shutdown();
+        }
         if (dataManager != null) {
             dataManager.saveData();
-        }
-        // Save RPG data on disable
-        if (rpgManager != null) {
-            rpgManager.saveAll();
-        }
-        
-        // Cleanup RPG HUD
-        if (rpgHudListener != null) {
-            rpgHudListener.cleanup();
-        }
-        if (achievementManager != null) {
-            achievementManager.savePlayerData();
         }
         getLogger().info("CoreProtect deshabilitado");
     }
@@ -193,19 +156,7 @@ public class CoreProtectPlugin extends JavaPlugin {
         return raidManager;
     }
 
-    public RPGManager getRPGManager() {
-        return rpgManager;
-    }
-
-    public AbilityRegistry getAbilityRegistry() {
-        return abilityRegistry;
-    }
-
-    public RPGCombatListener getRPGCombatListener() {
-        return rpgCombatListener;
-    }
-
-    public BossManager getBossManager() {
-        return bossManager;
+    public EvoCore getEvoCore() {
+        return evoCore;
     }
 }

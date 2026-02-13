@@ -33,6 +33,10 @@ build_output.log
 # Maven
 spigot-metadata.xml
 
+# Node / Web
+node_modules/
+web/
+
 # Misc
 *.bak
 *.tmp
