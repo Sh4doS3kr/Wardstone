@@ -77,8 +77,13 @@ public class CorePlaceListener implements Listener {
         SoundManager.playCorePlaced(event.getBlock().getLocation());
         plugin.getMessageManager().send(player, "protection.creating");
 
+        // Lock the core block during construction animation so it can't be broken
+        plugin.getProtectionManager().lockLocation(event.getBlock().getLocation());
+
         // Ejecutar animacion y crear proteccion al terminar
         Runnable onRegionCreated = () -> {
+                    // Unlock the core block after animation
+                    plugin.getProtectionManager().unlockLocation(event.getBlock().getLocation());
                     // Crear la region protegida
                     ProtectedRegion region = new ProtectedRegion(
                             player.getUniqueId(),
