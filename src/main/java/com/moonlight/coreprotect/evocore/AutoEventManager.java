@@ -7,7 +7,9 @@ import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
 import org.bukkit.entity.*;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.*;
@@ -183,7 +185,7 @@ public class AutoEventManager {
             new ItemStack(Material.GOLDEN_APPLE, 1 + random.nextInt(2)),
             new ItemStack(Material.EXPERIENCE_BOTTLE, 5 + random.nextInt(15)),
             new ItemStack(Material.ENDER_PEARL, 1 + random.nextInt(4)),
-            new ItemStack(Material.ENCHANTED_BOOK, 1),
+            createRandomEnchantedBook(),
             new ItemStack(Material.NAME_TAG, 1),
             new ItemStack(Material.SADDLE, 1)
         };
@@ -196,6 +198,25 @@ public class AutoEventManager {
             int slot = random.nextInt(27);
             chest.getInventory().setItem(slot, pool.get(i));
         }
+    }
+
+    private ItemStack createRandomEnchantedBook() {
+        Enchantment[] enchants = {
+            Enchantment.SHARPNESS, Enchantment.SMITE, Enchantment.BANE_OF_ARTHROPODS,
+            Enchantment.EFFICIENCY, Enchantment.UNBREAKING, Enchantment.FORTUNE,
+            Enchantment.PROTECTION, Enchantment.FIRE_PROTECTION, Enchantment.BLAST_PROTECTION,
+            Enchantment.PROJECTILE_PROTECTION, Enchantment.FEATHER_FALLING,
+            Enchantment.POWER, Enchantment.PUNCH, Enchantment.FLAME,
+            Enchantment.LOOTING, Enchantment.SILK_TOUCH, Enchantment.RESPIRATION,
+            Enchantment.AQUA_AFFINITY, Enchantment.THORNS, Enchantment.MENDING
+        };
+        Enchantment chosen = enchants[random.nextInt(enchants.length)];
+        int level = 1 + random.nextInt(chosen.getMaxLevel());
+        ItemStack book = new ItemStack(Material.ENCHANTED_BOOK);
+        EnchantmentStorageMeta meta = (EnchantmentStorageMeta) book.getItemMeta();
+        meta.addStoredEnchant(chosen, level, true);
+        book.setItemMeta(meta);
+        return book;
     }
 
     private boolean isOnCooldown(UUID regionId) {
