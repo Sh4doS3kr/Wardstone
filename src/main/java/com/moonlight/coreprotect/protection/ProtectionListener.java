@@ -17,6 +17,9 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.Material;
+import org.bukkit.event.block.BlockFromToEvent;
+import org.bukkit.event.player.PlayerBucketEmptyEvent;
+import org.bukkit.event.player.PlayerBucketFillEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.Location;
 import java.util.UUID;
@@ -369,6 +372,49 @@ public class ProtectionListener implements Listener {
             if (region != null && region.isNoHunger() && region.canAccess(player.getUniqueId())) {
                 event.setCancelled(true);
             }
+        }
+    }
+
+    // === BUCKET PROTECTION (lava/water placement) ===
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onBucketEmpty(PlayerBucketEmptyEvent event) {
+        Player player = event.getPlayer();
+        if (player.hasPermission("coreprotect.admin")) return;
+
+        ProtectedRegion region = plugin.getProtectionManager().getRegionAt(event.getBlock().getLocation());
+        if (region != null && !region.canAccess(player.getUniqueId())) {
+            plugin.getMessageManager().send(player, "protection.cannot-build");
+            SoundManager.playProtectionDenied(player.getLocation());
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onBucketFill(PlayerBucketFillEvent event) {
+        Player player = event.getPlayer();
+        if (player.hasPermission("coreprotect.admin")) return;
+
+        ProtectedRegion region = plugin.getProtectionManager().getRegionAt(event.getBlock().getLocation());
+        if (region != null && !region.canAccess(player.getUniqueId())) {
+            plugin.getMessageManager().send(player, "protection.cannot-break");
+            SoundManager.playProtectionDenied(player.getLocation());
+            event.setCancelled(true);
+        }
+    }
+
+    // === LIQUID FLOW PROTECTION (prevent lava/water flowing into protected zones) ===
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onLiquidFlow(BlockFromToEvent event) {
+        ProtectedRegion fromRegion = plugin.getProtectionManager().getRegionAt(event.getBlock().getLocation());
+        ProtectedRegion toRegion = plugin.getProtectionManager().getRegionAt(event.getToBlock().getLocation());
+
+        // Block liquid flowing INTO a protected region from outside
+        if (toRegion != null && fromRegion == null) {
+            event.setCancelled(true);
+        }
+        // Block liquid flowing into a DIFFERENT protected region
+        if (toRegion != null && fromRegion != null && !toRegion.getId().equals(fromRegion.getId())) {
+            event.setCancelled(true);
         }
     }
 
