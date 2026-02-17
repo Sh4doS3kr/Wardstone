@@ -68,7 +68,8 @@ public class WebServer {
         if (!checkGet(exchange)) return;
         DataCollector dc = evoCore.getDataCollector();
         AnalyticsEngine ae = evoCore.getAnalyticsEngine();
-        AutoEventManager aem = evoCore.getAutoEventManager();
+        // AutoEventManager desactivado - sistema de oleadas eliminado
+        // AutoEventManager aem = evoCore.getAutoEventManager();
 
         StringBuilder json = new StringBuilder("{");
         json.append("\"onlinePlayers\":").append(dc.getOnlinePlayers()).append(",");
@@ -76,8 +77,8 @@ public class WebServer {
         json.append("\"totalMobKills\":").append(dc.getTotalMobKills()).append(",");
         json.append("\"totalBlocksBroken\":").append(dc.getTotalBlocksBroken()).append(",");
         json.append("\"totalBlocksPlaced\":").append(dc.getTotalBlocksPlaced()).append(",");
-        json.append("\"activeInvasions\":").append(aem.getActiveInvasionCount()).append(",");
-        json.append("\"activeTreasures\":").append(aem.getActiveTreasureCount()).append(",");
+        json.append("\"activeInvasions\":0,"); // Siempre 0 - sistema desactivado
+        json.append("\"activeTreasures\":0,"); // Siempre 0 - sistema desactivado
         json.append("\"alerts\":").append(listToJsonArray(ae.getAlerts()));
         json.append("}");
         sendJson(exchange, json.toString());
