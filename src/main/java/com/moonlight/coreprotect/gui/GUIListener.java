@@ -5,6 +5,7 @@ import com.moonlight.coreprotect.core.CoreLevel;
 import com.moonlight.coreprotect.core.ProtectedRegion;
 import com.moonlight.coreprotect.effects.CoreAnimation;
 import com.moonlight.coreprotect.effects.SoundManager;
+import com.moonlight.coreprotect.effects.VipAnimation;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -96,16 +97,17 @@ public class GUIListener implements Listener {
             new ShopGUI(plugin).open(player, currentPage - 1);
             return;
         }
-        if (event.getSlot() == 50 && currentPage < 2) {
+        if (event.getSlot() == 50) {
             new ShopGUI(plugin).open(player, currentPage + 1);
             return;
         }
         if (clicked.getType() == Material.BOOK || clicked.getType() == Material.ARROW) return;
 
         int level = getLevelFromSlot(event.getSlot(), currentPage);
-        if (level < 1 || level > 20) return;
+        if (level < 1 || level > 24) return;
 
         CoreLevel coreLevel = CoreLevel.fromConfig(plugin.getConfig(), level);
+        if (coreLevel == null) return;
         processCorePurchase(player, coreLevel);
     }
 
@@ -469,7 +471,7 @@ public class GUIListener implements Listener {
     // ===================== HELPERS =====================
 
     private void processUpgradeCore(Player player, ProtectedRegion region) {
-        if (region.getLevel() >= 20) {
+        if (region.getLevel() >= 24) {
             plugin.getMessageManager().send(player, "upgrades.max-level");
             return;
         }
@@ -482,6 +484,20 @@ public class GUIListener implements Listener {
         int nextLevel = region.getLevel() + 1;
         CoreLevel nextCoreLevel = CoreLevel.fromConfig(plugin.getConfig(), nextLevel);
         CoreLevel currentCoreLevel = CoreLevel.fromConfig(plugin.getConfig(), region.getLevel());
+        if (nextCoreLevel == null) {
+            plugin.getMessageManager().send(player, "upgrades.max-level");
+            return;
+        }
+
+        // VIP permission check for upgrading to VIP cores
+        if (nextCoreLevel.isVip() && !player.hasPermission(nextCoreLevel.getVipPermission())) {
+            player.sendMessage(ChatColor.RED + "Necesitas el rango " + ChatColor.LIGHT_PURPLE + ChatColor.BOLD +
+                    nextCoreLevel.getVipRank().toUpperCase() + ChatColor.RED + " para mejorar a este nucleo.");
+            player.sendMessage(ChatColor.GRAY + "Consiguelo en: " + ChatColor.YELLOW + "moonlightmc.tebex.io");
+            SoundManager.playUpgradeDenied(player.getLocation());
+            player.closeInventory();
+            return;
+        }
         Economy economy = plugin.getEconomy();
 
         double upgradeCost = nextCoreLevel.getPrice() - currentCoreLevel.getPrice();
@@ -517,22 +533,25 @@ public class GUIListener implements Listener {
 
         plugin.getMessageManager().send(player, "upgrades.upgrading");
 
-        // Play epic 20s upgrade animation (purely visual)
-        CoreAnimation animation = new CoreAnimation(plugin);
-        animation.playUpgradeAnimation(
-                coreLoc,
-                currentCoreLevel.getMaterial(),
-                nextCoreLevel.getMaterial(),
-                () -> {
-                    // Unlock location after animation
-                    plugin.getProtectionManager().unlockLocation(coreLoc);
+        // Play upgrade animation (VIP or standard)
+        Runnable onAnimComplete = () -> {
+            plugin.getProtectionManager().unlockLocation(coreLoc);
+            if (player.isOnline()) {
+                plugin.getMessageManager().send(player, "upgrades.upgraded",
+                        "{level}", String.valueOf(nextLevel),
+                        "{core}", nextCoreLevel.getName());
+            }
+        };
 
-                    if (player.isOnline()) {
-                        plugin.getMessageManager().send(player, "upgrades.upgraded",
-                                "{level}", String.valueOf(nextLevel),
-                                "{core}", nextCoreLevel.getName());
-                    }
-                });
+        if (nextCoreLevel.isVip()) {
+            VipAnimation vipAnim = new VipAnimation(plugin);
+            vipAnim.playVipUpgrade(coreLoc, currentCoreLevel.getMaterial(),
+                    nextCoreLevel.getMaterial(), nextCoreLevel.getVipRank(), onAnimComplete);
+        } else {
+            CoreAnimation animation = new CoreAnimation(plugin);
+            animation.playUpgradeAnimation(coreLoc, currentCoreLevel.getMaterial(),
+                    nextCoreLevel.getMaterial(), onAnimComplete);
+        }
     }
 
     private void toggleVisuals(Player player, ProtectedRegion region) {
@@ -594,6 +613,16 @@ public class GUIListener implements Listener {
     }
 
     private void processCorePurchase(Player player, CoreLevel coreLevel) {
+        // VIP permission check
+        if (coreLevel.isVip() && !player.hasPermission(coreLevel.getVipPermission())) {
+            player.sendMessage(ChatColor.RED + "Necesitas el rango " + ChatColor.LIGHT_PURPLE + ChatColor.BOLD +
+                    coreLevel.getVipRank().toUpperCase() + ChatColor.RED + " para comprar este nucleo.");
+            player.sendMessage(ChatColor.GRAY + "Consiguelo en: " + ChatColor.YELLOW + "moonlightmc.tebex.io");
+            SoundManager.playUpgradeDenied(player.getLocation());
+            player.closeInventory();
+            return;
+        }
+
         Economy economy = plugin.getEconomy();
 
         if (!economy.has(player, coreLevel.getPrice())) {

@@ -89,7 +89,7 @@ public class CoreManagementGUI {
         inv.setItem(4, coreDisplay);
 
         // === UPGRADE BUTTON (slot 20) ===
-        if (region.getLevel() < 20) {
+        if (region.getLevel() < 24) {
             CoreLevel nextLevel = CoreLevel.fromConfig(plugin.getConfig(), region.getLevel() + 1);
             ItemStack upgradeBtn = new ItemStack(Material.BEACON);
             ItemMeta upgMeta = upgradeBtn.getItemMeta();

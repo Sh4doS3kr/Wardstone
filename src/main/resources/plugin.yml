@@ -25,3 +25,15 @@ permissions:
   coreprotect.admin:
     description: Permisos de administrador
     default: op
+  wardstone.vip.luna:
+    description: Acceso al nucleo VIP Luna
+    default: false
+  wardstone.vip.nova:
+    description: Acceso al nucleo VIP Nova
+    default: false
+  wardstone.vip.eclipse:
+    description: Acceso al nucleo VIP Eclipse
+    default: false
+  wardstone.vip.moonlord:
+    description: Acceso al nucleo VIP MoonLord
+    default: false

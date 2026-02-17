@@ -5,6 +5,7 @@ import com.moonlight.coreprotect.core.CoreLevel;
 import com.moonlight.coreprotect.core.ProtectedRegion;
 import com.moonlight.coreprotect.effects.CoreAnimation;
 import com.moonlight.coreprotect.effects.SoundManager;
+import com.moonlight.coreprotect.effects.VipAnimation;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -45,6 +46,17 @@ public class CorePlaceListener implements Listener {
         int level = container.get(coreKey, PersistentDataType.INTEGER);
         CoreLevel coreLevel = CoreLevel.fromConfig(plugin.getConfig(), level);
 
+        // VIP permission check
+        if (coreLevel.isVip() && !player.hasPermission(coreLevel.getVipPermission())) {
+            player.sendMessage(org.bukkit.ChatColor.RED + "Necesitas el rango " + org.bukkit.ChatColor.LIGHT_PURPLE +
+                    org.bukkit.ChatColor.BOLD + coreLevel.getVipRank().toUpperCase() + org.bukkit.ChatColor.RED +
+                    " para colocar este nucleo.");
+            player.sendMessage(org.bukkit.ChatColor.GRAY + "Consiguelo en: " + org.bukkit.ChatColor.YELLOW + "moonlightmc.tebex.io");
+            SoundManager.playProtectionDenied(player.getLocation());
+            event.setCancelled(true);
+            return;
+        }
+
         // Verificar si el area esta libre
         if (!plugin.getProtectionManager().canPlaceCore(event.getBlock().getLocation(), coreLevel.getSize())) {
             plugin.getMessageManager().send(player, "protection.area-protected");
@@ -66,11 +78,7 @@ public class CorePlaceListener implements Listener {
         plugin.getMessageManager().send(player, "protection.creating");
 
         // Ejecutar animacion y crear proteccion al terminar
-        CoreAnimation animation = new CoreAnimation(plugin);
-        animation.playActivationAnimation(
-                event.getBlock().getLocation().add(0.5, 0.5, 0.5),
-                coreLevel,
-                () -> {
+        Runnable onRegionCreated = () -> {
                     // Crear la region protegida
                     ProtectedRegion region = new ProtectedRegion(
                             player.getUniqueId(),
@@ -123,6 +131,18 @@ public class CorePlaceListener implements Listener {
                             plugin.getAchievementListener().onCoreMoved(player);
                         }
                     }
-                });
+                };
+
+        // Use VIP animation if it's a VIP core, otherwise standard
+        if (coreLevel.isVip()) {
+            VipAnimation vipAnim = new VipAnimation(plugin);
+            vipAnim.playVipPlacement(event.getBlock().getLocation(), coreLevel.getMaterial(),
+                    coreLevel.getVipRank(), onRegionCreated);
+        } else {
+            CoreAnimation animation = new CoreAnimation(plugin);
+            animation.playActivationAnimation(
+                    event.getBlock().getLocation().add(0.5, 0.5, 0.5),
+                    coreLevel, onRegionCreated);
+        }
     }
 }
