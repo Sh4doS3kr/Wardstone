@@ -14,6 +14,9 @@ import com.moonlight.coreprotect.utils.MessageManager;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 
 public class CoreProtectPlugin extends JavaPlugin {
 
@@ -34,6 +37,9 @@ public class CoreProtectPlugin extends JavaPlugin {
         // Guardar configuracion por defecto
         saveDefaultConfig();
         saveResource("messages.yml", false);
+
+        // MIGRADOR: Si la carpeta de datos viene de CoreProtect (nombre anterior), copiar data.yml
+        migrateDataFromOldFolder();
 
         // CONFIG MIGRATION: Fix Level 20 material if it's old
         if (getConfig().getString("levels.20.material").equals("BEACON") ||
@@ -100,6 +106,43 @@ public class CoreProtectPlugin extends JavaPlugin {
             dataManager.saveData();
         }
         getLogger().info("CoreProtect deshabilitado");
+    }
+
+    private void migrateDataFromOldFolder() {
+        // Possible old folder names from previous plugin name
+        String[] oldNames = {"CoreProtect", "coreprotect"};
+        File currentFolder = getDataFolder();
+
+        for (String oldName : oldNames) {
+            File oldFolder = new File(currentFolder.getParentFile(), oldName);
+            if (!oldFolder.exists() || oldFolder.equals(currentFolder)) continue;
+
+            // Migrate data.yml
+            File oldData = new File(oldFolder, "data.yml");
+            File newData = new File(currentFolder, "data.yml");
+            if (oldData.exists() && !newData.exists()) {
+                try {
+                    currentFolder.mkdirs();
+                    Files.copy(oldData.toPath(), newData.toPath());
+                    getLogger().info("MIGRADOR: Copiado data.yml desde " + oldFolder.getName() + " -> " + currentFolder.getName());
+                } catch (IOException e) {
+                    getLogger().severe("MIGRADOR: Error copiando data.yml: " + e.getMessage());
+                }
+            }
+
+            // Migrate achievements.yml
+            File oldAch = new File(oldFolder, "achievements.yml");
+            File newAch = new File(currentFolder, "achievements.yml");
+            if (oldAch.exists() && !newAch.exists()) {
+                try {
+                    currentFolder.mkdirs();
+                    Files.copy(oldAch.toPath(), newAch.toPath());
+                    getLogger().info("MIGRADOR: Copiado achievements.yml desde " + oldFolder.getName());
+                } catch (IOException e) {
+                    getLogger().severe("MIGRADOR: Error copiando achievements.yml: " + e.getMessage());
+                }
+            }
+        }
     }
 
     private boolean setupEconomy() {
