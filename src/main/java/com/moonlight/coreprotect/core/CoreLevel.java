@@ -130,8 +130,7 @@ public class CoreLevel {
         // PersistentData para identificar el nivel al colocar
         // Nota: ProtectionListener.onBlockPlace chequea esto
         meta.getPersistentDataContainer().set(
-                new org.bukkit.NamespacedKey(org.bukkit.plugin.java.JavaPlugin.getProvidingPlugin(CoreLevel.class),
-                        "core_level"),
+                new org.bukkit.NamespacedKey("coreprotect", "core_level"),
                 org.bukkit.persistence.PersistentDataType.INTEGER,
                 level);
 

@@ -126,7 +126,7 @@ public class ProtectionListener implements Listener {
                 org.bukkit.inventory.meta.ItemMeta meta = dropItem.getItemMeta();
                 if (meta != null) {
                     org.bukkit.persistence.PersistentDataContainer pdc = meta.getPersistentDataContainer();
-                    org.bukkit.NamespacedKey key = new org.bukkit.NamespacedKey(plugin, "core_upgrades");
+                    org.bukkit.NamespacedKey key = new org.bukkit.NamespacedKey("coreprotect", "core_upgrades");
                     StringBuilder data = new StringBuilder();
                     data.append(coreRegion.isNoExplosion() ? "1" : "0").append(",");
                     data.append(coreRegion.isNoPvP() ? "1" : "0").append(",");
@@ -145,7 +145,7 @@ public class ProtectionListener implements Listener {
 
                     // Store members
                     if (!coreRegion.getMembers().isEmpty()) {
-                        org.bukkit.NamespacedKey membersKey = new org.bukkit.NamespacedKey(plugin, "core_members");
+                        org.bukkit.NamespacedKey membersKey = new org.bukkit.NamespacedKey("coreprotect", "core_members");
                         StringBuilder membersData = new StringBuilder();
                         for (UUID member : coreRegion.getMembers()) {
                             if (membersData.length() > 0) membersData.append(";");
@@ -166,7 +166,7 @@ public class ProtectionListener implements Listener {
     public void onBlockPlacePost(BlockPlaceEvent event) {
         if (event.getItemInHand().hasItemMeta() &&
                 event.getItemInHand().getItemMeta().getPersistentDataContainer().has(
-                        new org.bukkit.NamespacedKey(plugin, "core_level"),
+                        new org.bukkit.NamespacedKey("coreprotect", "core_level"),
                         org.bukkit.persistence.PersistentDataType.INTEGER)) {
 
             org.bukkit.block.Block block = event.getBlock();

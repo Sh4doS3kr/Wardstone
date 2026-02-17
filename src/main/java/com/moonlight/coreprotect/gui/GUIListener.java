@@ -27,14 +27,14 @@ import java.util.*;
 public class GUIListener implements Listener {
 
     private final CoreProtectPlugin plugin;
-    private final NamespacedKey coreKey;
+    // Fixed namespace so items work regardless of plugin display name
+    private final NamespacedKey coreKey = new NamespacedKey("coreprotect", "core_level");
 
     // Track which region a player is managing (regionId by player UUID)
     private static final Map<UUID, UUID> playerRegionMap = new HashMap<>();
 
     public GUIListener(CoreProtectPlugin plugin) {
         this.plugin = plugin;
-        this.coreKey = new NamespacedKey(plugin, "core_level");
     }
 
     public static void setPlayerRegion(UUID playerId, UUID regionId) {

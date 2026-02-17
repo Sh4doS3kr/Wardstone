@@ -20,11 +20,16 @@ import org.bukkit.persistence.PersistentDataType;
 public class CorePlaceListener implements Listener {
 
     private final CoreProtectPlugin plugin;
-    private final NamespacedKey coreKey;
+    // Fixed namespace so items work regardless of plugin display name
+    private static final NamespacedKey CORE_KEY = new NamespacedKey("coreprotect", "core_level");
+    private static final NamespacedKey CORE_KEY_LEGACY = new NamespacedKey("wardstone", "core_level");
+    private static final NamespacedKey UPGRADES_KEY = new NamespacedKey("coreprotect", "core_upgrades");
+    private static final NamespacedKey UPGRADES_KEY_LEGACY = new NamespacedKey("wardstone", "core_upgrades");
+    private static final NamespacedKey MEMBERS_KEY = new NamespacedKey("coreprotect", "core_members");
+    private static final NamespacedKey MEMBERS_KEY_LEGACY = new NamespacedKey("wardstone", "core_members");
 
     public CorePlaceListener(CoreProtectPlugin plugin) {
         this.plugin = plugin;
-        this.coreKey = new NamespacedKey(plugin, "core_level");
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
@@ -39,11 +44,14 @@ public class CorePlaceListener implements Listener {
         ItemMeta meta = item.getItemMeta();
         PersistentDataContainer container = meta.getPersistentDataContainer();
 
-        if (!container.has(coreKey, PersistentDataType.INTEGER)) {
+        // Support both old (coreprotect:) and new (wardstone:) namespaces
+        NamespacedKey activeKey = container.has(CORE_KEY, PersistentDataType.INTEGER) ? CORE_KEY
+                : container.has(CORE_KEY_LEGACY, PersistentDataType.INTEGER) ? CORE_KEY_LEGACY : null;
+        if (activeKey == null) {
             return;
         }
 
-        int level = container.get(coreKey, PersistentDataType.INTEGER);
+        int level = container.get(activeKey, PersistentDataType.INTEGER);
         CoreLevel coreLevel = CoreLevel.fromConfig(plugin.getConfig(), level);
 
         // VIP permission check
@@ -65,12 +73,16 @@ public class CorePlaceListener implements Listener {
             return;
         }
 
-        // Read saved upgrades from item (preserved when core was moved)
-        String upgradeData = container.has(new NamespacedKey(plugin, "core_upgrades"), PersistentDataType.STRING)
-                ? container.get(new NamespacedKey(plugin, "core_upgrades"), PersistentDataType.STRING)
+        // Read saved upgrades from item (support both namespaces)
+        String upgradeData = container.has(UPGRADES_KEY, PersistentDataType.STRING)
+                ? container.get(UPGRADES_KEY, PersistentDataType.STRING)
+                : container.has(UPGRADES_KEY_LEGACY, PersistentDataType.STRING)
+                ? container.get(UPGRADES_KEY_LEGACY, PersistentDataType.STRING)
                 : null;
-        String membersData = container.has(new NamespacedKey(plugin, "core_members"), PersistentDataType.STRING)
-                ? container.get(new NamespacedKey(plugin, "core_members"), PersistentDataType.STRING)
+        String membersData = container.has(MEMBERS_KEY, PersistentDataType.STRING)
+                ? container.get(MEMBERS_KEY, PersistentDataType.STRING)
+                : container.has(MEMBERS_KEY_LEGACY, PersistentDataType.STRING)
+                ? container.get(MEMBERS_KEY_LEGACY, PersistentDataType.STRING)
                 : null;
 
         // Colocar el bloque y comenzar animacion
