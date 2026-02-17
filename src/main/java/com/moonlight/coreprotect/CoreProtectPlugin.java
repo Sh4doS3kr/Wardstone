@@ -10,7 +10,6 @@ import com.moonlight.coreprotect.achievements.AchievementListener;
 import com.moonlight.coreprotect.achievements.AchievementManager;
 import com.moonlight.coreprotect.evocore.EvoCore;
 import com.moonlight.coreprotect.integrations.BlueMapIntegration;
-import com.moonlight.coreprotect.raids.RaidManager;
 import com.moonlight.coreprotect.utils.MessageManager;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.plugin.RegisteredServiceProvider;
@@ -26,7 +25,6 @@ public class CoreProtectPlugin extends JavaPlugin {
     private BlueMapIntegration blueMapIntegration;
     private AchievementManager achievementManager;
     private AchievementListener achievementListener;
-    private RaidManager raidManager;
     private EvoCore evoCore;
 
     @Override
@@ -70,10 +68,6 @@ public class CoreProtectPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new ProtectionListener(this), this);
         getServer().getPluginManager().registerEvents(new CorePlaceListener(this), this);
         getServer().getPluginManager().registerEvents(achievementListener, this);
-
-        // Inicializar raids
-        raidManager = new RaidManager(this);
-        getServer().getPluginManager().registerEvents(raidManager, this);
 
         // Registrar comandos
         // Registrar comandos
@@ -152,10 +146,7 @@ public class CoreProtectPlugin extends JavaPlugin {
         return achievementListener;
     }
 
-    public RaidManager getRaidManager() {
-        return raidManager;
-    }
-
+    
     public EvoCore getEvoCore() {
         return evoCore;
     }

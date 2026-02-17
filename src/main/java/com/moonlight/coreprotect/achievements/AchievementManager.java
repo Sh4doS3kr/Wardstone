@@ -104,9 +104,6 @@ public class AchievementManager {
         add("sethome", "Hogar Dulce Hogar", "Establece tu primer home");
         add("use_tp", "Teletransportador Experto", "Usa /cores tp por primera vez");
         add("resource_collect", "Primer Sueldo Pasivo", "Recoge recursos del generador");
-        add("survive_raid", "¡No Pasarán!", "Sobrevive a una oleada de mobs");
-        add("survive_5_raids", "Veterano de Guerra", "Sobrevive a 5 oleadas");
-        add("survive_10_raids", "Leyenda del Servidor", "Sobrevive a 10 oleadas");
     }
 
     private void add(String id, String title, String description) {

@@ -74,12 +74,6 @@ home:
   not-in-region: "&cDebes estar dentro de una zona protegida para establecer tu home."
   not-member: "&cDebes ser dueño o miembro de esta zona para establecer tu home."
 
-# Mensajes de raids
-raids:
-  started: "&c&l⚔ ¡TU ZONA ESTÁ SIENDO ATACADA! &7¡Defiende tu núcleo!"
-  victory: "&a&l⚔ ¡OLEADA DERROTADA! &7¡Has defendido tu zona con éxito!"
-  timeout: "&e⚔ La oleada se ha retirado... por ahora."
-
 # Mensajes de errores
 errors:
   no-permission: "&cNo tienes permiso para hacer esto"
