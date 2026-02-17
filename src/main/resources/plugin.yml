@@ -12,7 +12,7 @@ commands:
   cores:
     description: Comando principal del plugin de nucleos
     usage: /<command> [tienda|info|remove|add|kick]
-    aliases: [core, nucleo, nucleos]
+    aliases: [nucleo, nucleos]
   admincore:
     description: Comandos de administracion
     usage: /<command> [deleteprotection]
