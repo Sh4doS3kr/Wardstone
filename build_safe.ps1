@@ -8,7 +8,7 @@ $srcDir = "$projectDir\src\main\java"
 $resourcesDir = "$projectDir\src\main\resources"
 $buildDir = "$projectDir\build"
 $classesDir = "$buildDir\classes"
-$outputJar = "$buildDir\CoreProtect-1.0.0.jar"
+$outputJar = "$buildDir\Wardstone-1.0.0.jar"
 
 # 1. Limpieza
 if (Test-Path $buildDir) { Remove-Item $buildDir -Recurse -Force }

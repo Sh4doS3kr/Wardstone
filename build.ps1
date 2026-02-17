@@ -9,7 +9,7 @@ $resourcesDir = "$projectDir\src\main\resources"
 $buildDir = "$projectDir\build"
 $classesDir = "$buildDir\classes"
 $libDir = "$projectDir\libs"
-$outputJar = "$buildDir\CoreProtect-1.0.0.jar"
+$outputJar = "$buildDir\Wardstone-1.0.0.jar"
 
 # Limpieza completa
 if (Test-Path $buildDir) { Remove-Item $buildDir -Recurse -Force }

@@ -23,7 +23,7 @@ dependencies {
 }
 
 jar {
-    archiveBaseName.set('CoreProtect')
+    archiveBaseName.set('Wardstone')
     archiveVersion.set('1.0.0')
 }
 
