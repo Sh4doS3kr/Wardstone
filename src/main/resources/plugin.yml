@@ -1,4 +1,4 @@
-name: CoreProtect
+name: Wardstone
 version: ${project.version}
 main: com.moonlight.coreprotect.CoreProtectPlugin
 api-version: 1.21
