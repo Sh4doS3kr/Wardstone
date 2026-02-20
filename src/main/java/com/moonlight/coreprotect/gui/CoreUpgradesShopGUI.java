@@ -266,7 +266,7 @@ public class CoreUpgradesShopGUI {
                         ChatColor.GRAY + "Los Phantoms NO pueden",
                         ChatColor.GRAY + "aparecer dentro de tu zona.",
                         "",
-                        ChatColor.GRAY + "¡Duerme sin miedo!")));
+                        ChatColor.GRAY + "¡Dejarán de molestar!")));
 
         // Slot 22: Resource Generator
         inv.setItem(22, createUpgradeItem(Material.DIAMOND, "Generador de Recursos",

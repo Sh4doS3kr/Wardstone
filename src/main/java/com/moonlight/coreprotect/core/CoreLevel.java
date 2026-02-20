@@ -119,9 +119,7 @@ public class CoreLevel {
         lore.add(org.bukkit.ChatColor.GRAY + "hasta Y maxima del mundo");
         if (isVip()) {
             lore.add("");
-            lore.add(org.bukkit.ChatColor.LIGHT_PURPLE + "" + org.bukkit.ChatColor.BOLD + "★ EXCLUSIVO VIP " + vipRank.toUpperCase() + " ★");
-            lore.add(org.bukkit.ChatColor.GRAY + "Animación de construcción única");
-            lore.add(org.bukkit.ChatColor.GRAY + "Partículas exclusivas permanentes");
+            lore.add(org.bukkit.ChatColor.GRAY + "Exclusivo rango " + translateColors(getVipGradientName()) );
             lore.add(org.bukkit.ChatColor.DARK_GRAY + "moonlightmc.tebex.io");
         }
         lore.add("");
@@ -137,6 +135,30 @@ public class CoreLevel {
         meta.setLore(lore);
         item.setItemMeta(meta);
         return item;
+    }
+
+    public String getVipGradientName() {
+        if (vipRank == null) return "";
+        switch (vipRank.toLowerCase()) {
+            case "luna":
+                return gradientText("Luna", new String[]{"&f", "&7", "&f", "&7"});
+            case "nova":
+                return gradientText("Nova", new String[]{"&e", "&6", "&e", "&6"});
+            case "eclipse":
+                return gradientText("Eclipse", new String[]{"&5", "&8", "&5", "&8", "&5", "&8", "&5"});
+            case "moonlord":
+                return gradientText("MoonLord", new String[]{"&d", "&5", "&d", "&5", "&d", "&5", "&d", "&5"});
+            default:
+                return vipRank;
+        }
+    }
+
+    private static String gradientText(String text, String[] colors) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < text.length(); i++) {
+            sb.append(colors[i % colors.length]).append(text.charAt(i));
+        }
+        return sb.toString();
     }
 
     private static String translateColors(String text) {
