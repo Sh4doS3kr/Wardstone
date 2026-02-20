@@ -161,8 +161,11 @@ public class AchievementManager {
         // Sound for the player
         player.playSound(player.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0f, 1.0f);
 
-        // Personal description message
-        player.sendMessage(ChatColor.GRAY + "  → " + achievement.getDescription());
+        // Description message (broadcast to ALL players)
+        String descMessage = ChatColor.GRAY + "  → " + achievement.getDescription();
+        for (Player online : Bukkit.getOnlinePlayers()) {
+            online.sendMessage(descMessage);
+        }
     }
 
     public int getAchievementCount(UUID playerId) {
