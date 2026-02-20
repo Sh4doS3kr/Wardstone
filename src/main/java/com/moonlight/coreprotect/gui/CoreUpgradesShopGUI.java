@@ -36,6 +36,7 @@ public class CoreUpgradesShopGUI {
     public static final double PRICE_FIXED_TIME = 90000;
     public static final double PRICE_CORE_TELEPORT = 120000;
     public static final double PRICE_NO_HUNGER = 45000;
+    public static final double PRICE_ANTI_PHANTOM = 55000;
 
     private final CoreProtectPlugin plugin;
 
@@ -257,6 +258,15 @@ public class CoreUpgradesShopGUI {
                         ChatColor.GRAY + "tus núcleos directamente.",
                         "",
                         ChatColor.GRAY + "¡Viaja al instante!")));
+
+        // Slot 19: Anti-Phantom
+        inv.setItem(19, createUpgradeItem(Material.PHANTOM_MEMBRANE, "Anti-Phantoms",
+                region.isAntiPhantom(), PRICE_ANTI_PHANTOM,
+                Arrays.asList(
+                        ChatColor.GRAY + "Los Phantoms NO pueden",
+                        ChatColor.GRAY + "aparecer dentro de tu zona.",
+                        "",
+                        ChatColor.GRAY + "¡Duerme sin miedo!")));
 
         // Slot 22: Resource Generator
         inv.setItem(22, createUpgradeItem(Material.DIAMOND, "Generador de Recursos",

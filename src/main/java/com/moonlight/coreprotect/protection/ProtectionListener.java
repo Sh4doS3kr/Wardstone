@@ -12,6 +12,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockDamageEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.entity.EntityType;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
@@ -140,7 +141,8 @@ public class ProtectionListener implements Listener {
                     data.append(coreRegion.isResourceGenerator() ? "1" : "0").append(",");
                     data.append(coreRegion.getFixedTime()).append(",");
                     data.append(coreRegion.isCoreTeleport() ? "1" : "0").append(",");
-                    data.append(coreRegion.isNoHunger() ? "1" : "0");
+                    data.append(coreRegion.isNoHunger() ? "1" : "0").append(",");
+                    data.append(coreRegion.isAntiPhantom() ? "1" : "0");
                     pdc.set(key, org.bukkit.persistence.PersistentDataType.STRING, data.toString());
 
                     // Store members
@@ -335,18 +337,24 @@ public class ProtectionListener implements Listener {
         }
     }
 
-    // === MOB SPAWN PREVENTION ===
+    // === MOB SPAWN PREVENTION + ANTI-PHANTOM ===
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onCreatureSpawn(CreatureSpawnEvent event) {
-        if (event.getSpawnReason() == CreatureSpawnEvent.SpawnReason.CUSTOM ||
-            event.getSpawnReason() == CreatureSpawnEvent.SpawnReason.SPAWNER_EGG) {
-            return; // Don't block manual spawns
+        ProtectedRegion region = plugin.getProtectionManager().getRegionAt(event.getLocation());
+        if (region == null) return;
+
+        // Anti-Phantom upgrade: block phantom spawns
+        if (event.getEntityType() == EntityType.PHANTOM && region.isAntiPhantom()) {
+            event.setCancelled(true);
+            return;
         }
 
-        if (!(event.getEntity() instanceof org.bukkit.entity.Monster)) return;
-
-        ProtectedRegion region = plugin.getProtectionManager().getRegionAt(event.getLocation());
-        if (region != null && region.isNoMobSpawn()) {
+        // Anti-Mob upgrade: block hostile mob spawns
+        if (event.getSpawnReason() == CreatureSpawnEvent.SpawnReason.CUSTOM ||
+            event.getSpawnReason() == CreatureSpawnEvent.SpawnReason.SPAWNER_EGG) {
+            return;
+        }
+        if (event.getEntity() instanceof org.bukkit.entity.Monster && region.isNoMobSpawn()) {
             event.setCancelled(true);
         }
     }

@@ -126,25 +126,25 @@ levels:
 # Permiso: wardstone.vip.<rango>
   21:
     material: END_STONE
-    name: "&f✦ &7Nucleo &fLunar &7✦"
+    name: "&7Nucleo &f&oLuna"
     price: 2000000
     size: 180
     vip-rank: "luna"
   22:
     material: GLOWSTONE
-    name: "&6✦ &eNucleo &6Nova &e✦"
+    name: "&7Nucleo &e&oNova"
     price: 3500000
     size: 200
     vip-rank: "nova"
   23:
     material: GILDED_BLACKSTONE
-    name: "&8✦ &5Nucleo &0Eclipse &5✦"
+    name: "&7Nucleo &5&oEclipse"
     price: 5000000
     size: 225
     vip-rank: "eclipse"
   24:
     material: REINFORCED_DEEPSLATE
-    name: "&d✦ &5Nucleo &d&lMoonLord &5✦"
+    name: "&7Nucleo &d&oMoonLord"
     price: 10000000
     size: 256
     vip-rank: "moonlord"

@@ -35,6 +35,7 @@ public class ProtectedRegion {
     private int fixedTime; // 0=off, 1=day, 2=night
     private boolean coreTeleport;
     private boolean noHunger;
+    private boolean antiPhantom;
 
     public ProtectedRegion(UUID owner, Location coreLocation, int level, int size) {
         this.id = UUID.randomUUID();
@@ -60,6 +61,7 @@ public class ProtectedRegion {
         this.fixedTime = 0;
         this.coreTeleport = false;
         this.noHunger = false;
+        this.antiPhantom = false;
     }
 
     public ProtectedRegion(UUID id, UUID owner, String worldName, int coreX, int coreY, int coreZ,
@@ -67,7 +69,7 @@ public class ProtectedRegion {
             boolean noExplosion, boolean noPvP, int damageBoostLevel, int healthBoostLevel,
             boolean noMobSpawn, boolean autoHeal, boolean speedBoost, boolean noFallDamage,
             boolean antiEnderman, boolean resourceGenerator, int fixedTime,
-            boolean coreTeleport, boolean noHunger) {
+            boolean coreTeleport, boolean noHunger, boolean antiPhantom) {
         this.id = id;
         this.owner = owner;
         this.worldName = worldName;
@@ -91,6 +93,7 @@ public class ProtectedRegion {
         this.fixedTime = fixedTime;
         this.coreTeleport = coreTeleport;
         this.noHunger = noHunger;
+        this.antiPhantom = antiPhantom;
     }
 
     public boolean contains(Location location) {
@@ -233,6 +236,9 @@ public class ProtectedRegion {
     public boolean isNoHunger() { return noHunger; }
     public void setNoHunger(boolean noHunger) { this.noHunger = noHunger; }
 
+    public boolean isAntiPhantom() { return antiPhantom; }
+    public void setAntiPhantom(boolean antiPhantom) { this.antiPhantom = antiPhantom; }
+
     public int getActiveUpgradeCount() {
         int count = 0;
         if (noExplosion) count++;
@@ -248,6 +254,7 @@ public class ProtectedRegion {
         if (fixedTime > 0) count++;
         if (coreTeleport) count++;
         if (noHunger) count++;
+        if (antiPhantom) count++;
         return count;
     }
 

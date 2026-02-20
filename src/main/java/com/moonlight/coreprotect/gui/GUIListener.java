@@ -366,6 +366,17 @@ public class GUIListener implements Listener {
             }
             return;
         }
+        if (slot == 19 && !region.isAntiPhantom()) {
+            if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_ANTI_PHANTOM)) {
+                region.setAntiPhantom(true);
+                plugin.getDataManager().saveData();
+                plugin.getMessageManager().send(player, "upgrades.purchased", "{upgrade}", "Anti-Phantoms");
+                SoundManager.playUpgradePurchased(player.getLocation());
+                plugin.getAchievementListener().onUpgradePurchased(player, region, "antiPhantom", CoreUpgradesShopGUI.PRICE_ANTI_PHANTOM);
+                new CoreUpgradesShopGUI(plugin).open(player, region, 2);
+            }
+            return;
+        }
         if (slot == 22 && !region.isResourceGenerator()) {
             if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_RESOURCE_GEN)) {
                 region.setResourceGenerator(true);

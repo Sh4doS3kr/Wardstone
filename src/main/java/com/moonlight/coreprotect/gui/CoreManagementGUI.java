@@ -212,6 +212,10 @@ public class CoreManagementGUI {
         inv.setItem(49, createUpgradeStatus(Material.FEATHER, "Sin Caída",
                 region.isNoFallDamage(), "Sin daño por caída"));
 
+        // === ANTI-PHANTOM STATUS (slot 49 -> move to 53) ===
+        inv.setItem(53, createUpgradeStatus(Material.PHANTOM_MEMBRANE, "Anti-Phantoms",
+                region.isAntiPhantom(), "Los phantoms no entran en tu zona"));
+
         // === CLOSE BUTTON (slot 51) ===
         ItemStack closeBtn = new ItemStack(Material.BARRIER);
         ItemMeta closeMeta = closeBtn.getItemMeta();

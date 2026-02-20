@@ -86,12 +86,13 @@ public class DataManager {
                 int fixedTime = regionSection.getInt("upgrades.fixedTime", 0);
                 boolean coreTeleport = regionSection.getBoolean("upgrades.coreTeleport", false);
                 boolean noHunger = regionSection.getBoolean("upgrades.noHunger", false);
+                boolean antiPhantom = regionSection.getBoolean("upgrades.antiPhantom", false);
 
                 ProtectedRegion region = new ProtectedRegion(
                         id, owner, worldName, coreX, coreY, coreZ, level, size, members, createdAt,
                         noExplosion, noPvP, damageBoostLevel, healthBoostLevel,
                         noMobSpawn, autoHeal, speedBoost, noFallDamage,
-                        antiEnderman, resourceGenerator, fixedTime, coreTeleport, noHunger);
+                        antiEnderman, resourceGenerator, fixedTime, coreTeleport, noHunger, antiPhantom);
 
                 plugin.getProtectionManager().addRegion(region);
             } catch (Exception e) {
@@ -151,6 +152,7 @@ public class DataManager {
             dataConfig.set(path + ".upgrades.fixedTime", region.getFixedTime());
             dataConfig.set(path + ".upgrades.coreTeleport", region.isCoreTeleport());
             dataConfig.set(path + ".upgrades.noHunger", region.isNoHunger());
+            dataConfig.set(path + ".upgrades.antiPhantom", region.isAntiPhantom());
         }
 
         // Save homes

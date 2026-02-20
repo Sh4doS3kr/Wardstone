@@ -124,6 +124,9 @@ public class CorePlaceListener implements Listener {
                                 region.setCoreTeleport(parts[11].equals("1"));
                                 region.setNoHunger(parts[12].equals("1"));
                             }
+                            if (parts.length >= 14) {
+                                region.setAntiPhantom(parts[13].equals("1"));
+                            }
                         } catch (Exception ignored) {
                         }
                     }
