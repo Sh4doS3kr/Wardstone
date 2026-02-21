@@ -206,18 +206,31 @@ public class GUIListener implements Listener {
             }
         }
 
+        boolean shift = event.isShiftClick();
+
         // === PAGE 1 UPGRADES ===
         if (page == 1) {
-            handlePage1Upgrades(slot, player, region);
+            handlePage1Upgrades(slot, player, region, shift);
         }
         // === PAGE 2 UPGRADES ===
         else if (page == 2) {
-            handlePage2Upgrades(slot, player, region);
+            handlePage2Upgrades(slot, player, region, shift);
         }
     }
 
-    private void handlePage1Upgrades(int slot, Player player, ProtectedRegion region) {
+    private void handlePage1Upgrades(int slot, Player player, ProtectedRegion region, boolean shift) {
+
         // Slot 10: Anti-Explosion
+        if (slot == 10) {
+            if (shift && region.isNoExplosion()) {
+                region.setNoExplosion(false);
+                plugin.getDataManager().saveData();
+                player.sendMessage(ChatColor.YELLOW + "Anti-Explosión " + ChatColor.RED + "desactivado.");
+                SoundManager.playGUIClick(player.getLocation());
+                new CoreUpgradesShopGUI(plugin).open(player, region, 1);
+                return;
+            }
+        }
         if (slot == 10 && !region.isNoExplosion()) {
             if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_NO_EXPLOSION)) {
                 region.setNoExplosion(true);
@@ -228,6 +241,16 @@ public class GUIListener implements Listener {
                 new CoreUpgradesShopGUI(plugin).open(player, region);
             }
             return;
+        }
+        if (slot == 12) {
+            if (shift && region.isNoPvP()) {
+                region.setNoPvP(false);
+                plugin.getDataManager().saveData();
+                player.sendMessage(ChatColor.YELLOW + "Anti-PvP " + ChatColor.RED + "desactivado.");
+                SoundManager.playGUIClick(player.getLocation());
+                new CoreUpgradesShopGUI(plugin).open(player, region, 1);
+                return;
+            }
         }
         if (slot == 12 && !region.isNoPvP()) {
             if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_NO_PVP)) {
@@ -240,6 +263,16 @@ public class GUIListener implements Listener {
             }
             return;
         }
+        if (slot == 14) {
+            if (shift && region.isNoMobSpawn()) {
+                region.setNoMobSpawn(false);
+                plugin.getDataManager().saveData();
+                player.sendMessage(ChatColor.YELLOW + "Anti-Mobs " + ChatColor.RED + "desactivado.");
+                SoundManager.playGUIClick(player.getLocation());
+                new CoreUpgradesShopGUI(plugin).open(player, region, 1);
+                return;
+            }
+        }
         if (slot == 14 && !region.isNoMobSpawn()) {
             if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_NO_MOB_SPAWN)) {
                 region.setNoMobSpawn(true);
@@ -250,6 +283,16 @@ public class GUIListener implements Listener {
                 new CoreUpgradesShopGUI(plugin).open(player, region);
             }
             return;
+        }
+        if (slot == 16) {
+            if (shift && region.isNoFallDamage()) {
+                region.setNoFallDamage(false);
+                plugin.getDataManager().saveData();
+                player.sendMessage(ChatColor.YELLOW + "Sin Caída " + ChatColor.RED + "desactivado.");
+                SoundManager.playGUIClick(player.getLocation());
+                new CoreUpgradesShopGUI(plugin).open(player, region, 1);
+                return;
+            }
         }
         if (slot == 16 && !region.isNoFallDamage()) {
             if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_NO_FALL_DAMAGE)) {
@@ -262,6 +305,16 @@ public class GUIListener implements Listener {
             }
             return;
         }
+        if (slot == 19) {
+            if (shift && region.isAutoHeal()) {
+                region.setAutoHeal(false);
+                plugin.getDataManager().saveData();
+                player.sendMessage(ChatColor.YELLOW + "Auto-Curación " + ChatColor.RED + "desactivado.");
+                SoundManager.playGUIClick(player.getLocation());
+                new CoreUpgradesShopGUI(plugin).open(player, region, 1);
+                return;
+            }
+        }
         if (slot == 19 && !region.isAutoHeal()) {
             if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_AUTO_HEAL)) {
                 region.setAutoHeal(true);
@@ -272,6 +325,16 @@ public class GUIListener implements Listener {
                 new CoreUpgradesShopGUI(plugin).open(player, region);
             }
             return;
+        }
+        if (slot == 21) {
+            if (shift && region.isSpeedBoost()) {
+                region.setSpeedBoost(false);
+                plugin.getDataManager().saveData();
+                player.sendMessage(ChatColor.YELLOW + "Velocidad " + ChatColor.RED + "desactivado.");
+                SoundManager.playGUIClick(player.getLocation());
+                new CoreUpgradesShopGUI(plugin).open(player, region, 1);
+                return;
+            }
         }
         if (slot == 21 && !region.isSpeedBoost()) {
             if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_SPEED_BOOST)) {
@@ -312,7 +375,18 @@ public class GUIListener implements Listener {
         }
     }
 
-    private void handlePage2Upgrades(int slot, Player player, ProtectedRegion region) {
+    private void handlePage2Upgrades(int slot, Player player, ProtectedRegion region, boolean shift) {
+
+        if (slot == 10) {
+            if (shift && region.isAntiEnderman()) {
+                region.setAntiEnderman(false);
+                plugin.getDataManager().saveData();
+                player.sendMessage(ChatColor.YELLOW + "Anti-Enderman " + ChatColor.RED + "desactivado.");
+                SoundManager.playGUIClick(player.getLocation());
+                new CoreUpgradesShopGUI(plugin).open(player, region, 2);
+                return;
+            }
+        }
         if (slot == 10 && !region.isAntiEnderman()) {
             if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_ANTI_ENDERMAN)) {
                 region.setAntiEnderman(true);
@@ -323,6 +397,16 @@ public class GUIListener implements Listener {
                 new CoreUpgradesShopGUI(plugin).open(player, region, 2);
             }
             return;
+        }
+        if (slot == 12) {
+            if (shift && region.isNoHunger()) {
+                region.setNoHunger(false);
+                plugin.getDataManager().saveData();
+                player.sendMessage(ChatColor.YELLOW + "Sin Hambre " + ChatColor.RED + "desactivado.");
+                SoundManager.playGUIClick(player.getLocation());
+                new CoreUpgradesShopGUI(plugin).open(player, region, 2);
+                return;
+            }
         }
         if (slot == 12 && !region.isNoHunger()) {
             if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_NO_HUNGER)) {
@@ -336,6 +420,14 @@ public class GUIListener implements Listener {
             return;
         }
         if (slot == 14) {
+            if (shift && region.getFixedTime() > 0) {
+                region.setFixedTime(0);
+                plugin.getDataManager().saveData();
+                player.sendMessage(ChatColor.YELLOW + "Tiempo Fijo " + ChatColor.RED + "desactivado. " + ChatColor.GRAY + "(ciclo normal)");
+                SoundManager.playGUIClick(player.getLocation());
+                new CoreUpgradesShopGUI(plugin).open(player, region, 2);
+                return;
+            }
             if (region.getFixedTime() == 0) {
                 if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_FIXED_TIME)) {
                     region.setFixedTime(1);
@@ -355,6 +447,16 @@ public class GUIListener implements Listener {
             }
             return;
         }
+        if (slot == 16) {
+            if (shift && region.isCoreTeleport()) {
+                region.setCoreTeleport(false);
+                plugin.getDataManager().saveData();
+                player.sendMessage(ChatColor.YELLOW + "Teletransporte " + ChatColor.RED + "desactivado.");
+                SoundManager.playGUIClick(player.getLocation());
+                new CoreUpgradesShopGUI(plugin).open(player, region, 2);
+                return;
+            }
+        }
         if (slot == 16 && !region.isCoreTeleport()) {
             if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_CORE_TELEPORT)) {
                 region.setCoreTeleport(true);
@@ -366,6 +468,16 @@ public class GUIListener implements Listener {
             }
             return;
         }
+        if (slot == 19) {
+            if (shift && region.isAntiPhantom()) {
+                region.setAntiPhantom(false);
+                plugin.getDataManager().saveData();
+                player.sendMessage(ChatColor.YELLOW + "Anti-Phantoms " + ChatColor.RED + "desactivado.");
+                SoundManager.playGUIClick(player.getLocation());
+                new CoreUpgradesShopGUI(plugin).open(player, region, 2);
+                return;
+            }
+        }
         if (slot == 19 && !region.isAntiPhantom()) {
             if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_ANTI_PHANTOM)) {
                 region.setAntiPhantom(true);
@@ -376,6 +488,16 @@ public class GUIListener implements Listener {
                 new CoreUpgradesShopGUI(plugin).open(player, region, 2);
             }
             return;
+        }
+        if (slot == 22) {
+            if (shift && region.isResourceGenerator()) {
+                region.setResourceGenerator(false);
+                plugin.getDataManager().saveData();
+                player.sendMessage(ChatColor.YELLOW + "Generador de Recursos " + ChatColor.RED + "desactivado.");
+                SoundManager.playGUIClick(player.getLocation());
+                new CoreUpgradesShopGUI(plugin).open(player, region, 2);
+                return;
+            }
         }
         if (slot == 22 && !region.isResourceGenerator()) {
             if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_RESOURCE_GEN)) {

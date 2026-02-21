@@ -247,7 +247,8 @@ public class CoreUpgradesShopGUI {
                         ChatColor.GRAY + "de tu zona protegida.",
                         "",
                         ChatColor.GRAY + "Click = Siempre de día",
-                        ChatColor.GRAY + "Ya comprado = Alterna día/noche")));
+                        ChatColor.GRAY + "Ya comprado = Alterna día/noche",
+                        ChatColor.GRAY + "Shift+Click = Desactivar (ciclo normal)")));
 
         // Slot 16: Core Teleport
         inv.setItem(16, createUpgradeItem(Material.ENDER_EYE, "Teletransporte",
@@ -321,7 +322,8 @@ public class CoreUpgradesShopGUI {
             lore.add("");
             lore.addAll(description);
             lore.add("");
-            lore.add(ChatColor.GREEN + "" + ChatColor.BOLD + "✔ COMPRADO");
+            lore.add(ChatColor.GREEN + "" + ChatColor.BOLD + "✔ ACTIVO");
+            lore.add(ChatColor.DARK_RED + "" + ChatColor.ITALIC + "Shift+Click para desactivar");
             meta.setLore(lore);
         } else {
             meta.setDisplayName(ChatColor.RED + "" + ChatColor.BOLD + "✖ " + name);
