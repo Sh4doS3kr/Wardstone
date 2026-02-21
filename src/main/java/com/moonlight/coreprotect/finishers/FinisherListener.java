@@ -2,37 +2,120 @@ package com.moonlight.coreprotect.finishers;
 
 import com.moonlight.coreprotect.CoreProtectPlugin;
 import org.bukkit.ChatColor;
-import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
+import org.bukkit.scheduler.BukkitRunnable;
+
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
 
 public class FinisherListener implements Listener {
 
     private final CoreProtectPlugin plugin;
     private final FinisherEffects effects;
+    private final Set<UUID> beingFinished = new HashSet<>();
 
     public FinisherListener(CoreProtectPlugin plugin) {
         this.plugin = plugin;
         this.effects = new FinisherEffects(plugin);
     }
 
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onPlayerDeath(PlayerDeathEvent event) {
-        Player victim = event.getEntity();
-        Player killer = victim.getKiller();
+    public boolean isBeingFinished(UUID uuid) {
+        return beingFinished.contains(uuid);
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onDamage(EntityDamageEvent event) {
+        if (!(event.getEntity() instanceof Player)) return;
+        Player victim = (Player) event.getEntity();
+        if (beingFinished.contains(victim.getUniqueId())) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onPlayerAttacked(EntityDamageByEntityEvent event) {
+        if (!(event.getEntity() instanceof Player)) return;
+        Player victim = (Player) event.getEntity();
+
+        // Already in a finisher animation
+        if (beingFinished.contains(victim.getUniqueId())) {
+            event.setCancelled(true);
+            return;
+        }
+
+        // Get the actual killer (could be arrow, etc.)
+        Player killer = null;
+        if (event.getDamager() instanceof Player) {
+            killer = (Player) event.getDamager();
+        } else if (event.getDamager() instanceof org.bukkit.entity.Projectile) {
+            org.bukkit.entity.Projectile proj = (org.bukkit.entity.Projectile) event.getDamager();
+            if (proj.getShooter() instanceof Player) {
+                killer = (Player) proj.getShooter();
+            }
+        }
         if (killer == null) return;
 
+        // Check if this hit would kill the victim
+        double finalDamage = event.getFinalDamage();
+        if (victim.getHealth() - finalDamage > 0) return;
+
+        // Check if killer has a finisher
         FinisherManager manager = plugin.getFinisherManager();
         FinisherType finisher = manager.getSelectedFinisher(killer.getUniqueId());
         if (finisher == null) return;
 
-        Location deathLoc = victim.getLocation();
-        effects.play(finisher, deathLoc, killer);
+        // === CANCEL DEATH, START FINISHER ===
+        event.setCancelled(true);
+        beingFinished.add(victim.getUniqueId());
+
+        // Freeze the victim
+        victim.setHealth(1.0);
+        victim.setInvulnerable(true);
+        victim.setWalkSpeed(0f);
+        victim.setFlySpeed(0f);
+        victim.setGlowing(true);
+        victim.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 400, 255, false, false, false));
+        victim.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 400, 200, false, false, false));
+
+        // Announce finisher
+        String finisherMsg = ChatColor.DARK_RED + "☠ " + ChatColor.RED + killer.getName()
+                + ChatColor.GRAY + " ejecuta a " + ChatColor.RED + victim.getName()
+                + ChatColor.GRAY + " con " + finisher.getDisplayName();
+        for (Player online : org.bukkit.Bukkit.getOnlinePlayers()) {
+            online.sendMessage(finisherMsg);
+        }
+
+        // Get animation duration and play
+        int durationTicks = effects.play(finisher, victim, killer);
+
+        // After animation completes, kill the victim
+        final Player finalKiller = killer;
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                beingFinished.remove(victim.getUniqueId());
+                victim.setInvulnerable(false);
+                victim.setWalkSpeed(0.2f);
+                victim.setFlySpeed(0.1f);
+                victim.setGlowing(false);
+                victim.removePotionEffect(PotionEffectType.SLOWNESS);
+                victim.removePotionEffect(PotionEffectType.JUMP_BOOST);
+                victim.removePotionEffect(PotionEffectType.LEVITATION);
+
+                // Kill the victim
+                victim.setHealth(0);
+            }
+        }.runTaskLater(plugin, durationTicks + 5);
     }
 
     @EventHandler
