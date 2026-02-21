@@ -42,7 +42,16 @@ public class FinisherEffects {
         fb.setHurtEntities(false);
         fb.setVelocity(new Vector(vx, vy, vz));
         new BukkitRunnable() {
-            @Override public void run() { if (!fb.isDead()) fb.remove(); }
+            @Override public void run() {
+                if (!fb.isDead()) {
+                    Location deathLoc = fb.getLocation();
+                    // Small explosion on landing
+                    w.spawnParticle(Particle.EXPLOSION_EMITTER, deathLoc, 1, 0.3, 0.3, 0.3, 0);
+                    w.spawnParticle(Particle.CLOUD, deathLoc, 8, 0.4, 0.4, 0.4, 0.02);
+                    w.playSound(deathLoc, Sound.ENTITY_GENERIC_EXPLODE, 0.4f, 1.5f);
+                    fb.remove();
+                }
+            }
         }.runTaskLater(plugin, lifetime);
     }
 
