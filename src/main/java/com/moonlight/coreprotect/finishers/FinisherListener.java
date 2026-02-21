@@ -44,6 +44,15 @@ public class FinisherListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onPlayerAttacked(EntityDamageByEntityEvent event) {
+        // Block victim from attacking during finisher
+        if (event.getDamager() instanceof Player) {
+            Player attacker = (Player) event.getDamager();
+            if (beingFinished.contains(attacker.getUniqueId())) {
+                event.setCancelled(true);
+                return;
+            }
+        }
+
         if (!(event.getEntity() instanceof Player)) return;
         Player victim = (Player) event.getEntity();
 
