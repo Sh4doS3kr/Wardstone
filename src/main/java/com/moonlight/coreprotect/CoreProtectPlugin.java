@@ -1,6 +1,7 @@
 package com.moonlight.coreprotect;
 
 import com.moonlight.coreprotect.commands.CoreCommand;
+import com.moonlight.coreprotect.commands.GaspiCommand;
 import com.moonlight.coreprotect.data.DataManager;
 import com.moonlight.coreprotect.gui.GUIListener;
 import com.moonlight.coreprotect.protection.CorePlaceListener;
@@ -81,6 +82,7 @@ public class CoreProtectPlugin extends JavaPlugin {
         getCommand("cores").setTabCompleter(new CoreCommand(this));
         getCommand("admincore").setExecutor(new com.moonlight.coreprotect.commands.AdminCommand(this));
         getCommand("admincore").setTabCompleter(new com.moonlight.coreprotect.commands.AdminCommand(this));
+        getCommand("gaspi").setExecutor(new GaspiCommand(this));
 
         // Auto-guardado
         int saveInterval = getConfig().getInt("settings.auto-save-interval", 5) * 60 * 20;

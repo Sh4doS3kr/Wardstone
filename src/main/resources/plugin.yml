@@ -17,6 +17,9 @@ commands:
     description: Comandos de administracion
     usage: /<command> [deleteprotection]
     permission: coreprotect.admin
+  gaspi:
+    description: Reclamar recompensa unica de llaves
+    usage: /<command>
 
 permissions:
   coreprotect.use:
