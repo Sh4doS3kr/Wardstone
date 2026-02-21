@@ -68,7 +68,46 @@ public enum FinisherType {
                     "",
                     ChatColor.DARK_PURPLE + "Estilo: " + ChatColor.WHITE + "Celestial"
             },
-            80000);
+            80000),
+
+    HELLFIRE("hellfire",
+            ChatColor.RED + "" + ChatColor.BOLD + "🔥 Infierno Demoníaco",
+            Material.MAGMA_BLOCK,
+            new String[]{
+                    ChatColor.GRAY + "Una columna de fuego infernal",
+                    ChatColor.GRAY + "envuelve a la víctima mientras",
+                    ChatColor.GRAY + "asciende rodeada de lava y",
+                    ChatColor.GRAY + "llamas demoníacas.",
+                    "",
+                    ChatColor.DARK_PURPLE + "Estilo: " + ChatColor.RED + "Demonio"
+            },
+            70000),
+
+    ICE_STORM("ice",
+            ChatColor.AQUA + "" + ChatColor.BOLD + "❄ Tormenta de Hielo",
+            Material.BLUE_ICE,
+            new String[]{
+                    ChatColor.GRAY + "La víctima se congela en",
+                    ChatColor.GRAY + "un pilar de hielo que se",
+                    ChatColor.GRAY + "eleva y estalla en una",
+                    ChatColor.GRAY + "ventisca de cristales.",
+                    "",
+                    ChatColor.DARK_PURPLE + "Estilo: " + ChatColor.AQUA + "Glacial"
+            },
+            72000),
+
+    DRAGON_WRATH("dragon",
+            ChatColor.DARK_PURPLE + "" + ChatColor.BOLD + "🐉 Ira del Dragón",
+            Material.DRAGON_HEAD,
+            new String[]{
+                    ChatColor.GRAY + "El aliento de un dragón",
+                    ChatColor.GRAY + "ancestral envuelve a la",
+                    ChatColor.GRAY + "víctima en espirales de",
+                    ChatColor.GRAY + "fuego púrpura y destrucción.",
+                    "",
+                    ChatColor.DARK_PURPLE + "Estilo: " + ChatColor.LIGHT_PURPLE + "Dragón"
+            },
+            90000);
 
     private final String id;
     private final String displayName;

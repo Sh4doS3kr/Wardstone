@@ -26,6 +26,9 @@ public class FinisherEffects {
             case BLOOD_ERUPTION:   return playBlood(victim);
             case SHATTERED_AMETHYST: return playAmethyst(victim);
             case ORBITAL_STRIKE:   return playOrbital(victim);
+            case HELLFIRE:         return playHellfire(victim);
+            case ICE_STORM:        return playIce(victim);
+            case DRAGON_WRATH:     return playDragon(victim);
             default: return 40;
         }
     }
@@ -53,7 +56,7 @@ public class FinisherEffects {
         if (w == null) return 20;
 
         // Levitate victim
-        victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, 160, 1, false, false, false));
+        victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, 160, 2, false, false, false));
         w.playSound(origin, Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 1.0f, 0.4f);
         w.playSound(origin, Sound.ENTITY_WARDEN_EMERGE, 0.6f, 1.5f);
 
@@ -347,7 +350,7 @@ public class FinisherEffects {
         new BukkitRunnable() {
             @Override public void run() {
                 if (!victim.isOnline()) return;
-                victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, 130, 1, false, false, false));
+                victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, 130, 2, false, false, false));
                 w.playSound(origin, Sound.ENTITY_GHAST_SCREAM, 0.5f, 0.5f);
             }
         }.runTaskLater(plugin, 35);
@@ -494,7 +497,7 @@ public class FinisherEffects {
         new BukkitRunnable() {
             @Override public void run() {
                 if (!victim.isOnline()) return;
-                victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, 140, 1, false, false, false));
+                victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, 140, 2, false, false, false));
             }
         }.runTaskLater(plugin, 30);
 
@@ -786,6 +789,380 @@ public class FinisherEffects {
                 t += 3;
             }
         }.runTaskTimer(plugin, 210, 3);
+
+        return DUR;
+    }
+
+    // ========================================================================
+    //  6. INFIERNO DEMONÍACO  (10s = 200 ticks)
+    // ========================================================================
+    private int playHellfire(Player victim) {
+        final int DUR = 200;
+        Location origin = victim.getLocation().clone();
+        World w = origin.getWorld();
+        if (w == null) return 20;
+
+        victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, 180, 2, false, false, false));
+        w.playSound(origin, Sound.ENTITY_BLAZE_AMBIENT, 1.2f, 0.3f);
+        w.playSound(origin, Sound.ENTITY_WARDEN_EMERGE, 0.8f, 0.6f);
+
+        // Phase 1: Fire circle on ground + lava pillars (0-60)
+        new BukkitRunnable() {
+            int t = 0;
+            @Override public void run() {
+                if (t >= 60 || !victim.isOnline()) { cancel(); return; }
+                Location loc = vLoc(victim);
+                if (loc == null) { cancel(); return; }
+
+                double radius = 3.0 - t * 0.03;
+                for (int i = 0; i < 12; i++) {
+                    double a = (Math.PI * 2 / 12) * i + t * 0.1;
+                    double x = Math.cos(a) * radius, z = Math.sin(a) * radius;
+                    w.spawnParticle(Particle.FLAME, loc.clone().add(x, 0.2, z), 4, 0.08, 0.15, 0.08, 0.01);
+                    w.spawnParticle(Particle.LAVA, loc.clone().add(x, 0.1, z), 1, 0.05, 0.05, 0.05, 0);
+                }
+                w.spawnParticle(Particle.DUST, loc.clone().add(0, 0.1, 0), 10, radius * 0.6, 0.02, radius * 0.6, 0,
+                        new Particle.DustOptions(Color.fromRGB(200, 50, 0), 2.0f));
+
+                if (t % 8 == 0) {
+                    Material[] mats = {Material.MAGMA_BLOCK, Material.NETHERRACK, Material.NETHER_BRICKS};
+                    for (int p = 0; p < 2; p++) {
+                        double a2 = rng().nextDouble(Math.PI * 2);
+                        double r2 = 1 + rng().nextDouble(2);
+                        spawnBlock(w, loc.clone().add(Math.cos(a2) * r2, -1, Math.sin(a2) * r2),
+                                mats[rng().nextInt(mats.length)], 0, rng().nextDouble(0.3, 0.7), 0, 70);
+                    }
+                    w.playSound(loc, Sound.ENTITY_BLAZE_SHOOT, 0.6f, 0.5f);
+                }
+                t += 2;
+            }
+        }.runTaskTimer(plugin, 0, 2);
+
+        // Phase 2: Fire tornado around victim (40-160)
+        new BukkitRunnable() {
+            int t = 0;
+            @Override public void run() {
+                if (t >= 120 || !victim.isOnline()) { cancel(); return; }
+                Location loc = vLoc(victim);
+                if (loc == null) { cancel(); return; }
+
+                for (int arm = 0; arm < 4; arm++) {
+                    double a = t * 0.4 + arm * Math.PI / 2;
+                    double r = 1.2 + Math.sin(t * 0.08) * 0.4;
+                    for (double y = 0; y < 3; y += 0.5) {
+                        double x = Math.cos(a + y * 0.5) * r;
+                        double z = Math.sin(a + y * 0.5) * r;
+                        w.spawnParticle(Particle.FLAME, loc.clone().add(x, y - 0.5, z), 3, 0.05, 0.1, 0.05, 0.015);
+                    }
+                }
+                w.spawnParticle(Particle.LAVA, loc, 3, 0.5, 0.5, 0.5, 0);
+                w.spawnParticle(Particle.DUST, loc.clone().add(0, 1, 0), 8, 0.6, 1.0, 0.6, 0,
+                        new Particle.DustOptions(Color.fromRGB(255, 100, 0), 1.5f));
+
+                if (t % 6 == 0) w.playSound(loc, Sound.BLOCK_FIRE_AMBIENT, 0.8f, 0.5f);
+                if (t % 20 == 0) w.playSound(loc, Sound.ENTITY_BLAZE_AMBIENT, 0.6f, 0.4f);
+                t += 2;
+            }
+        }.runTaskTimer(plugin, 40, 2);
+
+        // Phase 3: Stronger levitation
+        new BukkitRunnable() {
+            @Override public void run() {
+                if (!victim.isOnline()) return;
+                victim.removePotionEffect(PotionEffectType.LEVITATION);
+                victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, 80, 4, false, false, false));
+            }
+        }.runTaskLater(plugin, 90);
+
+        // Phase 4: ERUPTION (tick 165)
+        new BukkitRunnable() {
+            @Override public void run() {
+                Location loc = vLoc(victim);
+                if (loc == null) return;
+
+                w.spawnParticle(Particle.FLAME, loc, 300, 5.0, 5.0, 5.0, 0.15);
+                w.spawnParticle(Particle.LAVA, loc, 80, 4.0, 4.0, 4.0, 0);
+                w.spawnParticle(Particle.DUST, loc, 150, 4.0, 4.0, 4.0, 0,
+                        new Particle.DustOptions(Color.fromRGB(255, 60, 0), 3.0f));
+                w.spawnParticle(Particle.EXPLOSION_EMITTER, loc, 5, 1.5, 1.5, 1.5, 0);
+                w.playSound(loc, Sound.ENTITY_GENERIC_EXPLODE, 2.0f, 0.5f);
+                w.playSound(loc, Sound.ENTITY_BLAZE_DEATH, 1.5f, 0.3f);
+
+                Material[] debris = {Material.MAGMA_BLOCK, Material.NETHERRACK, Material.NETHER_BRICKS,
+                        Material.ORANGE_CONCRETE, Material.RED_CONCRETE};
+                for (int b = 0; b < 25; b++) {
+                    spawnBlock(w, loc.clone().add(0, 1, 0), debris[rng().nextInt(debris.length)],
+                            rng().nextDouble(-1.8, 1.8), rng().nextDouble(0.5, 2.2), rng().nextDouble(-1.8, 1.8),
+                            55 + rng().nextInt(25));
+                }
+            }
+        }.runTaskLater(plugin, 165);
+
+        return DUR;
+    }
+
+    // ========================================================================
+    //  7. TORMENTA DE HIELO  (10s = 200 ticks)
+    // ========================================================================
+    private int playIce(Player victim) {
+        final int DUR = 200;
+        Location origin = victim.getLocation().clone();
+        World w = origin.getWorld();
+        if (w == null) return 20;
+
+        victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, 180, 2, false, false, false));
+        w.playSound(origin, Sound.BLOCK_GLASS_BREAK, 1.0f, 1.8f);
+        w.playSound(origin, Sound.ENTITY_PLAYER_HURT_FREEZE, 1.0f, 0.5f);
+
+        // Phase 1: Frost ring + ice pillars (0-60)
+        new BukkitRunnable() {
+            int t = 0;
+            @Override public void run() {
+                if (t >= 60 || !victim.isOnline()) { cancel(); return; }
+                Location loc = vLoc(victim);
+                if (loc == null) { cancel(); return; }
+
+                double radius = 3.0 - t * 0.03;
+                for (int i = 0; i < 16; i++) {
+                    double a = (Math.PI * 2 / 16) * i + t * 0.06;
+                    double x = Math.cos(a) * radius, z = Math.sin(a) * radius;
+                    w.spawnParticle(Particle.DUST, loc.clone().add(x, 0.1, z), 3, 0.08, 0.02, 0.08, 0,
+                            new Particle.DustOptions(Color.fromRGB(150, 220, 255), 2.0f));
+                    w.spawnParticle(Particle.SNOWFLAKE, loc.clone().add(x * 0.7, 0.5, z * 0.7), 2, 0.1, 0.2, 0.1, 0.01);
+                }
+
+                if (t % 10 == 0) {
+                    Material[] mats = {Material.BLUE_ICE, Material.PACKED_ICE, Material.ICE};
+                    for (int p = 0; p < 3; p++) {
+                        double a2 = rng().nextDouble(Math.PI * 2);
+                        double r2 = 1 + rng().nextDouble(2);
+                        spawnBlock(w, loc.clone().add(Math.cos(a2) * r2, -1, Math.sin(a2) * r2),
+                                mats[rng().nextInt(mats.length)], 0, rng().nextDouble(0.25, 0.55), 0, 80);
+                    }
+                    w.playSound(loc, Sound.BLOCK_GLASS_BREAK, 0.5f, 2.0f);
+                }
+                t += 2;
+            }
+        }.runTaskTimer(plugin, 0, 2);
+
+        // Phase 2: Blizzard swirl (40-160)
+        new BukkitRunnable() {
+            int t = 0;
+            @Override public void run() {
+                if (t >= 120 || !victim.isOnline()) { cancel(); return; }
+                Location loc = vLoc(victim);
+                if (loc == null) { cancel(); return; }
+
+                // Snowflake tornado
+                for (int arm = 0; arm < 5; arm++) {
+                    double a = t * 0.35 + arm * Math.PI * 2 / 5;
+                    double r = 1.5 - t * 0.005;
+                    if (r < 0.4) r = 0.4;
+                    for (double y = 0; y < 2.5; y += 0.6) {
+                        double x = Math.cos(a + y * 0.4) * r;
+                        double z = Math.sin(a + y * 0.4) * r;
+                        w.spawnParticle(Particle.SNOWFLAKE, loc.clone().add(x, y, z), 3, 0.06, 0.08, 0.06, 0.01);
+                    }
+                }
+                w.spawnParticle(Particle.DUST, loc.clone().add(0, 1, 0), 10, 0.5, 1.0, 0.5, 0,
+                        new Particle.DustOptions(Color.fromRGB(200, 240, 255), 1.5f));
+
+                // Floating ice
+                if (t % 16 == 0) {
+                    Material[] ices = {Material.BLUE_ICE, Material.PACKED_ICE};
+                    FallingBlock fb = w.spawnFallingBlock(
+                            loc.clone().add(rng().nextDouble(-1, 1), rng().nextDouble(0, 2), rng().nextDouble(-1, 1)),
+                            ices[rng().nextInt(ices.length)].createBlockData());
+                    fb.setDropItem(false);
+                    fb.setHurtEntities(false);
+                    fb.setGravity(false);
+                    fb.setVelocity(new Vector(0, 0.06, 0));
+                    new BukkitRunnable() {
+                        @Override public void run() { if (!fb.isDead()) fb.remove(); }
+                    }.runTaskLater(plugin, 55);
+                }
+
+                if (t % 8 == 0) w.playSound(loc, Sound.ENTITY_PLAYER_HURT_FREEZE, 0.5f, 1.0f + t * 0.005f);
+                t += 2;
+            }
+        }.runTaskTimer(plugin, 40, 2);
+
+        // Phase 3: Stronger levitation
+        new BukkitRunnable() {
+            @Override public void run() {
+                if (!victim.isOnline()) return;
+                victim.removePotionEffect(PotionEffectType.LEVITATION);
+                victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, 80, 4, false, false, false));
+            }
+        }.runTaskLater(plugin, 90);
+
+        // Phase 4: ICE SHATTER (tick 165)
+        new BukkitRunnable() {
+            @Override public void run() {
+                Location loc = vLoc(victim);
+                if (loc == null) return;
+
+                w.spawnParticle(Particle.SNOWFLAKE, loc, 200, 5.0, 5.0, 5.0, 0.15);
+                w.spawnParticle(Particle.DUST, loc, 250, 5.0, 5.0, 5.0, 0,
+                        new Particle.DustOptions(Color.fromRGB(150, 220, 255), 3.0f));
+                w.spawnParticle(Particle.DUST, loc, 150, 4.0, 4.0, 4.0, 0,
+                        new Particle.DustOptions(Color.fromRGB(80, 180, 255), 2.5f));
+                w.spawnParticle(Particle.EXPLOSION_EMITTER, loc, 4, 1.5, 1.5, 1.5, 0);
+                w.spawnParticle(Particle.END_ROD, loc, 60, 3.0, 3.0, 3.0, 0.1);
+                w.playSound(loc, Sound.BLOCK_GLASS_BREAK, 2.0f, 0.5f);
+                w.playSound(loc, Sound.ENTITY_GENERIC_EXPLODE, 1.2f, 1.5f);
+                w.playSound(loc, Sound.ENTITY_PLAYER_HURT_FREEZE, 1.5f, 0.3f);
+
+                Material[] debris = {Material.BLUE_ICE, Material.PACKED_ICE, Material.ICE,
+                        Material.LIGHT_BLUE_CONCRETE, Material.WHITE_CONCRETE};
+                for (int b = 0; b < 25; b++) {
+                    spawnBlock(w, loc.clone().add(0, 1, 0), debris[rng().nextInt(debris.length)],
+                            rng().nextDouble(-1.8, 1.8), rng().nextDouble(0.5, 2.2), rng().nextDouble(-1.8, 1.8),
+                            55 + rng().nextInt(25));
+                }
+            }
+        }.runTaskLater(plugin, 165);
+
+        return DUR;
+    }
+
+    // ========================================================================
+    //  8. IRA DEL DRAGÓN  (12s = 240 ticks)
+    // ========================================================================
+    private int playDragon(Player victim) {
+        final int DUR = 240;
+        Location origin = victim.getLocation().clone();
+        World w = origin.getWorld();
+        if (w == null) return 20;
+
+        victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, 200, 2, false, false, false));
+        w.playSound(origin, Sound.ENTITY_ENDER_DRAGON_GROWL, 1.5f, 0.5f);
+
+        // Phase 1: Purple flames on ground + end stone erupting (0-70)
+        new BukkitRunnable() {
+            int t = 0;
+            @Override public void run() {
+                if (t >= 70 || !victim.isOnline()) { cancel(); return; }
+                Location loc = vLoc(victim);
+                if (loc == null) { cancel(); return; }
+
+                double radius = 3.5 - t * 0.03;
+                for (int i = 0; i < 12; i++) {
+                    double a = (Math.PI * 2 / 12) * i + t * 0.08;
+                    double x = Math.cos(a) * radius, z = Math.sin(a) * radius;
+                    w.spawnParticle(Particle.DRAGON_BREATH, loc.clone().add(x, 0.2, z), 4, 0.08, 0.1, 0.08, 0.005);
+                    w.spawnParticle(Particle.DUST, loc.clone().add(x * 0.6, 0.3, z * 0.6), 3, 0.1, 0.05, 0.1, 0,
+                            new Particle.DustOptions(Color.fromRGB(120, 0, 180), 2.0f));
+                }
+
+                if (t % 10 == 0) {
+                    Material[] mats = {Material.END_STONE, Material.PURPUR_BLOCK, Material.OBSIDIAN};
+                    for (int p = 0; p < 2; p++) {
+                        double a2 = rng().nextDouble(Math.PI * 2);
+                        double r2 = 1.5 + rng().nextDouble(2);
+                        spawnBlock(w, loc.clone().add(Math.cos(a2) * r2, -1, Math.sin(a2) * r2),
+                                mats[rng().nextInt(mats.length)], 0, rng().nextDouble(0.3, 0.6), 0, 75);
+                    }
+                    w.playSound(loc, Sound.ENTITY_ENDER_DRAGON_FLAP, 0.6f, 0.5f);
+                }
+                t += 2;
+            }
+        }.runTaskTimer(plugin, 0, 2);
+
+        // Phase 2: Dragon breath spirals (50-180)
+        new BukkitRunnable() {
+            int t = 0;
+            @Override public void run() {
+                if (t >= 130 || !victim.isOnline()) { cancel(); return; }
+                Location loc = vLoc(victim);
+                if (loc == null) { cancel(); return; }
+
+                // 3 spiraling dragon breath arms
+                for (int arm = 0; arm < 3; arm++) {
+                    double a = t * 0.3 + arm * Math.PI * 2 / 3;
+                    double r = 2.0 - t * 0.008;
+                    if (r < 0.5) r = 0.5;
+                    for (double y = 0; y < 3; y += 0.5) {
+                        double x = Math.cos(a + y * 0.6) * r;
+                        double z = Math.sin(a + y * 0.6) * r;
+                        w.spawnParticle(Particle.DRAGON_BREATH, loc.clone().add(x, y - 0.5, z),
+                                4, 0.06, 0.08, 0.06, 0.003);
+                    }
+                }
+
+                // Central purple column
+                w.spawnParticle(Particle.DUST, loc, 12, 0.4, 1.5, 0.4, 0,
+                        new Particle.DustOptions(Color.fromRGB(150, 0, 220), 2.0f));
+                w.spawnParticle(Particle.END_ROD, loc.clone().add(0, 1, 0), 4, 0.3, 0.6, 0.3, 0.02);
+
+                if (t % 14 == 0) {
+                    w.playSound(loc, Sound.ENTITY_ENDER_DRAGON_GROWL, 0.4f, 0.8f + t * 0.005f);
+                    w.spawnParticle(Particle.SONIC_BOOM, loc, 1, 0, 0, 0, 0);
+                }
+
+                // Flying dragon debris
+                if (t % 12 == 0) {
+                    Material[] mats = {Material.END_STONE, Material.PURPUR_BLOCK, Material.PURPLE_CONCRETE};
+                    for (int b = 0; b < 2; b++) {
+                        double bx = rng().nextDouble(-2, 2), bz = rng().nextDouble(-2, 2);
+                        spawnBlock(w, loc.clone().add(bx, -2, bz), mats[rng().nextInt(mats.length)],
+                                -bx * 0.08, rng().nextDouble(0.3, 0.7), -bz * 0.08, 45);
+                    }
+                }
+
+                t += 2;
+            }
+        }.runTaskTimer(plugin, 50, 2);
+
+        // Phase 3: Stronger levitation
+        new BukkitRunnable() {
+            @Override public void run() {
+                if (!victim.isOnline()) return;
+                victim.removePotionEffect(PotionEffectType.LEVITATION);
+                victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, 100, 4, false, false, false));
+            }
+        }.runTaskLater(plugin, 100);
+
+        // Phase 4: DRAGON EXPLOSION (tick 200)
+        new BukkitRunnable() {
+            @Override public void run() {
+                Location loc = vLoc(victim);
+                if (loc == null) return;
+
+                w.spawnParticle(Particle.DRAGON_BREATH, loc, 300, 6.0, 6.0, 6.0, 0.1);
+                w.spawnParticle(Particle.DUST, loc, 250, 5.0, 5.0, 5.0, 0,
+                        new Particle.DustOptions(Color.fromRGB(150, 0, 220), 3.0f));
+                w.spawnParticle(Particle.DUST, loc, 150, 4.0, 4.0, 4.0, 0,
+                        new Particle.DustOptions(Color.fromRGB(200, 100, 255), 2.5f));
+                w.spawnParticle(Particle.END_ROD, loc, 100, 4.0, 4.0, 4.0, 0.2);
+                w.spawnParticle(Particle.EXPLOSION_EMITTER, loc, 6, 2.0, 2.0, 2.0, 0);
+                w.spawnParticle(Particle.SONIC_BOOM, loc, 3, 1, 1, 1, 0);
+                w.playSound(loc, Sound.ENTITY_ENDER_DRAGON_DEATH, 1.5f, 0.8f);
+                w.playSound(loc, Sound.ENTITY_GENERIC_EXPLODE, 2.0f, 0.5f);
+
+                Material[] debris = {Material.END_STONE, Material.PURPUR_BLOCK, Material.OBSIDIAN,
+                        Material.PURPLE_CONCRETE, Material.CRYING_OBSIDIAN, Material.DRAGON_EGG};
+                for (int b = 0; b < 30; b++) {
+                    spawnBlock(w, loc.clone().add(0, 1, 0), debris[rng().nextInt(debris.length)],
+                            rng().nextDouble(-2.0, 2.0), rng().nextDouble(0.5, 2.5), rng().nextDouble(-2.0, 2.0),
+                            55 + rng().nextInt(30));
+                }
+            }
+        }.runTaskLater(plugin, 200);
+
+        // Phase 5: Lingering dragon breath (205-235)
+        new BukkitRunnable() {
+            int t = 0;
+            @Override public void run() {
+                if (t >= 35) { cancel(); return; }
+                Location loc = vLoc(victim);
+                if (loc == null) loc = origin.clone().add(0, 5, 0);
+                w.spawnParticle(Particle.DRAGON_BREATH, loc, 20 - t / 2, 3.0, 3.0, 3.0, 0.03);
+                w.spawnParticle(Particle.END_ROD, loc, 5, 2.0, 2.0, 2.0, 0.02);
+                if (t % 8 == 0) w.playSound(loc, Sound.ENTITY_ENDER_DRAGON_FLAP, 0.4f, 1.2f);
+                t += 3;
+            }
+        }.runTaskTimer(plugin, 205, 3);
 
         return DUR;
     }

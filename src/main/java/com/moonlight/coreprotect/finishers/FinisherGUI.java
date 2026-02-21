@@ -29,7 +29,7 @@ public class FinisherGUI {
     }
 
     public void open(Player player) {
-        Inventory inv = Bukkit.createInventory(null, 45, TITLE);
+        Inventory inv = Bukkit.createInventory(null, 54, TITLE);
         UUID uuid = player.getUniqueId();
         FinisherManager manager = plugin.getFinisherManager();
 
@@ -39,8 +39,8 @@ public class FinisherGUI {
         borderMeta.setDisplayName(" ");
         border.setItemMeta(borderMeta);
         for (int i = 0; i < 9; i++) inv.setItem(i, border);
-        for (int i = 36; i < 45; i++) inv.setItem(i, border);
-        for (int row = 1; row < 4; row++) {
+        for (int i = 45; i < 54; i++) inv.setItem(i, border);
+        for (int row = 1; row < 5; row++) {
             inv.setItem(row * 9, border);
             inv.setItem(row * 9 + 8, border);
         }
@@ -50,7 +50,7 @@ public class FinisherGUI {
         ItemMeta fillMeta = fill.getItemMeta();
         fillMeta.setDisplayName(" ");
         fill.setItemMeta(fillMeta);
-        for (int i = 9; i < 36; i++) {
+        for (int i = 9; i < 45; i++) {
             if (inv.getItem(i) == null) inv.setItem(i, fill);
         }
 
@@ -68,8 +68,8 @@ public class FinisherGUI {
         titleItem.setItemMeta(titleMeta);
         inv.setItem(4, titleItem);
 
-        // Finisher items at slots: 11, 13, 15, 20, 24
-        int[] slots = {11, 13, 15, 20, 24};
+        // Finisher items: row 1 (slots 10-16), row 2 (slots 19-25)
+        int[] slots = {10, 12, 14, 16, 19, 21, 23, 25};
         FinisherType[] types = FinisherType.values();
 
         for (int i = 0; i < types.length && i < slots.length; i++) {
@@ -82,7 +82,7 @@ public class FinisherGUI {
         deselectMeta.setDisplayName(ChatColor.RED + "" + ChatColor.BOLD + "✖ Quitar Finisher");
         deselectMeta.setLore(Arrays.asList("", ChatColor.GRAY + "Click para no usar ningún finisher."));
         deselect.setItemMeta(deselectMeta);
-        inv.setItem(40, deselect);
+        inv.setItem(49, deselect);
 
         player.openInventory(inv);
     }

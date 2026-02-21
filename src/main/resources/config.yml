@@ -157,3 +157,6 @@ finishers:
     blood: 60000
     amethyst: 65000
     orbital: 80000
+    hellfire: 70000
+    ice: 72000
+    dragon: 90000

@@ -6,6 +6,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.entity.FallingBlock;
+import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -31,6 +33,17 @@ public class FinisherListener implements Listener {
 
     public boolean isBeingFinished(UUID uuid) {
         return beingFinished.contains(uuid);
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onBlockForm(EntityChangeBlockEvent event) {
+        if (event.getEntity() instanceof FallingBlock) {
+            FallingBlock fb = (FallingBlock) event.getEntity();
+            if (!fb.getDropItem()) {
+                event.setCancelled(true);
+                fb.remove();
+            }
+        }
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
@@ -171,7 +184,7 @@ public class FinisherListener implements Listener {
         FinisherManager manager = plugin.getFinisherManager();
 
         // Deselect button
-        if (slot == 40) {
+        if (slot == 49) {
             manager.deselectFinisher(player.getUniqueId());
             player.sendMessage(ChatColor.YELLOW + "Has quitado tu finisher activo.");
             com.moonlight.coreprotect.effects.SoundManager.playGUIClick(player.getLocation());
@@ -180,7 +193,7 @@ public class FinisherListener implements Listener {
         }
 
         // Map slots to finisher types
-        int[] slots = {11, 13, 15, 20, 24};
+        int[] slots = {10, 12, 14, 16, 19, 21, 23, 25};
         FinisherType[] types = FinisherType.values();
         FinisherType type = null;
         for (int i = 0; i < slots.length && i < types.length; i++) {
