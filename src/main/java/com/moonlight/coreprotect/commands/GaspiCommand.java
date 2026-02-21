@@ -70,6 +70,15 @@ public class GaspiCommand implements CommandExecutor {
         player.sendMessage(ChatColor.GREEN + "" + ChatColor.BOLD + "¡Recompensa reclamada!");
         player.sendMessage(ChatColor.GRAY + "Has recibido " + ChatColor.GOLD + "2 llaves Legendary" + ChatColor.GRAY + " y " + ChatColor.AQUA + "5 llaves Especial" + ChatColor.GRAY + ".");
 
+        // Broadcast to all players
+        String broadcast = "\n" + ChatColor.GOLD + "  ★ " + ChatColor.YELLOW + "" + ChatColor.BOLD + player.getName()
+                + ChatColor.GREEN + " ha reclamado su recompensa especial!"
+                + "\n" + ChatColor.GRAY + "  ┗ " + ChatColor.GOLD + "2x Legendary" + ChatColor.GRAY + " + " + ChatColor.AQUA + "5x Especial"
+                + "\n" + ChatColor.DARK_GRAY + "  Usa " + ChatColor.YELLOW + "/gaspi" + ChatColor.DARK_GRAY + " para reclamar la tuya!\n";
+        for (Player online : Bukkit.getOnlinePlayers()) {
+            online.sendMessage(broadcast);
+        }
+
         return true;
     }
 }
