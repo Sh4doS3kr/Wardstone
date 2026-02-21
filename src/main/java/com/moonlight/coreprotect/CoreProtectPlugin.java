@@ -2,6 +2,9 @@ package com.moonlight.coreprotect;
 
 import com.moonlight.coreprotect.commands.CoreCommand;
 import com.moonlight.coreprotect.commands.GaspiCommand;
+import com.moonlight.coreprotect.finishers.FinisherCommand;
+import com.moonlight.coreprotect.finishers.FinisherListener;
+import com.moonlight.coreprotect.finishers.FinisherManager;
 import com.moonlight.coreprotect.data.DataManager;
 import com.moonlight.coreprotect.gui.GUIListener;
 import com.moonlight.coreprotect.protection.CorePlaceListener;
@@ -30,6 +33,7 @@ public class CoreProtectPlugin extends JavaPlugin {
     private AchievementManager achievementManager;
     private AchievementListener achievementListener;
     private EvoCore evoCore;
+    private FinisherManager finisherManager;
 
     @Override
     public void onEnable() {
@@ -70,11 +74,15 @@ public class CoreProtectPlugin extends JavaPlugin {
         achievementManager.loadPlayerData();
         achievementListener = new AchievementListener(this);
 
+        // Inicializar finishers
+        finisherManager = new FinisherManager(this);
+
         // Registrar eventos
         getServer().getPluginManager().registerEvents(new GUIListener(this), this);
         getServer().getPluginManager().registerEvents(new ProtectionListener(this), this);
         getServer().getPluginManager().registerEvents(new CorePlaceListener(this), this);
         getServer().getPluginManager().registerEvents(achievementListener, this);
+        getServer().getPluginManager().registerEvents(new FinisherListener(this), this);
 
         // Registrar comandos
         // Registrar comandos
@@ -83,6 +91,7 @@ public class CoreProtectPlugin extends JavaPlugin {
         getCommand("admincore").setExecutor(new com.moonlight.coreprotect.commands.AdminCommand(this));
         getCommand("admincore").setTabCompleter(new com.moonlight.coreprotect.commands.AdminCommand(this));
         getCommand("gaspi").setExecutor(new GaspiCommand(this));
+        getCommand("finishers").setExecutor(new FinisherCommand(this));
 
         // Auto-guardado
         int saveInterval = getConfig().getInt("settings.auto-save-interval", 5) * 60 * 20;
@@ -194,5 +203,9 @@ public class CoreProtectPlugin extends JavaPlugin {
     
     public EvoCore getEvoCore() {
         return evoCore;
+    }
+
+    public FinisherManager getFinisherManager() {
+        return finisherManager;
     }
 }

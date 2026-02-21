@@ -148,3 +148,12 @@ levels:
     price: 10000000
     size: 256
     vip-rank: "moonlord"
+
+# Death Finishers - Precios
+finishers:
+  prices:
+    thunder: 50000
+    void: 75000
+    blood: 60000
+    amethyst: 65000
+    orbital: 80000

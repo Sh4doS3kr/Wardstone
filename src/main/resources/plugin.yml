@@ -20,6 +20,10 @@ commands:
   gaspi:
     description: Reclamar recompensa unica de llaves
     usage: /<command>
+  finishers:
+    description: Menu de Death Finishers
+    usage: /<command>
+    aliases: [finisher, deathfinisher]
 
 permissions:
   coreprotect.use:
