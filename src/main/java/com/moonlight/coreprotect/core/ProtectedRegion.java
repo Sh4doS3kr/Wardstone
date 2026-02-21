@@ -5,7 +5,9 @@ import org.bukkit.Location;
 import org.bukkit.World;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 public class ProtectedRegion {
@@ -20,6 +22,9 @@ public class ProtectedRegion {
     private int size;
     private final List<UUID> members;
     private final long createdAt;
+
+    // Tracks which boolean upgrades have been purchased (even if currently disabled)
+    private final Set<String> unlockedUpgrades = new HashSet<>();
 
     // Upgrade flags
     private boolean noExplosion;
@@ -238,6 +243,11 @@ public class ProtectedRegion {
 
     public boolean isAntiPhantom() { return antiPhantom; }
     public void setAntiPhantom(boolean antiPhantom) { this.antiPhantom = antiPhantom; }
+
+    public boolean isUnlocked(String upgradeId) { return unlockedUpgrades.contains(upgradeId); }
+    public void unlockUpgrade(String upgradeId) { unlockedUpgrades.add(upgradeId); }
+    public Set<String> getUnlockedUpgrades() { return new HashSet<>(unlockedUpgrades); }
+    public void setUnlockedUpgrades(Set<String> upgrades) { unlockedUpgrades.clear(); unlockedUpgrades.addAll(upgrades); }
 
     public int getActiveUpgradeCount() {
         int count = 0;

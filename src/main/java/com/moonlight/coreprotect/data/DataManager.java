@@ -10,8 +10,10 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 public class DataManager {
@@ -94,6 +96,28 @@ public class DataManager {
                         noMobSpawn, autoHeal, speedBoost, noFallDamage,
                         antiEnderman, resourceGenerator, fixedTime, coreTeleport, noHunger, antiPhantom);
 
+                // Load unlocked upgrades set
+                List<String> unlockedList = regionSection.getStringList("upgrades.unlocked");
+                if (!unlockedList.isEmpty()) {
+                    region.setUnlockedUpgrades(new HashSet<>(unlockedList));
+                } else {
+                    // Migration: if active=true, mark as unlocked automatically
+                    Set<String> migrated = new HashSet<>();
+                    if (noExplosion) migrated.add("noExplosion");
+                    if (noPvP) migrated.add("noPvP");
+                    if (noMobSpawn) migrated.add("noMobSpawn");
+                    if (autoHeal) migrated.add("autoHeal");
+                    if (speedBoost) migrated.add("speedBoost");
+                    if (noFallDamage) migrated.add("noFallDamage");
+                    if (antiEnderman) migrated.add("antiEnderman");
+                    if (resourceGenerator) migrated.add("resourceGenerator");
+                    if (fixedTime > 0) migrated.add("fixedTime");
+                    if (coreTeleport) migrated.add("coreTeleport");
+                    if (noHunger) migrated.add("noHunger");
+                    if (antiPhantom) migrated.add("antiPhantom");
+                    region.setUnlockedUpgrades(migrated);
+                }
+
                 plugin.getProtectionManager().addRegion(region);
             } catch (Exception e) {
                 plugin.getLogger().warning("Error al cargar region " + key + ": " + e.getMessage());
@@ -153,6 +177,7 @@ public class DataManager {
             dataConfig.set(path + ".upgrades.coreTeleport", region.isCoreTeleport());
             dataConfig.set(path + ".upgrades.noHunger", region.isNoHunger());
             dataConfig.set(path + ".upgrades.antiPhantom", region.isAntiPhantom());
+            dataConfig.set(path + ".upgrades.unlocked", new ArrayList<>(region.getUnlockedUpgrades()));
         }
 
         // Save homes

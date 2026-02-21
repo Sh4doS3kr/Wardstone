@@ -86,7 +86,7 @@ public class CoreUpgradesShopGUI {
         // === ROW 1: Toggle upgrades (slots 10-16 = positions in grid) ===
         // Slot 10: Anti-Explosion
         inv.setItem(10, createUpgradeItem(Material.TNT, "Anti-Explosión",
-                region.isNoExplosion(), PRICE_NO_EXPLOSION,
+                region.isNoExplosion(), region.isUnlocked("noExplosion"), PRICE_NO_EXPLOSION,
                 Arrays.asList(
                         ChatColor.GRAY + "Evita TODAS las explosiones",
                         ChatColor.GRAY + "dentro de tu zona protegida.",
@@ -96,7 +96,7 @@ public class CoreUpgradesShopGUI {
 
         // Slot 12: Anti-PvP
         inv.setItem(12, createUpgradeItem(Material.IRON_SWORD, "Anti-PvP",
-                region.isNoPvP(), PRICE_NO_PVP,
+                region.isNoPvP(), region.isUnlocked("noPvP"), PRICE_NO_PVP,
                 Arrays.asList(
                         ChatColor.GRAY + "Los jugadores NO pueden",
                         ChatColor.GRAY + "hacerse daño entre sí",
@@ -106,7 +106,7 @@ public class CoreUpgradesShopGUI {
 
         // Slot 14: No Mob Spawn
         inv.setItem(14, createUpgradeItem(Material.ZOMBIE_HEAD, "Anti-Mobs",
-                region.isNoMobSpawn(), PRICE_NO_MOB_SPAWN,
+                region.isNoMobSpawn(), region.isUnlocked("noMobSpawn"), PRICE_NO_MOB_SPAWN,
                 Arrays.asList(
                         ChatColor.GRAY + "Evita el spawn de mobs",
                         ChatColor.GRAY + "hostiles en tu zona.",
@@ -116,7 +116,7 @@ public class CoreUpgradesShopGUI {
 
         // Slot 16: No Fall Damage
         inv.setItem(16, createUpgradeItem(Material.FEATHER, "Sin Caída",
-                region.isNoFallDamage(), PRICE_NO_FALL_DAMAGE,
+                region.isNoFallDamage(), region.isUnlocked("noFallDamage"), PRICE_NO_FALL_DAMAGE,
                 Arrays.asList(
                         ChatColor.GRAY + "Elimina todo el daño",
                         ChatColor.GRAY + "por caída en tu zona.",
@@ -127,7 +127,7 @@ public class CoreUpgradesShopGUI {
         // === ROW 2: More toggle upgrades (slots 19-25) ===
         // Slot 19: Auto Heal
         inv.setItem(19, createUpgradeItem(Material.ENCHANTED_GOLDEN_APPLE, "Auto-Curación",
-                region.isAutoHeal(), PRICE_AUTO_HEAL,
+                region.isAutoHeal(), region.isUnlocked("autoHeal"), PRICE_AUTO_HEAL,
                 Arrays.asList(
                         ChatColor.GRAY + "Regeneración pasiva lenta",
                         ChatColor.GRAY + "mientras estés en tu zona.",
@@ -137,7 +137,7 @@ public class CoreUpgradesShopGUI {
 
         // Slot 21: Speed Boost
         inv.setItem(21, createUpgradeItem(Material.SUGAR, "Velocidad",
-                region.isSpeedBoost(), PRICE_SPEED_BOOST,
+                region.isSpeedBoost(), region.isUnlocked("speedBoost"), PRICE_SPEED_BOOST,
                 Arrays.asList(
                         ChatColor.GRAY + "Velocidad de movimiento",
                         ChatColor.GRAY + "aumentada en tu zona.",
@@ -221,7 +221,7 @@ public class CoreUpgradesShopGUI {
 
         // Slot 10: Anti-Enderman
         inv.setItem(10, createUpgradeItem(Material.ENDER_PEARL, "Anti-Enderman",
-                region.isAntiEnderman(), PRICE_ANTI_ENDERMAN,
+                region.isAntiEnderman(), region.isUnlocked("antiEnderman"), PRICE_ANTI_ENDERMAN,
                 Arrays.asList(
                         ChatColor.GRAY + "Los Endermen no pueden",
                         ChatColor.GRAY + "mover bloques en tu zona.",
@@ -230,7 +230,7 @@ public class CoreUpgradesShopGUI {
 
         // Slot 12: No Hunger
         inv.setItem(12, createUpgradeItem(Material.COOKED_BEEF, "Sin Hambre",
-                region.isNoHunger(), PRICE_NO_HUNGER,
+                region.isNoHunger(), region.isUnlocked("noHunger"), PRICE_NO_HUNGER,
                 Arrays.asList(
                         ChatColor.GRAY + "No pierdes hambre mientras",
                         ChatColor.GRAY + "estés en tu zona.",
@@ -241,7 +241,7 @@ public class CoreUpgradesShopGUI {
         boolean hasFixedTime = region.getFixedTime() > 0;
         String timeLabel = hasFixedTime ? (region.getFixedTime() == 1 ? "Tiempo Fijo: Día" : "Tiempo Fijo: Noche") : "Tiempo Fijo";
         inv.setItem(14, createUpgradeItem(Material.CLOCK, timeLabel,
-                hasFixedTime, PRICE_FIXED_TIME,
+                hasFixedTime, region.isUnlocked("fixedTime"), PRICE_FIXED_TIME,
                 Arrays.asList(
                         ChatColor.GRAY + "Fija la hora del día dentro",
                         ChatColor.GRAY + "de tu zona protegida.",
@@ -252,7 +252,7 @@ public class CoreUpgradesShopGUI {
 
         // Slot 16: Core Teleport
         inv.setItem(16, createUpgradeItem(Material.ENDER_EYE, "Teletransporte",
-                region.isCoreTeleport(), PRICE_CORE_TELEPORT,
+                region.isCoreTeleport(), region.isUnlocked("coreTeleport"), PRICE_CORE_TELEPORT,
                 Arrays.asList(
                         ChatColor.GRAY + "Permite usar /cores tp",
                         ChatColor.GRAY + "para teletransportarte entre",
@@ -262,7 +262,7 @@ public class CoreUpgradesShopGUI {
 
         // Slot 19: Anti-Phantom
         inv.setItem(19, createUpgradeItem(Material.PHANTOM_MEMBRANE, "Anti-Phantoms",
-                region.isAntiPhantom(), PRICE_ANTI_PHANTOM,
+                region.isAntiPhantom(), region.isUnlocked("antiPhantom"), PRICE_ANTI_PHANTOM,
                 Arrays.asList(
                         ChatColor.GRAY + "Los Phantoms NO pueden",
                         ChatColor.GRAY + "aparecer dentro de tu zona.",
@@ -271,7 +271,7 @@ public class CoreUpgradesShopGUI {
 
         // Slot 22: Resource Generator
         inv.setItem(22, createUpgradeItem(Material.DIAMOND, "Generador de Recursos",
-                region.isResourceGenerator(), PRICE_RESOURCE_GEN,
+                region.isResourceGenerator(), region.isUnlocked("resourceGenerator"), PRICE_RESOURCE_GEN,
                 Arrays.asList(
                         ChatColor.GRAY + "Genera recursos automáticamente",
                         ChatColor.GRAY + "en un cofre junto al núcleo.",
@@ -311,12 +311,12 @@ public class CoreUpgradesShopGUI {
         player.openInventory(inv);
     }
 
-    private ItemStack createUpgradeItem(Material material, String name, boolean owned, double price, List<String> description) {
+    private ItemStack createUpgradeItem(Material material, String name, boolean active, boolean unlocked, double price, List<String> description) {
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
         meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
 
-        if (owned) {
+        if (active) {
             meta.setDisplayName(ChatColor.GREEN + "" + ChatColor.BOLD + "✔ " + name);
             List<String> lore = new ArrayList<>();
             lore.add("");
@@ -324,6 +324,15 @@ public class CoreUpgradesShopGUI {
             lore.add("");
             lore.add(ChatColor.GREEN + "" + ChatColor.BOLD + "✔ ACTIVO");
             lore.add(ChatColor.DARK_RED + "" + ChatColor.ITALIC + "Shift+Click para desactivar");
+            meta.setLore(lore);
+        } else if (unlocked) {
+            meta.setDisplayName(ChatColor.GOLD + "" + ChatColor.BOLD + "⏸ " + name + " (Desactivado)");
+            List<String> lore = new ArrayList<>();
+            lore.add("");
+            lore.addAll(description);
+            lore.add("");
+            lore.add(ChatColor.GOLD + "" + ChatColor.BOLD + "⏸ DESACTIVADO");
+            lore.add(ChatColor.YELLOW + "▶ Click para reactivar (gratis)");
             meta.setLore(lore);
         } else {
             meta.setDisplayName(ChatColor.RED + "" + ChatColor.BOLD + "✖ " + name);

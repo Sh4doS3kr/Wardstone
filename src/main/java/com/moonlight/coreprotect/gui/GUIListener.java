@@ -232,8 +232,15 @@ public class GUIListener implements Listener {
             }
         }
         if (slot == 10 && !region.isNoExplosion()) {
-            if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_NO_EXPLOSION)) {
+            if (region.isUnlocked("noExplosion")) {
                 region.setNoExplosion(true);
+                plugin.getDataManager().saveData();
+                player.sendMessage(ChatColor.GREEN + "Anti-Explosión reactivado.");
+                SoundManager.playUpgradePurchased(player.getLocation());
+                new CoreUpgradesShopGUI(plugin).open(player, region, 1);
+            } else if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_NO_EXPLOSION)) {
+                region.setNoExplosion(true);
+                region.unlockUpgrade("noExplosion");
                 plugin.getDataManager().saveData();
                 plugin.getMessageManager().send(player, "upgrades.purchased", "{upgrade}", "Anti-Explosión");
                 SoundManager.playUpgradePurchased(player.getLocation());
@@ -253,8 +260,15 @@ public class GUIListener implements Listener {
             }
         }
         if (slot == 12 && !region.isNoPvP()) {
-            if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_NO_PVP)) {
+            if (region.isUnlocked("noPvP")) {
                 region.setNoPvP(true);
+                plugin.getDataManager().saveData();
+                player.sendMessage(ChatColor.GREEN + "Anti-PvP reactivado.");
+                SoundManager.playUpgradePurchased(player.getLocation());
+                new CoreUpgradesShopGUI(plugin).open(player, region, 1);
+            } else if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_NO_PVP)) {
+                region.setNoPvP(true);
+                region.unlockUpgrade("noPvP");
                 plugin.getDataManager().saveData();
                 plugin.getMessageManager().send(player, "upgrades.purchased", "{upgrade}", "Anti-PvP");
                 SoundManager.playUpgradePurchased(player.getLocation());
@@ -274,8 +288,15 @@ public class GUIListener implements Listener {
             }
         }
         if (slot == 14 && !region.isNoMobSpawn()) {
-            if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_NO_MOB_SPAWN)) {
+            if (region.isUnlocked("noMobSpawn")) {
                 region.setNoMobSpawn(true);
+                plugin.getDataManager().saveData();
+                player.sendMessage(ChatColor.GREEN + "Anti-Mobs reactivado.");
+                SoundManager.playUpgradePurchased(player.getLocation());
+                new CoreUpgradesShopGUI(plugin).open(player, region, 1);
+            } else if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_NO_MOB_SPAWN)) {
+                region.setNoMobSpawn(true);
+                region.unlockUpgrade("noMobSpawn");
                 plugin.getDataManager().saveData();
                 plugin.getMessageManager().send(player, "upgrades.purchased", "{upgrade}", "Anti-Mobs");
                 SoundManager.playUpgradePurchased(player.getLocation());
@@ -295,8 +316,15 @@ public class GUIListener implements Listener {
             }
         }
         if (slot == 16 && !region.isNoFallDamage()) {
-            if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_NO_FALL_DAMAGE)) {
+            if (region.isUnlocked("noFallDamage")) {
                 region.setNoFallDamage(true);
+                plugin.getDataManager().saveData();
+                player.sendMessage(ChatColor.GREEN + "Sin Caída reactivado.");
+                SoundManager.playUpgradePurchased(player.getLocation());
+                new CoreUpgradesShopGUI(plugin).open(player, region, 1);
+            } else if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_NO_FALL_DAMAGE)) {
+                region.setNoFallDamage(true);
+                region.unlockUpgrade("noFallDamage");
                 plugin.getDataManager().saveData();
                 plugin.getMessageManager().send(player, "upgrades.purchased", "{upgrade}", "Sin Caída");
                 SoundManager.playUpgradePurchased(player.getLocation());
@@ -316,8 +344,15 @@ public class GUIListener implements Listener {
             }
         }
         if (slot == 19 && !region.isAutoHeal()) {
-            if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_AUTO_HEAL)) {
+            if (region.isUnlocked("autoHeal")) {
                 region.setAutoHeal(true);
+                plugin.getDataManager().saveData();
+                player.sendMessage(ChatColor.GREEN + "Auto-Curación reactivado.");
+                SoundManager.playUpgradePurchased(player.getLocation());
+                new CoreUpgradesShopGUI(plugin).open(player, region, 1);
+            } else if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_AUTO_HEAL)) {
+                region.setAutoHeal(true);
+                region.unlockUpgrade("autoHeal");
                 plugin.getDataManager().saveData();
                 plugin.getMessageManager().send(player, "upgrades.purchased", "{upgrade}", "Auto-Curación");
                 SoundManager.playUpgradePurchased(player.getLocation());
@@ -337,8 +372,15 @@ public class GUIListener implements Listener {
             }
         }
         if (slot == 21 && !region.isSpeedBoost()) {
-            if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_SPEED_BOOST)) {
+            if (region.isUnlocked("speedBoost")) {
                 region.setSpeedBoost(true);
+                plugin.getDataManager().saveData();
+                player.sendMessage(ChatColor.GREEN + "Velocidad reactivado.");
+                SoundManager.playUpgradePurchased(player.getLocation());
+                new CoreUpgradesShopGUI(plugin).open(player, region, 1);
+            } else if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_SPEED_BOOST)) {
+                region.setSpeedBoost(true);
+                region.unlockUpgrade("speedBoost");
                 plugin.getDataManager().saveData();
                 plugin.getMessageManager().send(player, "upgrades.purchased", "{upgrade}", "Velocidad");
                 SoundManager.playUpgradePurchased(player.getLocation());
@@ -388,8 +430,15 @@ public class GUIListener implements Listener {
             }
         }
         if (slot == 10 && !region.isAntiEnderman()) {
-            if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_ANTI_ENDERMAN)) {
+            if (region.isUnlocked("antiEnderman")) {
                 region.setAntiEnderman(true);
+                plugin.getDataManager().saveData();
+                player.sendMessage(ChatColor.GREEN + "Anti-Enderman reactivado.");
+                SoundManager.playUpgradePurchased(player.getLocation());
+                new CoreUpgradesShopGUI(plugin).open(player, region, 2);
+            } else if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_ANTI_ENDERMAN)) {
+                region.setAntiEnderman(true);
+                region.unlockUpgrade("antiEnderman");
                 plugin.getDataManager().saveData();
                 plugin.getMessageManager().send(player, "upgrades.purchased", "{upgrade}", "Anti-Enderman");
                 SoundManager.playUpgradePurchased(player.getLocation());
@@ -409,8 +458,15 @@ public class GUIListener implements Listener {
             }
         }
         if (slot == 12 && !region.isNoHunger()) {
-            if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_NO_HUNGER)) {
+            if (region.isUnlocked("noHunger")) {
                 region.setNoHunger(true);
+                plugin.getDataManager().saveData();
+                player.sendMessage(ChatColor.GREEN + "Sin Hambre reactivado.");
+                SoundManager.playUpgradePurchased(player.getLocation());
+                new CoreUpgradesShopGUI(plugin).open(player, region, 2);
+            } else if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_NO_HUNGER)) {
+                region.setNoHunger(true);
+                region.unlockUpgrade("noHunger");
                 plugin.getDataManager().saveData();
                 plugin.getMessageManager().send(player, "upgrades.purchased", "{upgrade}", "Sin Hambre");
                 SoundManager.playUpgradePurchased(player.getLocation());
@@ -429,8 +485,15 @@ public class GUIListener implements Listener {
                 return;
             }
             if (region.getFixedTime() == 0) {
-                if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_FIXED_TIME)) {
+                if (region.isUnlocked("fixedTime")) {
                     region.setFixedTime(1);
+                    plugin.getDataManager().saveData();
+                    player.sendMessage(ChatColor.GREEN + "Tiempo Fijo reactivado (Día).");
+                    SoundManager.playUpgradePurchased(player.getLocation());
+                    new CoreUpgradesShopGUI(plugin).open(player, region, 2);
+                } else if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_FIXED_TIME)) {
+                    region.setFixedTime(1);
+                    region.unlockUpgrade("fixedTime");
                     plugin.getDataManager().saveData();
                     plugin.getMessageManager().send(player, "upgrades.purchased", "{upgrade}", "Tiempo Fijo (Día)");
                     SoundManager.playUpgradePurchased(player.getLocation());
@@ -458,8 +521,15 @@ public class GUIListener implements Listener {
             }
         }
         if (slot == 16 && !region.isCoreTeleport()) {
-            if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_CORE_TELEPORT)) {
+            if (region.isUnlocked("coreTeleport")) {
                 region.setCoreTeleport(true);
+                plugin.getDataManager().saveData();
+                player.sendMessage(ChatColor.GREEN + "Teletransporte reactivado.");
+                SoundManager.playUpgradePurchased(player.getLocation());
+                new CoreUpgradesShopGUI(plugin).open(player, region, 2);
+            } else if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_CORE_TELEPORT)) {
+                region.setCoreTeleport(true);
+                region.unlockUpgrade("coreTeleport");
                 plugin.getDataManager().saveData();
                 plugin.getMessageManager().send(player, "upgrades.purchased", "{upgrade}", "Teletransporte");
                 SoundManager.playUpgradePurchased(player.getLocation());
@@ -479,8 +549,15 @@ public class GUIListener implements Listener {
             }
         }
         if (slot == 19 && !region.isAntiPhantom()) {
-            if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_ANTI_PHANTOM)) {
+            if (region.isUnlocked("antiPhantom")) {
                 region.setAntiPhantom(true);
+                plugin.getDataManager().saveData();
+                player.sendMessage(ChatColor.GREEN + "Anti-Phantoms reactivado.");
+                SoundManager.playUpgradePurchased(player.getLocation());
+                new CoreUpgradesShopGUI(plugin).open(player, region, 2);
+            } else if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_ANTI_PHANTOM)) {
+                region.setAntiPhantom(true);
+                region.unlockUpgrade("antiPhantom");
                 plugin.getDataManager().saveData();
                 plugin.getMessageManager().send(player, "upgrades.purchased", "{upgrade}", "Anti-Phantoms");
                 SoundManager.playUpgradePurchased(player.getLocation());
@@ -500,8 +577,15 @@ public class GUIListener implements Listener {
             }
         }
         if (slot == 22 && !region.isResourceGenerator()) {
-            if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_RESOURCE_GEN)) {
+            if (region.isUnlocked("resourceGenerator")) {
                 region.setResourceGenerator(true);
+                plugin.getDataManager().saveData();
+                player.sendMessage(ChatColor.GREEN + "Generador de Recursos reactivado.");
+                SoundManager.playUpgradePurchased(player.getLocation());
+                new CoreUpgradesShopGUI(plugin).open(player, region, 2);
+            } else if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_RESOURCE_GEN)) {
+                region.setResourceGenerator(true);
+                region.unlockUpgrade("resourceGenerator");
                 plugin.getDataManager().saveData();
                 plugin.getMessageManager().send(player, "upgrades.purchased", "{upgrade}", "Generador de Recursos");
                 SoundManager.playUpgradePurchased(player.getLocation());
