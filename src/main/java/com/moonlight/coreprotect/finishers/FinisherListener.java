@@ -78,19 +78,23 @@ public class FinisherListener implements Listener {
         event.setCancelled(true);
         beingFinished.add(victim.getUniqueId());
 
-        // Freeze the victim
+        // Freeze the victim completely
         victim.setHealth(1.0);
         victim.setInvulnerable(true);
         victim.setWalkSpeed(0f);
         victim.setFlySpeed(0f);
         victim.setGlowing(true);
-        victim.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 400, 255, false, false, false));
-        victim.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 400, 200, false, false, false));
+        victim.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 600, 255, false, false, false));
+        victim.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 600, 200, false, false, false));
+        victim.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 40, 0, false, false, false));
 
         // Announce finisher
-        String finisherMsg = ChatColor.DARK_RED + "☠ " + ChatColor.RED + killer.getName()
-                + ChatColor.GRAY + " ejecuta a " + ChatColor.RED + victim.getName()
-                + ChatColor.GRAY + " con " + finisher.getDisplayName();
+        String line = ChatColor.DARK_GRAY + "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━";
+        String finisherMsg = "\n" + line
+                + "\n" + ChatColor.DARK_RED + "  ☠ " + ChatColor.RED + "" + ChatColor.BOLD + killer.getName()
+                + ChatColor.GRAY + " ejecuta a " + ChatColor.RED + "" + ChatColor.BOLD + victim.getName()
+                + "\n" + ChatColor.GRAY + "  con " + finisher.getDisplayName()
+                + "\n" + line + "\n";
         for (Player online : org.bukkit.Bukkit.getOnlinePlayers()) {
             online.sendMessage(finisherMsg);
         }
@@ -98,8 +102,31 @@ public class FinisherListener implements Listener {
         // Get animation duration and play
         int durationTicks = effects.play(finisher, victim, killer);
 
+        // Freeze loop: teleport victim back to origin every 2 ticks so they literally cannot move
+        final org.bukkit.Location freezeLoc = victim.getLocation().clone();
+        new BukkitRunnable() {
+            int t = 0;
+            @Override
+            public void run() {
+                if (t >= durationTicks || !victim.isOnline() || !beingFinished.contains(victim.getUniqueId())) {
+                    cancel();
+                    return;
+                }
+                // Keep yaw/pitch but lock XZ position (Y is controlled by levitation)
+                org.bukkit.Location current = victim.getLocation();
+                if (Math.abs(current.getX() - freezeLoc.getX()) > 0.15
+                        || Math.abs(current.getZ() - freezeLoc.getZ()) > 0.15) {
+                    org.bukkit.Location tp = freezeLoc.clone();
+                    tp.setY(current.getY());
+                    tp.setYaw(current.getYaw());
+                    tp.setPitch(current.getPitch());
+                    victim.teleport(tp);
+                }
+                t += 2;
+            }
+        }.runTaskTimer(plugin, 0, 2);
+
         // After animation completes, kill the victim
-        final Player finalKiller = killer;
         new BukkitRunnable() {
             @Override
             public void run() {
@@ -111,6 +138,7 @@ public class FinisherListener implements Listener {
                 victim.removePotionEffect(PotionEffectType.SLOWNESS);
                 victim.removePotionEffect(PotionEffectType.JUMP_BOOST);
                 victim.removePotionEffect(PotionEffectType.LEVITATION);
+                victim.removePotionEffect(PotionEffectType.BLINDNESS);
 
                 // Kill the victim
                 victim.setHealth(0);
