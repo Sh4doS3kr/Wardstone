@@ -38,17 +38,22 @@ public class FinisherEffects {
     }
 
     private void scheduleGhostCleanup(Player victim, int delay) {
-        new BukkitRunnable() {
-            public void run() {
-                Location loc = victim.isOnline() ? victim.getLocation() : null;
-                if (loc == null || loc.getWorld() == null) return;
-                for (org.bukkit.entity.Entity e : loc.getWorld().getNearbyEntities(loc, 20, 20, 20)) {
-                    if (e instanceof FallingBlock && e.hasMetadata(GHOST_TAG)) {
-                        e.remove();
+        final Location origin = victim.getLocation().clone();
+        final World w = origin.getWorld();
+        if (w == null) return;
+        int[] sweeps = {delay + 2, delay + 25, delay + 50, delay + 80};
+        for (int tick : sweeps) {
+            new BukkitRunnable() {
+                public void run() {
+                    if (!w.isChunkLoaded(origin.getBlockX() >> 4, origin.getBlockZ() >> 4)) return;
+                    for (org.bukkit.entity.Entity e : w.getNearbyEntities(origin, 30, 30, 30)) {
+                        if (e instanceof FallingBlock && e.hasMetadata(GHOST_TAG)) {
+                            e.remove();
+                        }
                     }
                 }
-            }
-        }.runTaskLater(plugin, delay + 2);
+            }.runTaskLater(plugin, tick);
+        }
     }
 
     private Location vLoc(Player v) { return v.isOnline() ? v.getLocation() : null; }
