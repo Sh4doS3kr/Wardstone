@@ -17,21 +17,38 @@ public class FinisherEffects {
     public FinisherEffects(Plugin plugin) { this.plugin = plugin; }
 
     public int play(FinisherType type, Player victim, Player killer) {
+        int dur;
         switch (type) {
-            case THUNDER_JUDGMENT: return playThunder(victim);
-            case VOID_INVOCATION: return playVoid(victim);
-            case BLOOD_ERUPTION: return playBlood(victim);
-            case SHATTERED_AMETHYST: return playAmethyst(victim);
-            case ORBITAL_STRIKE: return playOrbital(victim);
-            case HELLFIRE: return playHellfire(victim);
-            case ICE_STORM: return playIce(victim);
-            case DRAGON_WRATH: return playDragon(victim);
-            case SOUL_VORTEX: return playSoulVortex(victim);
-            case WITHER_STORM: return playWitherStorm(victim);
-            case SCULK_RESONANCE: return playSculkResonance(victim);
-            case APOCALYPSE: return playApocalypse(victim);
-            default: return 40;
+            case THUNDER_JUDGMENT: dur = playThunder(victim); break;
+            case VOID_INVOCATION: dur = playVoid(victim); break;
+            case BLOOD_ERUPTION: dur = playBlood(victim); break;
+            case SHATTERED_AMETHYST: dur = playAmethyst(victim); break;
+            case ORBITAL_STRIKE: dur = playOrbital(victim); break;
+            case HELLFIRE: dur = playHellfire(victim); break;
+            case ICE_STORM: dur = playIce(victim); break;
+            case DRAGON_WRATH: dur = playDragon(victim); break;
+            case SOUL_VORTEX: dur = playSoulVortex(victim); break;
+            case WITHER_STORM: dur = playWitherStorm(victim); break;
+            case SCULK_RESONANCE: dur = playSculkResonance(victim); break;
+            case APOCALYPSE: dur = playApocalypse(victim); break;
+            default: dur = 40; break;
         }
+        scheduleGhostCleanup(victim, dur);
+        return dur;
+    }
+
+    private void scheduleGhostCleanup(Player victim, int delay) {
+        new BukkitRunnable() {
+            public void run() {
+                Location loc = victim.isOnline() ? victim.getLocation() : null;
+                if (loc == null || loc.getWorld() == null) return;
+                for (org.bukkit.entity.Entity e : loc.getWorld().getNearbyEntities(loc, 20, 20, 20)) {
+                    if (e instanceof FallingBlock && e.hasMetadata(GHOST_TAG)) {
+                        e.remove();
+                    }
+                }
+            }
+        }.runTaskLater(plugin, delay + 2);
     }
 
     private Location vLoc(Player v) { return v.isOnline() ? v.getLocation() : null; }
