@@ -68,8 +68,8 @@ public class FinisherGUI {
         titleItem.setItemMeta(titleMeta);
         inv.setItem(4, titleItem);
 
-        // Finisher items: row 1 (slots 10-16), row 2 (slots 19-25)
-        int[] slots = {10, 12, 14, 16, 19, 21, 23, 25};
+        // Finisher items: row 1 (slots 10-16), row 2 (slots 19-25), row 3 (slots 28-34)
+        int[] slots = {10, 12, 14, 16, 19, 21, 23, 25, 28, 30, 32};
         FinisherType[] types = FinisherType.values();
 
         for (int i = 0; i < types.length && i < slots.length; i++) {

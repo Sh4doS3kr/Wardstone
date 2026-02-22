@@ -304,7 +304,7 @@ public class FinisherListener implements Listener {
         }
 
         // Map slots to finisher types
-        int[] slots = { 10, 12, 14, 16, 19, 21, 23, 25 };
+        int[] slots = { 10, 12, 14, 16, 19, 21, 23, 25, 28, 30, 32 };
         FinisherType[] types = FinisherType.values();
         FinisherType type = null;
         for (int i = 0; i < slots.length && i < types.length; i++) {
