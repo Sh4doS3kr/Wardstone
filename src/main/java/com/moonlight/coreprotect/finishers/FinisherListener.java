@@ -17,7 +17,9 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -26,6 +28,7 @@ public class FinisherListener implements Listener {
     private final CoreProtectPlugin plugin;
     private final FinisherEffects effects;
     private final Set<UUID> beingFinished = new HashSet<>();
+    private final Map<UUID, Long> testCooldowns = new HashMap<>();
 
     public FinisherListener(CoreProtectPlugin plugin) {
         this.plugin = plugin;
@@ -293,6 +296,68 @@ public class FinisherListener implements Listener {
 
         int slot = event.getRawSlot();
         FinisherManager manager = plugin.getFinisherManager();
+
+        // Test button
+        if (slot == 46) {
+            FinisherType selected = manager.getSelectedFinisher(player.getUniqueId());
+            if (selected == null) {
+                player.sendMessage(ChatColor.RED + "No tienes ningún finisher equipado para probar.");
+                return;
+            }
+            long now = System.currentTimeMillis();
+            Long lastUse = testCooldowns.get(player.getUniqueId());
+            if (lastUse != null && now - lastUse < 60000) {
+                long remaining = (60000 - (now - lastUse)) / 1000;
+                player.sendMessage(ChatColor.RED + "Debes esperar " + ChatColor.GOLD + remaining + "s" + ChatColor.RED + " para volver a probar.");
+                return;
+            }
+            if (beingFinished.contains(player.getUniqueId())) {
+                player.sendMessage(ChatColor.RED + "Ya estás en una animación.");
+                return;
+            }
+            testCooldowns.put(player.getUniqueId(), now);
+            player.closeInventory();
+            beingFinished.add(player.getUniqueId());
+
+            player.setInvulnerable(true);
+            player.setWalkSpeed(0f);
+            player.setFlySpeed(0f);
+            player.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 600, 255, false, false, false));
+            player.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 600, 200, false, false, false));
+
+            player.sendMessage(ChatColor.GOLD + "⚡ " + ChatColor.YELLOW + "Probando " + selected.getDisplayName() + ChatColor.YELLOW + "...");
+            int dur = effects.play(selected, player, player);
+
+            final org.bukkit.Location freezeLoc = player.getLocation().clone();
+            new BukkitRunnable() {
+                int t = 0;
+                @Override public void run() {
+                    if (t >= dur || !player.isOnline() || !beingFinished.contains(player.getUniqueId())) { cancel(); return; }
+                    org.bukkit.Location cur = player.getLocation();
+                    if (Math.abs(cur.getX() - freezeLoc.getX()) > 0.15 || Math.abs(cur.getZ() - freezeLoc.getZ()) > 0.15) {
+                        org.bukkit.Location tp = freezeLoc.clone(); tp.setY(cur.getY()); tp.setYaw(cur.getYaw()); tp.setPitch(cur.getPitch()); player.teleport(tp);
+                    }
+                    t += 2;
+                }
+            }.runTaskTimer(plugin, 0, 2);
+
+            new BukkitRunnable() {
+                @Override public void run() {
+                    if (!player.isOnline()) return;
+                    beingFinished.remove(player.getUniqueId());
+                    player.setInvulnerable(false);
+                    player.setWalkSpeed(0.2f);
+                    player.setFlySpeed(0.1f);
+                    player.setGlowing(false);
+                    player.removePotionEffect(PotionEffectType.SLOWNESS);
+                    player.removePotionEffect(PotionEffectType.JUMP_BOOST);
+                    player.removePotionEffect(PotionEffectType.LEVITATION);
+                    player.removePotionEffect(PotionEffectType.BLINDNESS);
+                    player.sendMessage(ChatColor.GREEN + "✔ Prueba completada. No has recibido daño.");
+                }
+            }.runTaskLater(plugin, dur + 5);
+            return;
+        }
 
         // Deselect button
         if (slot == 49) {

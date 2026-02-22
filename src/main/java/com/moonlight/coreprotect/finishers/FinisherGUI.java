@@ -84,6 +84,20 @@ public class FinisherGUI {
         deselect.setItemMeta(deselectMeta);
         inv.setItem(49, deselect);
 
+        // Test button
+        ItemStack testBtn = new ItemStack(Material.CLOCK);
+        ItemMeta testMeta = testBtn.getItemMeta();
+        testMeta.setDisplayName(ChatColor.GOLD + "" + ChatColor.BOLD + "⚡ Probar Finisher");
+        testMeta.setLore(Arrays.asList(
+                "",
+                ChatColor.GRAY + "Prueba tu finisher equipado",
+                ChatColor.GRAY + "en ti mismo sin morir.",
+                "",
+                ChatColor.DARK_GRAY + "Cooldown: 60 segundos"
+        ));
+        testBtn.setItemMeta(testMeta);
+        inv.setItem(46, testBtn);
+
         player.openInventory(inv);
     }
 
