@@ -33,6 +33,8 @@ if (Test-Path "$libDir\spigot-api.jar") {
 
 $vaultJar = "$libDir\vault-api.jar"
 $bluemapJar = "$libDir\bluemap-api.jar"
+$gsonJar = "$libDir\gson.jar"
+
 if (-not (Test-Path $vaultJar)) {
     Write-Host "Descargando Vault API..." -ForegroundColor Yellow
     $vaultUrl = "https://jitpack.io/com/github/MilkBowl/VaultAPI/1.7.1/VaultAPI-1.7.1.jar"
@@ -45,13 +47,25 @@ if (-not (Test-Path $vaultJar)) {
     }
 }
 
+if (-not (Test-Path $gsonJar)) {
+    Write-Host "Descargando Gson..." -ForegroundColor Yellow
+    $gsonUrl = "https://repo1.maven.org/maven2/com/google/code/gson/gson/2.10.1/gson-2.10.1.jar"
+    try {
+        Invoke-WebRequest -Uri $gsonUrl -OutFile $gsonJar
+        Write-Host "Gson descargado correctamente." -ForegroundColor Green
+    } catch {
+        Write-Host "Error al descargar Gson. Descargalo manualmente." -ForegroundColor Red
+        exit 1
+    }
+}
+
 Write-Host "Compilando codigo fuente con Java 21..." -ForegroundColor Cyan
 
 # Obtener todos los archivos Java
 $javaFiles = Get-ChildItem -Path $srcDir -Filter "*.java" -Recurse | ForEach-Object { $_.FullName }
 
 # Construir classpath
-$classpath = "$apiJar;$vaultJar"
+$classpath = "$apiJar;$vaultJar;$gsonJar"
 if (Test-Path $bluemapJar) {
     $classpath += ";$bluemapJar"
     Write-Host "BlueMap API encontrada: $bluemapJar" -ForegroundColor Green

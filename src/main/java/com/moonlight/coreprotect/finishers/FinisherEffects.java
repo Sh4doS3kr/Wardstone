@@ -21,20 +21,34 @@ public class FinisherEffects {
 
     public int play(FinisherType type, Player victim, Player killer) {
         switch (type) {
-            case THUNDER_JUDGMENT:  return playThunder(victim);
-            case VOID_INVOCATION:  return playVoid(victim);
-            case BLOOD_ERUPTION:   return playBlood(victim);
-            case SHATTERED_AMETHYST: return playAmethyst(victim);
-            case ORBITAL_STRIKE:   return playOrbital(victim);
-            case HELLFIRE:         return playHellfire(victim);
-            case ICE_STORM:        return playIce(victim);
-            case DRAGON_WRATH:     return playDragon(victim);
-            default: return 40;
+            case THUNDER_JUDGMENT:
+                return playThunder(victim);
+            case VOID_INVOCATION:
+                return playVoid(victim);
+            case BLOOD_ERUPTION:
+                return playBlood(victim);
+            case SHATTERED_AMETHYST:
+                return playAmethyst(victim);
+            case ORBITAL_STRIKE:
+                return playOrbital(victim);
+            case HELLFIRE:
+                return playHellfire(victim);
+            case ICE_STORM:
+                return playIce(victim);
+            case DRAGON_WRATH:
+                return playDragon(victim);
+            default:
+                return 40;
         }
     }
 
-    private Location vLoc(Player v) { return v.isOnline() ? v.getLocation() : null; }
-    private ThreadLocalRandom rng() { return ThreadLocalRandom.current(); }
+    private Location vLoc(Player v) {
+        return v.isOnline() ? v.getLocation() : null;
+    }
+
+    private ThreadLocalRandom rng() {
+        return ThreadLocalRandom.current();
+    }
 
     private void spawnBlock(World w, Location loc, Material mat, double vx, double vy, double vz, int lifetime) {
         FallingBlock fb = w.spawnFallingBlock(loc, mat.createBlockData());
@@ -42,7 +56,8 @@ public class FinisherEffects {
         fb.setHurtEntities(false);
         fb.setVelocity(new Vector(vx, vy, vz));
         new BukkitRunnable() {
-            @Override public void run() {
+            @Override
+            public void run() {
                 if (!fb.isDead()) {
                     Location deathLoc = fb.getLocation();
                     // Small explosion on landing
@@ -56,13 +71,14 @@ public class FinisherEffects {
     }
 
     // ========================================================================
-    //  1. EL JUICIO DEL TRUENO  (10s = 200 ticks)
+    // 1. EL JUICIO DEL TRUENO (10s = 200 ticks)
     // ========================================================================
     private int playThunder(Player victim) {
         final int DUR = 200;
         Location origin = victim.getLocation().clone();
         World w = origin.getWorld();
-        if (w == null) return 20;
+        if (w == null)
+            return 20;
 
         // Levitate victim
         victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, 160, 2, false, false, false));
@@ -72,10 +88,18 @@ public class FinisherEffects {
         // Phase 1: Constant electric storm aura (0-200)
         new BukkitRunnable() {
             int t = 0;
-            @Override public void run() {
-                if (t >= DUR || !victim.isOnline()) { cancel(); return; }
+
+            @Override
+            public void run() {
+                if (t >= DUR || !victim.isOnline()) {
+                    cancel();
+                    return;
+                }
                 Location loc = vLoc(victim);
-                if (loc == null) { cancel(); return; }
+                if (loc == null) {
+                    cancel();
+                    return;
+                }
 
                 // 3 spinning electric rings
                 for (int ring = 0; ring < 3; ring++) {
@@ -102,19 +126,22 @@ public class FinisherEffects {
                             12, 0.3, 0.3, 0.3, 0.06);
                 }
 
-                if (t % 15 == 0) w.playSound(loc, Sound.BLOCK_RESPAWN_ANCHOR_CHARGE, 0.8f, 2.0f);
+                if (t % 15 == 0)
+                    w.playSound(loc, Sound.BLOCK_RESPAWN_ANCHOR_CHARGE, 0.8f, 2.0f);
                 t += 2;
             }
         }.runTaskTimer(plugin, 0, 2);
 
         // Phase 2: 10 lightning bolts (ticks 20-160, closer and closer)
-        int[] bolts = {20, 35, 48, 60, 72, 85, 100, 115, 130, 145};
+        int[] bolts = { 20, 35, 48, 60, 72, 85, 100, 115, 130, 145 };
         for (int i = 0; i < bolts.length; i++) {
             final int idx = i;
             new BukkitRunnable() {
-                @Override public void run() {
+                @Override
+                public void run() {
                     Location loc = vLoc(victim);
-                    if (loc == null) return;
+                    if (loc == null)
+                        return;
                     double spread = 3.0 * (1.0 - idx / 10.0);
                     double ox = rng().nextDouble(-spread, spread);
                     double oz = rng().nextDouble(-spread, spread);
@@ -124,7 +151,7 @@ public class FinisherEffects {
                             40 + idx * 8, 1.5, 2.0, 1.5, 0.08);
 
                     // Flying copper/iron blocks from each bolt
-                    Material[] mats = {Material.OXIDIZED_COPPER, Material.COPPER_BLOCK, Material.LIGHTNING_ROD};
+                    Material[] mats = { Material.OXIDIZED_COPPER, Material.COPPER_BLOCK, Material.LIGHTNING_ROD };
                     for (int b = 0; b < 2 + idx / 3; b++) {
                         spawnBlock(w, strike.clone().add(0, 1, 0),
                                 mats[rng().nextInt(mats.length)],
@@ -137,8 +164,10 @@ public class FinisherEffects {
 
         // Phase 3: Stronger levitation at midpoint
         new BukkitRunnable() {
-            @Override public void run() {
-                if (!victim.isOnline()) return;
+            @Override
+            public void run() {
+                if (!victim.isOnline())
+                    return;
                 victim.removePotionEffect(PotionEffectType.LEVITATION);
                 victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, 80, 3, false, false, false));
             }
@@ -146,10 +175,13 @@ public class FinisherEffects {
 
         // Phase 4: FINAL triple strike (tick 160)
         new BukkitRunnable() {
-            @Override public void run() {
+            @Override
+            public void run() {
                 Location loc = vLoc(victim);
-                if (loc == null) return;
-                for (int i = 0; i < 3; i++) w.strikeLightningEffect(loc);
+                if (loc == null)
+                    return;
+                for (int i = 0; i < 3; i++)
+                    w.strikeLightningEffect(loc);
                 w.spawnParticle(Particle.ELECTRIC_SPARK, loc.clone().add(0, 1, 0), 300, 4.0, 3.0, 4.0, 0.15);
                 w.spawnParticle(Particle.CLOUD, loc, 100, 3.0, 2.0, 3.0, 0.08);
                 w.spawnParticle(Particle.EXPLOSION_EMITTER, loc, 5, 1.0, 1.0, 1.0, 0);
@@ -158,8 +190,8 @@ public class FinisherEffects {
                 w.playSound(loc, Sound.ENTITY_GENERIC_EXPLODE, 1.5f, 0.8f);
 
                 // Massive block explosion
-                Material[] debris = {Material.OXIDIZED_COPPER, Material.COPPER_BLOCK, Material.IRON_BLOCK,
-                        Material.GOLD_BLOCK, Material.LIGHTNING_ROD};
+                Material[] debris = { Material.OXIDIZED_COPPER, Material.COPPER_BLOCK, Material.IRON_BLOCK,
+                        Material.GOLD_BLOCK, Material.LIGHTNING_ROD };
                 for (int b = 0; b < 15; b++) {
                     spawnBlock(w, loc.clone().add(0, 2, 0), debris[rng().nextInt(debris.length)],
                             rng().nextDouble(-1.2, 1.2), rng().nextDouble(0.6, 1.8), rng().nextDouble(-1.2, 1.2),
@@ -171,12 +203,19 @@ public class FinisherEffects {
         // Phase 5: Aftershock sparks (165-195)
         new BukkitRunnable() {
             int t = 0;
-            @Override public void run() {
-                if (t >= 35) { cancel(); return; }
+
+            @Override
+            public void run() {
+                if (t >= 35) {
+                    cancel();
+                    return;
+                }
                 Location loc = vLoc(victim);
-                if (loc == null) loc = origin.clone().add(0, 3, 0);
+                if (loc == null)
+                    loc = origin.clone().add(0, 3, 0);
                 w.spawnParticle(Particle.ELECTRIC_SPARK, loc, 30 - t, 3.0, 3.0, 3.0, 0.05);
-                if (t % 8 == 0) w.playSound(loc, Sound.ENTITY_LIGHTNING_BOLT_IMPACT, 0.5f, 1.5f);
+                if (t % 8 == 0)
+                    w.playSound(loc, Sound.ENTITY_LIGHTNING_BOLT_IMPACT, 0.5f, 1.5f);
                 t += 3;
             }
         }.runTaskTimer(plugin, 165, 3);
@@ -185,13 +224,14 @@ public class FinisherEffects {
     }
 
     // ========================================================================
-    //  2. INVOCACIÓN DEL VACÍO  (10s = 200 ticks)
+    // 2. INVOCACIÓN DEL VACÍO (10s = 200 ticks)
     // ========================================================================
     private int playVoid(Player victim) {
         final int DUR = 200;
         Location origin = victim.getLocation().clone();
         World w = origin.getWorld();
-        if (w == null) return 20;
+        if (w == null)
+            return 20;
 
         w.playSound(origin, Sound.ENTITY_ENDERMAN_TELEPORT, 1.2f, 0.2f);
         w.playSound(origin, Sound.ENTITY_WARDEN_EMERGE, 1.0f, 0.4f);
@@ -199,10 +239,18 @@ public class FinisherEffects {
         // Phase 1: Dark ground circle + rising darkness (0-60)
         new BukkitRunnable() {
             int t = 0;
-            @Override public void run() {
-                if (t >= 60 || !victim.isOnline()) { cancel(); return; }
+
+            @Override
+            public void run() {
+                if (t >= 60 || !victim.isOnline()) {
+                    cancel();
+                    return;
+                }
                 Location loc = vLoc(victim);
-                if (loc == null) { cancel(); return; }
+                if (loc == null) {
+                    cancel();
+                    return;
+                }
 
                 double radius = 3.0 - (t * 0.03);
                 for (int i = 0; i < 16; i++) {
@@ -221,15 +269,18 @@ public class FinisherEffects {
                             0, rng().nextDouble(0.3, 0.6), 0, 50);
                 }
 
-                if (t % 12 == 0) w.playSound(loc, Sound.BLOCK_PORTAL_AMBIENT, 0.6f, 0.3f + t * 0.015f);
+                if (t % 12 == 0)
+                    w.playSound(loc, Sound.BLOCK_PORTAL_AMBIENT, 0.6f, 0.3f + t * 0.015f);
                 t += 2;
             }
         }.runTaskTimer(plugin, 0, 2);
 
         // Phase 2: Victim levitates (tick 40)
         new BukkitRunnable() {
-            @Override public void run() {
-                if (!victim.isOnline()) return;
+            @Override
+            public void run() {
+                if (!victim.isOnline())
+                    return;
                 victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, 140, 2, false, false, false));
                 Location loc = vLoc(victim);
                 if (loc != null) {
@@ -242,16 +293,25 @@ public class FinisherEffects {
         // Phase 3: Intense multi-spiral vortex + flying end stone (60-170)
         new BukkitRunnable() {
             int t = 0;
-            @Override public void run() {
-                if (t >= 110 || !victim.isOnline()) { cancel(); return; }
+
+            @Override
+            public void run() {
+                if (t >= 110 || !victim.isOnline()) {
+                    cancel();
+                    return;
+                }
                 Location loc = vLoc(victim);
-                if (loc == null) { cancel(); return; }
+                if (loc == null) {
+                    cancel();
+                    return;
+                }
 
                 // 6 spiraling arms
                 for (int arm = 0; arm < 6; arm++) {
                     double a = (t * 0.5) + (arm * Math.PI / 3);
                     double r = 2.0 - (t * 0.012);
-                    if (r < 0.4) r = 0.4;
+                    if (r < 0.4)
+                        r = 0.4;
                     double x = Math.cos(a) * r, z = Math.sin(a) * r;
                     double y = (arm % 3) * 0.5 + Math.sin(t * 0.1) * 0.3;
                     w.spawnParticle(Particle.DRAGON_BREATH, loc.clone().add(x, y, z), 5, 0.08, 0.08, 0.08, 0.003);
@@ -271,7 +331,8 @@ public class FinisherEffects {
 
                 // Flying end stone blocks being sucked in
                 if (t % 10 == 0) {
-                    Material[] mats = {Material.END_STONE, Material.OBSIDIAN, Material.CRYING_OBSIDIAN, Material.PURPLE_CONCRETE};
+                    Material[] mats = { Material.END_STONE, Material.OBSIDIAN, Material.CRYING_OBSIDIAN,
+                            Material.PURPLE_CONCRETE };
                     for (int b = 0; b < 3; b++) {
                         double bx = rng().nextDouble(-3, 3), bz = rng().nextDouble(-3, 3);
                         spawnBlock(w, loc.clone().add(bx, -2, bz), mats[rng().nextInt(mats.length)],
@@ -285,9 +346,11 @@ public class FinisherEffects {
 
         // Phase 4: IMPLOSION (tick 175)
         new BukkitRunnable() {
-            @Override public void run() {
+            @Override
+            public void run() {
                 Location loc = vLoc(victim);
-                if (loc == null) return;
+                if (loc == null)
+                    return;
 
                 w.spawnParticle(Particle.SQUID_INK, loc, 250, 5.0, 5.0, 5.0, 0.12);
                 w.spawnParticle(Particle.DRAGON_BREATH, loc, 150, 4.0, 4.0, 4.0, 0.08);
@@ -299,8 +362,8 @@ public class FinisherEffects {
                 w.playSound(loc, Sound.ENTITY_ENDERMAN_TELEPORT, 1.5f, 0.2f);
 
                 // Debris explosion
-                Material[] debris = {Material.END_STONE, Material.OBSIDIAN, Material.CRYING_OBSIDIAN,
-                        Material.PURPLE_CONCRETE, Material.BLACK_CONCRETE};
+                Material[] debris = { Material.END_STONE, Material.OBSIDIAN, Material.CRYING_OBSIDIAN,
+                        Material.PURPLE_CONCRETE, Material.BLACK_CONCRETE };
                 for (int b = 0; b < 20; b++) {
                     spawnBlock(w, loc.clone().add(0, 1, 0), debris[rng().nextInt(debris.length)],
                             rng().nextDouble(-1.5, 1.5), rng().nextDouble(0.5, 2.0), rng().nextDouble(-1.5, 1.5),
@@ -313,13 +376,14 @@ public class FinisherEffects {
     }
 
     // ========================================================================
-    //  3. ERUPCIÓN DE SANGRE  (10s = 200 ticks)
+    // 3. ERUPCIÓN DE SANGRE (10s = 200 ticks)
     // ========================================================================
     private int playBlood(Player victim) {
         final int DUR = 200;
         Location origin = victim.getLocation().clone();
         World w = origin.getWorld();
-        if (w == null) return 20;
+        if (w == null)
+            return 20;
 
         w.playSound(origin, Sound.ENTITY_WARDEN_EMERGE, 0.8f, 0.7f);
         w.playSound(origin, Sound.ENTITY_ELDER_GUARDIAN_CURSE, 0.6f, 0.5f);
@@ -327,10 +391,18 @@ public class FinisherEffects {
         // Phase 1: Blood pool expanding + ground cracks (0-50)
         new BukkitRunnable() {
             int t = 0;
-            @Override public void run() {
-                if (t >= 50 || !victim.isOnline()) { cancel(); return; }
+
+            @Override
+            public void run() {
+                if (t >= 50 || !victim.isOnline()) {
+                    cancel();
+                    return;
+                }
                 Location loc = vLoc(victim);
-                if (loc == null) { cancel(); return; }
+                if (loc == null) {
+                    cancel();
+                    return;
+                }
 
                 double radius = 0.5 + t * 0.08;
                 for (int i = 0; i < 16; i++) {
@@ -348,7 +420,8 @@ public class FinisherEffects {
                 if (t % 6 == 0) {
                     w.playSound(loc, Sound.BLOCK_HONEY_BLOCK_SLIDE, 0.8f, 0.3f);
                     // Red blocks popping from ground
-                    spawnBlock(w, loc.clone().add(rng().nextDouble(-radius, radius), 0, rng().nextDouble(-radius, radius)),
+                    spawnBlock(w,
+                            loc.clone().add(rng().nextDouble(-radius, radius), 0, rng().nextDouble(-radius, radius)),
                             Material.RED_CONCRETE, 0, rng().nextDouble(0.15, 0.35), 0, 35);
                 }
                 t += 2;
@@ -357,8 +430,10 @@ public class FinisherEffects {
 
         // Phase 2: Victim levitates (tick 35)
         new BukkitRunnable() {
-            @Override public void run() {
-                if (!victim.isOnline()) return;
+            @Override
+            public void run() {
+                if (!victim.isOnline())
+                    return;
                 victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, 130, 2, false, false, false));
                 w.playSound(origin, Sound.ENTITY_GHAST_SCREAM, 0.5f, 0.5f);
             }
@@ -367,10 +442,18 @@ public class FinisherEffects {
         // Phase 3: Blood fountain + continuous drip rain (40-160)
         new BukkitRunnable() {
             int t = 0;
-            @Override public void run() {
-                if (t >= 120 || !victim.isOnline()) { cancel(); return; }
+
+            @Override
+            public void run() {
+                if (t >= 120 || !victim.isOnline()) {
+                    cancel();
+                    return;
+                }
                 Location loc = vLoc(victim);
-                if (loc == null) { cancel(); return; }
+                if (loc == null) {
+                    cancel();
+                    return;
+                }
 
                 // Fountain from ground
                 double h = Math.min(t * 0.1, 6.0);
@@ -396,7 +479,8 @@ public class FinisherEffects {
                     }
                 }
 
-                if (t % 10 == 0) w.playSound(loc, Sound.ENTITY_SLIME_SQUISH, 1.0f, 0.4f);
+                if (t % 10 == 0)
+                    w.playSound(loc, Sound.ENTITY_SLIME_SQUISH, 1.0f, 0.4f);
                 t += 2;
             }
         }.runTaskTimer(plugin, 40, 2);
@@ -404,11 +488,20 @@ public class FinisherEffects {
         // Phase 4: Falling blood blocks rain (50-160)
         new BukkitRunnable() {
             int c = 0;
-            @Override public void run() {
-                if (c >= 30 || !victim.isOnline()) { cancel(); return; }
+
+            @Override
+            public void run() {
+                if (c >= 30 || !victim.isOnline()) {
+                    cancel();
+                    return;
+                }
                 Location loc = vLoc(victim);
-                if (loc == null) { cancel(); return; }
-                Material[] mats = {Material.RED_CONCRETE_POWDER, Material.RED_CONCRETE, Material.RED_WOOL, Material.REDSTONE_BLOCK};
+                if (loc == null) {
+                    cancel();
+                    return;
+                }
+                Material[] mats = { Material.RED_CONCRETE_POWDER, Material.RED_CONCRETE, Material.RED_WOOL,
+                        Material.REDSTONE_BLOCK };
                 for (int b = 0; b < 2; b++) {
                     double ox = rng().nextDouble(-3, 3), oz = rng().nextDouble(-3, 3);
                     spawnBlock(w, loc.clone().add(ox, 5 + rng().nextDouble(4), oz),
@@ -420,9 +513,11 @@ public class FinisherEffects {
 
         // Phase 5: BLOOD EXPLOSION (tick 170)
         new BukkitRunnable() {
-            @Override public void run() {
+            @Override
+            public void run() {
                 Location loc = vLoc(victim);
-                if (loc == null) return;
+                if (loc == null)
+                    return;
                 w.spawnParticle(Particle.DUST, loc, 300, 5.0, 5.0, 5.0, 0,
                         new Particle.DustOptions(Color.RED, 3.0f));
                 w.spawnParticle(Particle.DUST, loc, 200, 4.0, 4.0, 4.0, 0,
@@ -434,8 +529,8 @@ public class FinisherEffects {
                 w.playSound(loc, Sound.ENTITY_SLIME_SQUISH, 1.5f, 0.2f);
 
                 // Massive debris
-                Material[] debris = {Material.RED_CONCRETE, Material.RED_CONCRETE_POWDER,
-                        Material.REDSTONE_BLOCK, Material.RED_WOOL, Material.NETHER_WART_BLOCK};
+                Material[] debris = { Material.RED_CONCRETE, Material.RED_CONCRETE_POWDER,
+                        Material.REDSTONE_BLOCK, Material.RED_WOOL, Material.NETHER_WART_BLOCK };
                 for (int b = 0; b < 20; b++) {
                     spawnBlock(w, loc.clone().add(0, 1, 0), debris[rng().nextInt(debris.length)],
                             rng().nextDouble(-1.5, 1.5), rng().nextDouble(0.5, 2.0), rng().nextDouble(-1.5, 1.5),
@@ -448,13 +543,14 @@ public class FinisherEffects {
     }
 
     // ========================================================================
-    //  4. SHATTERED AMETHYST  (10s = 200 ticks)
+    // 4. SHATTERED AMETHYST (10s = 200 ticks)
     // ========================================================================
     private int playAmethyst(Player victim) {
         final int DUR = 200;
         Location origin = victim.getLocation().clone();
         World w = origin.getWorld();
-        if (w == null) return 20;
+        if (w == null)
+            return 20;
 
         w.playSound(origin, Sound.BLOCK_AMETHYST_BLOCK_RESONATE, 1.2f, 0.4f);
         w.playSound(origin, Sound.BLOCK_BEACON_ACTIVATE, 0.6f, 1.8f);
@@ -462,14 +558,22 @@ public class FinisherEffects {
         // Phase 1: Crystal pillars rise from ground (0-60)
         new BukkitRunnable() {
             int t = 0;
-            @Override public void run() {
-                if (t >= 60 || !victim.isOnline()) { cancel(); return; }
+
+            @Override
+            public void run() {
+                if (t >= 60 || !victim.isOnline()) {
+                    cancel();
+                    return;
+                }
                 Location loc = vLoc(victim);
-                if (loc == null) { cancel(); return; }
+                if (loc == null) {
+                    cancel();
+                    return;
+                }
 
                 // Rising crystal blocks around the victim
                 if (t % 8 == 0) {
-                    Material[] mats = {Material.AMETHYST_BLOCK, Material.AMETHYST_CLUSTER, Material.PURPUR_BLOCK};
+                    Material[] mats = { Material.AMETHYST_BLOCK, Material.AMETHYST_CLUSTER, Material.PURPUR_BLOCK };
                     for (int p = 0; p < 3; p++) {
                         double a = rng().nextDouble(Math.PI * 2);
                         double r = 1.5 + rng().nextDouble(1.5);
@@ -485,7 +589,8 @@ public class FinisherEffects {
                     for (int i = 0; i < points; i++) {
                         double a = (Math.PI * 2 / points) * i + (t * (0.2 + ring * 0.1));
                         double r = 2.5 - t * 0.025 - ring * 0.3;
-                        if (r < 0.5) r = 0.5;
+                        if (r < 0.5)
+                            r = 0.5;
                         double x = Math.cos(a) * r, z = Math.sin(a) * r;
                         double y = ring * 0.8 + 0.3;
                         w.spawnParticle(Particle.DUST, loc.clone().add(x, y, z), 3,
@@ -504,8 +609,10 @@ public class FinisherEffects {
 
         // Phase 2: Victim levitates (tick 30)
         new BukkitRunnable() {
-            @Override public void run() {
-                if (!victim.isOnline()) return;
+            @Override
+            public void run() {
+                if (!victim.isOnline())
+                    return;
                 victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, 140, 2, false, false, false));
             }
         }.runTaskLater(plugin, 30);
@@ -513,16 +620,25 @@ public class FinisherEffects {
         // Phase 3: Crystal encasement (60-150)
         new BukkitRunnable() {
             int t = 0;
-            @Override public void run() {
-                if (t >= 90 || !victim.isOnline()) { cancel(); return; }
+
+            @Override
+            public void run() {
+                if (t >= 90 || !victim.isOnline()) {
+                    cancel();
+                    return;
+                }
                 Location loc = vLoc(victim);
-                if (loc == null) { cancel(); return; }
+                if (loc == null) {
+                    cancel();
+                    return;
+                }
 
                 // Dense crystal shell tightening
                 for (int i = 0; i < 20; i++) {
                     double a = (Math.PI * 2 / 20) * i + (t * 0.12);
                     double r = 1.0 - t * 0.006;
-                    if (r < 0.25) r = 0.25;
+                    if (r < 0.25)
+                        r = 0.25;
                     double x = Math.cos(a) * r, z = Math.sin(a) * r;
                     double y = (i % 5) * 0.45;
                     w.spawnParticle(Particle.DUST, loc.clone().add(x, y, z), 4,
@@ -543,7 +659,8 @@ public class FinisherEffects {
                     fb.setGravity(false);
                     fb.setVelocity(new Vector(0, 0.05, 0));
                     new BukkitRunnable() {
-                        @Override public void run() {
+                        @Override
+                        public void run() {
                             if (!fb.isDead()) {
                                 w.spawnParticle(Particle.DUST, fb.getLocation(), 10, 0.2, 0.2, 0.2, 0,
                                         new Particle.DustOptions(Color.fromRGB(163, 73, 223), 1.2f));
@@ -563,9 +680,11 @@ public class FinisherEffects {
 
         // Phase 4: SHATTER (tick 155)
         new BukkitRunnable() {
-            @Override public void run() {
+            @Override
+            public void run() {
                 Location loc = vLoc(victim);
-                if (loc == null) return;
+                if (loc == null)
+                    return;
                 Location c = loc.clone().add(0, 1, 0);
 
                 w.spawnParticle(Particle.DUST, c, 400, 5.0, 5.0, 5.0, 0,
@@ -580,8 +699,8 @@ public class FinisherEffects {
                 w.playSound(loc, Sound.ENTITY_GENERIC_EXPLODE, 1.2f, 1.5f);
 
                 // 25 flying crystal shards
-                Material[] shards = {Material.AMETHYST_CLUSTER, Material.AMETHYST_BLOCK,
-                        Material.PURPUR_BLOCK, Material.PURPLE_STAINED_GLASS};
+                Material[] shards = { Material.AMETHYST_CLUSTER, Material.AMETHYST_BLOCK,
+                        Material.PURPUR_BLOCK, Material.PURPLE_STAINED_GLASS };
                 for (int b = 0; b < 25; b++) {
                     spawnBlock(w, c, shards[rng().nextInt(shards.length)],
                             rng().nextDouble(-1.5, 1.5), rng().nextDouble(0.4, 2.0), rng().nextDouble(-1.5, 1.5),
@@ -593,14 +712,23 @@ public class FinisherEffects {
         // Phase 5: Lingering shimmer (160-195)
         new BukkitRunnable() {
             int t = 0;
-            @Override public void run() {
-                if (t >= 40) { cancel(); return; }
+
+            @Override
+            public void run() {
+                if (t >= 40) {
+                    cancel();
+                    return;
+                }
                 Location loc = vLoc(victim);
-                if (loc == null) { cancel(); return; }
+                if (loc == null) {
+                    cancel();
+                    return;
+                }
                 w.spawnParticle(Particle.DUST, loc.clone().add(0, 1, 0), 25 - t / 2, 3.0, 3.0, 3.0, 0,
                         new Particle.DustOptions(Color.fromRGB(200, 150, 255), 1.0f));
                 w.spawnParticle(Particle.END_ROD, loc.clone().add(0, 1, 0), 8, 2.0, 2.0, 2.0, 0.03);
-                if (t % 8 == 0) w.playSound(loc, Sound.BLOCK_AMETHYST_BLOCK_CHIME, 0.4f, 1.5f);
+                if (t % 8 == 0)
+                    w.playSound(loc, Sound.BLOCK_AMETHYST_BLOCK_CHIME, 0.4f, 1.5f);
                 t += 3;
             }
         }.runTaskTimer(plugin, 160, 3);
@@ -609,21 +737,30 @@ public class FinisherEffects {
     }
 
     // ========================================================================
-    //  5. ATAQUE ORBITAL  (12s = 240 ticks)
+    // 5. ATAQUE ORBITAL (12s = 240 ticks)
     // ========================================================================
     private int playOrbital(Player victim) {
         final int DUR = 240;
         Location origin = victim.getLocation().clone();
         World w = origin.getWorld();
-        if (w == null) return 20;
+        if (w == null)
+            return 20;
 
         // Phase 1: Target lock-on crosshair (0-70)
         new BukkitRunnable() {
             int t = 0;
-            @Override public void run() {
-                if (t >= 70 || !victim.isOnline()) { cancel(); return; }
+
+            @Override
+            public void run() {
+                if (t >= 70 || !victim.isOnline()) {
+                    cancel();
+                    return;
+                }
                 Location loc = vLoc(victim);
-                if (loc == null) { cancel(); return; }
+                if (loc == null) {
+                    cancel();
+                    return;
+                }
 
                 // Rotating crosshair with 8 arms
                 double radius = 3.0 - t * 0.025;
@@ -651,10 +788,18 @@ public class FinisherEffects {
         // Phase 2: Warning beam forming from sky (40-100)
         new BukkitRunnable() {
             int t = 0;
-            @Override public void run() {
-                if (t >= 60 || !victim.isOnline()) { cancel(); return; }
+
+            @Override
+            public void run() {
+                if (t >= 60 || !victim.isOnline()) {
+                    cancel();
+                    return;
+                }
                 Location loc = vLoc(victim);
-                if (loc == null) { cancel(); return; }
+                if (loc == null) {
+                    cancel();
+                    return;
+                }
 
                 double maxY = 15 + t * 0.5;
                 for (double y = 0; y < maxY; y += 1.0) {
@@ -662,7 +807,8 @@ public class FinisherEffects {
                     w.spawnParticle(Particle.END_ROD, loc.clone().add(wobble, y, wobble),
                             2, 0.04, 0.15, 0.04, 0.003);
                 }
-                if (t % 8 == 0) w.playSound(loc, Sound.BLOCK_BEACON_ACTIVATE, 0.5f, 1.5f + t * 0.01f);
+                if (t % 8 == 0)
+                    w.playSound(loc, Sound.BLOCK_BEACON_ACTIVATE, 0.5f, 1.5f + t * 0.01f);
 
                 // Glowstone blocks rising to form beam
                 if (t % 12 == 0) {
@@ -675,8 +821,10 @@ public class FinisherEffects {
 
         // Phase 3: Victim levitates (tick 70)
         new BukkitRunnable() {
-            @Override public void run() {
-                if (!victim.isOnline()) return;
+            @Override
+            public void run() {
+                if (!victim.isOnline())
+                    return;
                 victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, 160, 2, false, false, false));
                 Location loc = vLoc(victim);
                 if (loc != null) {
@@ -689,10 +837,18 @@ public class FinisherEffects {
         // Phase 4: Full beam locked on + energy rings (100-200)
         new BukkitRunnable() {
             int t = 0;
-            @Override public void run() {
-                if (t >= 100 || !victim.isOnline()) { cancel(); return; }
+
+            @Override
+            public void run() {
+                if (t >= 100 || !victim.isOnline()) {
+                    cancel();
+                    return;
+                }
                 Location loc = vLoc(victim);
-                if (loc == null) { cancel(); return; }
+                if (loc == null) {
+                    cancel();
+                    return;
+                }
 
                 // Thick beam
                 for (double y = -2; y < 35; y += 0.6) {
@@ -721,7 +877,7 @@ public class FinisherEffects {
 
                 // Orbiting energy blocks
                 if (t % 16 == 0) {
-                    Material[] mats = {Material.GLOWSTONE, Material.SEA_LANTERN, Material.GOLD_BLOCK};
+                    Material[] mats = { Material.GLOWSTONE, Material.SEA_LANTERN, Material.GOLD_BLOCK };
                     double a = rng().nextDouble(Math.PI * 2);
                     FallingBlock fb = w.spawnFallingBlock(
                             loc.clone().add(Math.cos(a) * 2, rng().nextDouble(0, 3), Math.sin(a) * 2),
@@ -731,7 +887,8 @@ public class FinisherEffects {
                     fb.setGravity(false);
                     fb.setVelocity(new Vector(0, 0.1, 0));
                     new BukkitRunnable() {
-                        @Override public void run() {
+                        @Override
+                        public void run() {
                             if (!fb.isDead()) {
                                 w.spawnParticle(Particle.END_ROD, fb.getLocation(), 10, 0.2, 0.2, 0.2, 0.03);
                                 fb.remove();
@@ -740,16 +897,19 @@ public class FinisherEffects {
                     }.runTaskLater(plugin, 50);
                 }
 
-                if (t % 6 == 0) w.playSound(loc, Sound.BLOCK_BEACON_AMBIENT, 0.8f, 2.0f);
+                if (t % 6 == 0)
+                    w.playSound(loc, Sound.BLOCK_BEACON_AMBIENT, 0.8f, 2.0f);
                 t += 2;
             }
         }.runTaskTimer(plugin, 100, 2);
 
         // Phase 5: IMPACT (tick 205)
         new BukkitRunnable() {
-            @Override public void run() {
+            @Override
+            public void run() {
                 Location loc = vLoc(victim);
-                if (loc == null) return;
+                if (loc == null)
+                    return;
 
                 w.spawnParticle(Particle.EXPLOSION_EMITTER, loc, 8, 2.0, 2.0, 2.0, 0);
                 w.spawnParticle(Particle.END_ROD, loc, 400, 6.0, 6.0, 6.0, 0.25);
@@ -765,8 +925,8 @@ public class FinisherEffects {
                 w.playSound(loc, Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 1.5f, 0.8f);
 
                 // Massive block debris
-                Material[] debris = {Material.GLOWSTONE, Material.SEA_LANTERN, Material.GOLD_BLOCK,
-                        Material.QUARTZ_BLOCK, Material.WHITE_CONCRETE, Material.YELLOW_CONCRETE};
+                Material[] debris = { Material.GLOWSTONE, Material.SEA_LANTERN, Material.GOLD_BLOCK,
+                        Material.QUARTZ_BLOCK, Material.WHITE_CONCRETE, Material.YELLOW_CONCRETE };
                 for (int b = 0; b < 30; b++) {
                     spawnBlock(w, loc.clone().add(0, 1.5, 0), debris[rng().nextInt(debris.length)],
                             rng().nextDouble(-2.0, 2.0), rng().nextDouble(0.5, 2.5), rng().nextDouble(-2.0, 2.0),
@@ -778,10 +938,16 @@ public class FinisherEffects {
         // Phase 6: Firework aftermath (210-235)
         new BukkitRunnable() {
             int t = 0;
-            @Override public void run() {
-                if (t >= 30) { cancel(); return; }
+
+            @Override
+            public void run() {
+                if (t >= 30) {
+                    cancel();
+                    return;
+                }
                 Location loc = vLoc(victim);
-                if (loc == null) loc = origin.clone().add(0, 4, 0);
+                if (loc == null)
+                    loc = origin.clone().add(0, 4, 0);
 
                 for (int fw = 0; fw < 3; fw++) {
                     double ox = rng().nextDouble(-4, 4), oy = rng().nextDouble(-1, 5), oz = rng().nextDouble(-4, 4);
@@ -803,13 +969,14 @@ public class FinisherEffects {
     }
 
     // ========================================================================
-    //  6. INFIERNO DEMONÍACO  (10s = 200 ticks)
+    // 6. INFIERNO DEMONÍACO (10s = 200 ticks)
     // ========================================================================
     private int playHellfire(Player victim) {
         final int DUR = 200;
         Location origin = victim.getLocation().clone();
         World w = origin.getWorld();
-        if (w == null) return 20;
+        if (w == null)
+            return 20;
 
         victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, 180, 2, false, false, false));
         w.playSound(origin, Sound.ENTITY_BLAZE_AMBIENT, 1.2f, 0.3f);
@@ -818,10 +985,18 @@ public class FinisherEffects {
         // Phase 1: Fire circle on ground + lava pillars (0-60)
         new BukkitRunnable() {
             int t = 0;
-            @Override public void run() {
-                if (t >= 60 || !victim.isOnline()) { cancel(); return; }
+
+            @Override
+            public void run() {
+                if (t >= 60 || !victim.isOnline()) {
+                    cancel();
+                    return;
+                }
                 Location loc = vLoc(victim);
-                if (loc == null) { cancel(); return; }
+                if (loc == null) {
+                    cancel();
+                    return;
+                }
 
                 double radius = 3.0 - t * 0.03;
                 for (int i = 0; i < 12; i++) {
@@ -834,7 +1009,7 @@ public class FinisherEffects {
                         new Particle.DustOptions(Color.fromRGB(200, 50, 0), 2.0f));
 
                 if (t % 8 == 0) {
-                    Material[] mats = {Material.MAGMA_BLOCK, Material.NETHERRACK, Material.NETHER_BRICKS};
+                    Material[] mats = { Material.MAGMA_BLOCK, Material.NETHERRACK, Material.NETHER_BRICKS };
                     for (int p = 0; p < 2; p++) {
                         double a2 = rng().nextDouble(Math.PI * 2);
                         double r2 = 1 + rng().nextDouble(2);
@@ -850,10 +1025,18 @@ public class FinisherEffects {
         // Phase 2: Fire tornado around victim (40-160)
         new BukkitRunnable() {
             int t = 0;
-            @Override public void run() {
-                if (t >= 120 || !victim.isOnline()) { cancel(); return; }
+
+            @Override
+            public void run() {
+                if (t >= 120 || !victim.isOnline()) {
+                    cancel();
+                    return;
+                }
                 Location loc = vLoc(victim);
-                if (loc == null) { cancel(); return; }
+                if (loc == null) {
+                    cancel();
+                    return;
+                }
 
                 for (int arm = 0; arm < 4; arm++) {
                     double a = t * 0.4 + arm * Math.PI / 2;
@@ -868,16 +1051,20 @@ public class FinisherEffects {
                 w.spawnParticle(Particle.DUST, loc.clone().add(0, 1, 0), 8, 0.6, 1.0, 0.6, 0,
                         new Particle.DustOptions(Color.fromRGB(255, 100, 0), 1.5f));
 
-                if (t % 6 == 0) w.playSound(loc, Sound.BLOCK_FIRE_AMBIENT, 0.8f, 0.5f);
-                if (t % 20 == 0) w.playSound(loc, Sound.ENTITY_BLAZE_AMBIENT, 0.6f, 0.4f);
+                if (t % 6 == 0)
+                    w.playSound(loc, Sound.BLOCK_FIRE_AMBIENT, 0.8f, 0.5f);
+                if (t % 20 == 0)
+                    w.playSound(loc, Sound.ENTITY_BLAZE_AMBIENT, 0.6f, 0.4f);
                 t += 2;
             }
         }.runTaskTimer(plugin, 40, 2);
 
         // Phase 3: Stronger levitation
         new BukkitRunnable() {
-            @Override public void run() {
-                if (!victim.isOnline()) return;
+            @Override
+            public void run() {
+                if (!victim.isOnline())
+                    return;
                 victim.removePotionEffect(PotionEffectType.LEVITATION);
                 victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, 80, 4, false, false, false));
             }
@@ -885,9 +1072,11 @@ public class FinisherEffects {
 
         // Phase 4: ERUPTION (tick 165)
         new BukkitRunnable() {
-            @Override public void run() {
+            @Override
+            public void run() {
                 Location loc = vLoc(victim);
-                if (loc == null) return;
+                if (loc == null)
+                    return;
 
                 w.spawnParticle(Particle.FLAME, loc, 300, 5.0, 5.0, 5.0, 0.15);
                 w.spawnParticle(Particle.LAVA, loc, 80, 4.0, 4.0, 4.0, 0);
@@ -897,8 +1086,8 @@ public class FinisherEffects {
                 w.playSound(loc, Sound.ENTITY_GENERIC_EXPLODE, 2.0f, 0.5f);
                 w.playSound(loc, Sound.ENTITY_BLAZE_DEATH, 1.5f, 0.3f);
 
-                Material[] debris = {Material.MAGMA_BLOCK, Material.NETHERRACK, Material.NETHER_BRICKS,
-                        Material.ORANGE_CONCRETE, Material.RED_CONCRETE};
+                Material[] debris = { Material.MAGMA_BLOCK, Material.NETHERRACK, Material.NETHER_BRICKS,
+                        Material.ORANGE_CONCRETE, Material.RED_CONCRETE };
                 for (int b = 0; b < 25; b++) {
                     spawnBlock(w, loc.clone().add(0, 1, 0), debris[rng().nextInt(debris.length)],
                             rng().nextDouble(-1.8, 1.8), rng().nextDouble(0.5, 2.2), rng().nextDouble(-1.8, 1.8),
@@ -911,13 +1100,14 @@ public class FinisherEffects {
     }
 
     // ========================================================================
-    //  7. TORMENTA DE HIELO  (10s = 200 ticks)
+    // 7. TORMENTA DE HIELO (10s = 200 ticks)
     // ========================================================================
     private int playIce(Player victim) {
         final int DUR = 200;
         Location origin = victim.getLocation().clone();
         World w = origin.getWorld();
-        if (w == null) return 20;
+        if (w == null)
+            return 20;
 
         victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, 180, 2, false, false, false));
         w.playSound(origin, Sound.BLOCK_GLASS_BREAK, 1.0f, 1.8f);
@@ -926,10 +1116,18 @@ public class FinisherEffects {
         // Phase 1: Frost ring + ice pillars (0-60)
         new BukkitRunnable() {
             int t = 0;
-            @Override public void run() {
-                if (t >= 60 || !victim.isOnline()) { cancel(); return; }
+
+            @Override
+            public void run() {
+                if (t >= 60 || !victim.isOnline()) {
+                    cancel();
+                    return;
+                }
                 Location loc = vLoc(victim);
-                if (loc == null) { cancel(); return; }
+                if (loc == null) {
+                    cancel();
+                    return;
+                }
 
                 double radius = 3.0 - t * 0.03;
                 for (int i = 0; i < 16; i++) {
@@ -941,7 +1139,7 @@ public class FinisherEffects {
                 }
 
                 if (t % 10 == 0) {
-                    Material[] mats = {Material.BLUE_ICE, Material.PACKED_ICE, Material.ICE};
+                    Material[] mats = { Material.BLUE_ICE, Material.PACKED_ICE, Material.ICE };
                     for (int p = 0; p < 3; p++) {
                         double a2 = rng().nextDouble(Math.PI * 2);
                         double r2 = 1 + rng().nextDouble(2);
@@ -957,16 +1155,25 @@ public class FinisherEffects {
         // Phase 2: Blizzard swirl (40-160)
         new BukkitRunnable() {
             int t = 0;
-            @Override public void run() {
-                if (t >= 120 || !victim.isOnline()) { cancel(); return; }
+
+            @Override
+            public void run() {
+                if (t >= 120 || !victim.isOnline()) {
+                    cancel();
+                    return;
+                }
                 Location loc = vLoc(victim);
-                if (loc == null) { cancel(); return; }
+                if (loc == null) {
+                    cancel();
+                    return;
+                }
 
                 // Snowflake tornado
                 for (int arm = 0; arm < 5; arm++) {
                     double a = t * 0.35 + arm * Math.PI * 2 / 5;
                     double r = 1.5 - t * 0.005;
-                    if (r < 0.4) r = 0.4;
+                    if (r < 0.4)
+                        r = 0.4;
                     for (double y = 0; y < 2.5; y += 0.6) {
                         double x = Math.cos(a + y * 0.4) * r;
                         double z = Math.sin(a + y * 0.4) * r;
@@ -978,7 +1185,7 @@ public class FinisherEffects {
 
                 // Floating ice
                 if (t % 16 == 0) {
-                    Material[] ices = {Material.BLUE_ICE, Material.PACKED_ICE};
+                    Material[] ices = { Material.BLUE_ICE, Material.PACKED_ICE };
                     FallingBlock fb = w.spawnFallingBlock(
                             loc.clone().add(rng().nextDouble(-1, 1), rng().nextDouble(0, 2), rng().nextDouble(-1, 1)),
                             ices[rng().nextInt(ices.length)].createBlockData());
@@ -987,19 +1194,26 @@ public class FinisherEffects {
                     fb.setGravity(false);
                     fb.setVelocity(new Vector(0, 0.06, 0));
                     new BukkitRunnable() {
-                        @Override public void run() { if (!fb.isDead()) fb.remove(); }
+                        @Override
+                        public void run() {
+                            if (!fb.isDead())
+                                fb.remove();
+                        }
                     }.runTaskLater(plugin, 55);
                 }
 
-                if (t % 8 == 0) w.playSound(loc, Sound.ENTITY_PLAYER_HURT_FREEZE, 0.5f, 1.0f + t * 0.005f);
+                if (t % 8 == 0)
+                    w.playSound(loc, Sound.ENTITY_PLAYER_HURT_FREEZE, 0.5f, 1.0f + t * 0.005f);
                 t += 2;
             }
         }.runTaskTimer(plugin, 40, 2);
 
         // Phase 3: Stronger levitation
         new BukkitRunnable() {
-            @Override public void run() {
-                if (!victim.isOnline()) return;
+            @Override
+            public void run() {
+                if (!victim.isOnline())
+                    return;
                 victim.removePotionEffect(PotionEffectType.LEVITATION);
                 victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, 80, 4, false, false, false));
             }
@@ -1007,9 +1221,11 @@ public class FinisherEffects {
 
         // Phase 4: ICE SHATTER (tick 165)
         new BukkitRunnable() {
-            @Override public void run() {
+            @Override
+            public void run() {
                 Location loc = vLoc(victim);
-                if (loc == null) return;
+                if (loc == null)
+                    return;
 
                 w.spawnParticle(Particle.SNOWFLAKE, loc, 200, 5.0, 5.0, 5.0, 0.15);
                 w.spawnParticle(Particle.DUST, loc, 250, 5.0, 5.0, 5.0, 0,
@@ -1022,8 +1238,8 @@ public class FinisherEffects {
                 w.playSound(loc, Sound.ENTITY_GENERIC_EXPLODE, 1.2f, 1.5f);
                 w.playSound(loc, Sound.ENTITY_PLAYER_HURT_FREEZE, 1.5f, 0.3f);
 
-                Material[] debris = {Material.BLUE_ICE, Material.PACKED_ICE, Material.ICE,
-                        Material.LIGHT_BLUE_CONCRETE, Material.WHITE_CONCRETE};
+                Material[] debris = { Material.BLUE_ICE, Material.PACKED_ICE, Material.ICE,
+                        Material.LIGHT_BLUE_CONCRETE, Material.WHITE_CONCRETE };
                 for (int b = 0; b < 25; b++) {
                     spawnBlock(w, loc.clone().add(0, 1, 0), debris[rng().nextInt(debris.length)],
                             rng().nextDouble(-1.8, 1.8), rng().nextDouble(0.5, 2.2), rng().nextDouble(-1.8, 1.8),
@@ -1036,13 +1252,14 @@ public class FinisherEffects {
     }
 
     // ========================================================================
-    //  8. IRA DEL DRAGÓN  (12s = 240 ticks)
+    // 8. IRA DEL DRAGÓN (12s = 240 ticks)
     // ========================================================================
     private int playDragon(Player victim) {
         final int DUR = 240;
         Location origin = victim.getLocation().clone();
         World w = origin.getWorld();
-        if (w == null) return 20;
+        if (w == null)
+            return 20;
 
         victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, 200, 2, false, false, false));
         w.playSound(origin, Sound.ENTITY_ENDER_DRAGON_GROWL, 1.5f, 0.5f);
@@ -1050,10 +1267,18 @@ public class FinisherEffects {
         // Phase 1: Purple flames on ground + end stone erupting (0-70)
         new BukkitRunnable() {
             int t = 0;
-            @Override public void run() {
-                if (t >= 70 || !victim.isOnline()) { cancel(); return; }
+
+            @Override
+            public void run() {
+                if (t >= 70 || !victim.isOnline()) {
+                    cancel();
+                    return;
+                }
                 Location loc = vLoc(victim);
-                if (loc == null) { cancel(); return; }
+                if (loc == null) {
+                    cancel();
+                    return;
+                }
 
                 double radius = 3.5 - t * 0.03;
                 for (int i = 0; i < 12; i++) {
@@ -1065,7 +1290,7 @@ public class FinisherEffects {
                 }
 
                 if (t % 10 == 0) {
-                    Material[] mats = {Material.END_STONE, Material.PURPUR_BLOCK, Material.OBSIDIAN};
+                    Material[] mats = { Material.END_STONE, Material.PURPUR_BLOCK, Material.OBSIDIAN };
                     for (int p = 0; p < 2; p++) {
                         double a2 = rng().nextDouble(Math.PI * 2);
                         double r2 = 1.5 + rng().nextDouble(2);
@@ -1081,16 +1306,25 @@ public class FinisherEffects {
         // Phase 2: Dragon breath spirals (50-180)
         new BukkitRunnable() {
             int t = 0;
-            @Override public void run() {
-                if (t >= 130 || !victim.isOnline()) { cancel(); return; }
+
+            @Override
+            public void run() {
+                if (t >= 130 || !victim.isOnline()) {
+                    cancel();
+                    return;
+                }
                 Location loc = vLoc(victim);
-                if (loc == null) { cancel(); return; }
+                if (loc == null) {
+                    cancel();
+                    return;
+                }
 
                 // 3 spiraling dragon breath arms
                 for (int arm = 0; arm < 3; arm++) {
                     double a = t * 0.3 + arm * Math.PI * 2 / 3;
                     double r = 2.0 - t * 0.008;
-                    if (r < 0.5) r = 0.5;
+                    if (r < 0.5)
+                        r = 0.5;
                     for (double y = 0; y < 3; y += 0.5) {
                         double x = Math.cos(a + y * 0.6) * r;
                         double z = Math.sin(a + y * 0.6) * r;
@@ -1111,7 +1345,7 @@ public class FinisherEffects {
 
                 // Flying dragon debris
                 if (t % 12 == 0) {
-                    Material[] mats = {Material.END_STONE, Material.PURPUR_BLOCK, Material.PURPLE_CONCRETE};
+                    Material[] mats = { Material.END_STONE, Material.PURPUR_BLOCK, Material.PURPLE_CONCRETE };
                     for (int b = 0; b < 2; b++) {
                         double bx = rng().nextDouble(-2, 2), bz = rng().nextDouble(-2, 2);
                         spawnBlock(w, loc.clone().add(bx, -2, bz), mats[rng().nextInt(mats.length)],
@@ -1125,8 +1359,10 @@ public class FinisherEffects {
 
         // Phase 3: Stronger levitation
         new BukkitRunnable() {
-            @Override public void run() {
-                if (!victim.isOnline()) return;
+            @Override
+            public void run() {
+                if (!victim.isOnline())
+                    return;
                 victim.removePotionEffect(PotionEffectType.LEVITATION);
                 victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, 100, 4, false, false, false));
             }
@@ -1134,9 +1370,11 @@ public class FinisherEffects {
 
         // Phase 4: DRAGON EXPLOSION (tick 200)
         new BukkitRunnable() {
-            @Override public void run() {
+            @Override
+            public void run() {
                 Location loc = vLoc(victim);
-                if (loc == null) return;
+                if (loc == null)
+                    return;
 
                 w.spawnParticle(Particle.DRAGON_BREATH, loc, 300, 6.0, 6.0, 6.0, 0.1);
                 w.spawnParticle(Particle.DUST, loc, 250, 5.0, 5.0, 5.0, 0,
@@ -1149,8 +1387,8 @@ public class FinisherEffects {
                 w.playSound(loc, Sound.ENTITY_ENDER_DRAGON_DEATH, 1.5f, 0.8f);
                 w.playSound(loc, Sound.ENTITY_GENERIC_EXPLODE, 2.0f, 0.5f);
 
-                Material[] debris = {Material.END_STONE, Material.PURPUR_BLOCK, Material.OBSIDIAN,
-                        Material.PURPLE_CONCRETE, Material.CRYING_OBSIDIAN, Material.DRAGON_EGG};
+                Material[] debris = { Material.END_STONE, Material.PURPUR_BLOCK, Material.OBSIDIAN,
+                        Material.PURPLE_CONCRETE, Material.CRYING_OBSIDIAN, Material.DRAGON_EGG };
                 for (int b = 0; b < 30; b++) {
                     spawnBlock(w, loc.clone().add(0, 1, 0), debris[rng().nextInt(debris.length)],
                             rng().nextDouble(-2.0, 2.0), rng().nextDouble(0.5, 2.5), rng().nextDouble(-2.0, 2.0),
@@ -1162,16 +1400,161 @@ public class FinisherEffects {
         // Phase 5: Lingering dragon breath (205-235)
         new BukkitRunnable() {
             int t = 0;
-            @Override public void run() {
-                if (t >= 35) { cancel(); return; }
+
+            @Override
+            public void run() {
+                if (t >= 35) {
+                    cancel();
+                    return;
+                }
                 Location loc = vLoc(victim);
-                if (loc == null) loc = origin.clone().add(0, 5, 0);
+                if (loc == null)
+                    loc = origin.clone().add(0, 5, 0);
                 w.spawnParticle(Particle.DRAGON_BREATH, loc, 20 - t / 2, 3.0, 3.0, 3.0, 0.03);
                 w.spawnParticle(Particle.END_ROD, loc, 5, 2.0, 2.0, 2.0, 0.02);
-                if (t % 8 == 0) w.playSound(loc, Sound.ENTITY_ENDER_DRAGON_FLAP, 0.4f, 1.2f);
+                if (t % 8 == 0)
+                    w.playSound(loc, Sound.ENTITY_ENDER_DRAGON_FLAP, 0.4f, 1.2f);
                 t += 3;
             }
         }.runTaskTimer(plugin, 205, 3);
+
+        return DUR;
+    }
+
+    // ========================================================================
+    // TOTEM EXPLOSION (Immediate Feedback)
+    // ========================================================================
+    public void playTotemExplosion(Location loc) {
+        World w = loc.getWorld();
+        if (w == null)
+            return;
+        w.spawnParticle(Particle.EXPLOSION_EMITTER, loc.clone().add(0, 1, 0), 1, 0, 0, 0, 0);
+        w.spawnParticle(Particle.TOTEM_OF_UNDYING, loc.clone().add(0, 1, 0), 100, 1.0, 1.0, 1.0, 0.5);
+        w.spawnParticle(Particle.FLASH, loc.clone().add(0, 1, 0), 3, 0, 0, 0, 0);
+        w.playSound(loc, Sound.ENTITY_GENERIC_EXPLODE, 1.0f, 1.5f);
+        w.playSound(loc, Sound.ITEM_TOTEM_USE, 1.0f, 1.0f);
+    }
+
+    // ========================================================================
+    // TOTEM COUNTER – ANIME BATTLE (FAST VERSION: 5s = 100 ticks)
+    // ========================================================================
+    public int playTotemCounter(Player victim, Player killer) {
+        final int DUR = 100;
+        Location origin = victim.getLocation().clone();
+        World w = origin.getWorld();
+        if (w == null)
+            return 20;
+
+        // ── Phase 1: TOTEM POP (0-15) ──────────────────────────────────────
+        w.spawnParticle(Particle.TOTEM_OF_UNDYING, origin.clone().add(0, 1, 0), 150, 1.0, 1.5, 1.0, 0.5);
+        w.spawnParticle(Particle.FLASH, origin.clone().add(0, 1, 0), 3, 0, 0, 0, 0);
+        w.playSound(origin, Sound.ITEM_TOTEM_USE, 1.2f, 1.0f);
+
+        // ── Phase 2: GOLDEN SHIELD AURA (15-35) ───────────────────────────
+        new BukkitRunnable() {
+            int t = 0;
+
+            @Override
+            public void run() {
+                if (t >= 20 || !victim.isOnline()) {
+                    cancel();
+                    return;
+                }
+                Location loc = vLoc(victim);
+                if (loc == null) {
+                    cancel();
+                    return;
+                }
+
+                double radius = 1.2 + t * 0.05;
+                for (int i = 0; i < 16; i++) {
+                    double a = (Math.PI * 2 / 16) * i + (t * 0.2);
+                    double x = Math.cos(a) * radius;
+                    double z = Math.sin(a) * radius;
+                    w.spawnParticle(Particle.DUST, loc.clone().add(x, 0.5 + (t * 0.1), z), 1,
+                            0, 0, 0, 0, new Particle.DustOptions(Color.fromRGB(255, 223, 50), 1.5f));
+                }
+                if (t % 5 == 0)
+                    w.playSound(loc, Sound.BLOCK_AMETHYST_BLOCK_CHIME, 0.5f, 1.5f);
+                t += 2;
+            }
+        }.runTaskTimer(plugin, 15, 2);
+
+        // ── Phase 3: ENERGY CLASH (35-65) ────────────────────────────────
+        new BukkitRunnable() {
+            int t = 0;
+
+            @Override
+            public void run() {
+                if (t >= 30 || !victim.isOnline() || !killer.isOnline()) {
+                    cancel();
+                    return;
+                }
+                Location vLoc = victim.getLocation();
+                Location kLoc = killer.getLocation();
+
+                Vector dir = vLoc.toVector().subtract(kLoc.toVector()).normalize();
+                for (double d = 0; d < vLoc.distance(kLoc) && d < 6; d += 1.0) {
+                    Location point = kLoc.clone().add(dir.clone().multiply(d)).add(0, 1, 0);
+                    w.spawnParticle(Particle.DUST, point, 2, 0.1, 0.1, 0.1, 0,
+                            new Particle.DustOptions(Color.RED, 1.5f));
+                }
+
+                Vector rev = kLoc.toVector().subtract(vLoc.toVector()).normalize();
+                for (double d = 0; d < 3; d += 0.8) {
+                    Location point = vLoc.clone().add(rev.clone().multiply(d)).add(0, 1, 0);
+                    w.spawnParticle(Particle.DUST, point, 2, 0.1, 0.1, 0.1, 0,
+                            new Particle.DustOptions(Color.fromRGB(255, 215, 0), 1.5f));
+                }
+
+                Location mid = vLoc.clone().add(kLoc).multiply(0.5).add(0, 1, 0);
+                w.spawnParticle(Particle.ELECTRIC_SPARK, mid, 10, 0.3, 0.3, 0.3, 0.1);
+                if (t % 6 == 0)
+                    w.playSound(mid, Sound.ENTITY_WARDEN_SONIC_BOOM, 0.5f, 1.5f);
+                t += 3;
+            }
+        }.runTaskTimer(plugin, 35, 3);
+
+        // ── Phase 4: COUNTER PULSE (65-85) ──────────────────────────────
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                Location loc = vLoc(victim);
+                if (loc == null)
+                    return;
+                w.spawnParticle(Particle.TOTEM_OF_UNDYING, loc.clone().add(0, 1, 0), 200, 3.0, 2.0, 3.0, 0.3);
+                w.spawnParticle(Particle.FLASH, loc.clone().add(0, 1, 0), 2, 0, 0, 0, 0);
+                w.playSound(loc, Sound.ENTITY_GENERIC_EXPLODE, 1.2f, 1.2f);
+
+                // Shockwave rings
+                for (int i = 0; i < 32; i++) {
+                    double a = (Math.PI * 2 / 32) * i;
+                    w.spawnParticle(Particle.END_ROD, loc.clone().add(Math.cos(a) * 2, 0.5, Math.sin(a) * 2), 2, 0, 0,
+                            0, 0.1);
+                }
+            }
+        }.runTaskLater(plugin, 65);
+
+        // ── Phase 5: VICTORY AURA (85-100) ──────────────────────────────
+        new BukkitRunnable() {
+            int t = 0;
+
+            @Override
+            public void run() {
+                if (t >= 15 || !victim.isOnline()) {
+                    cancel();
+                    return;
+                }
+                Location loc = vLoc(victim);
+                if (loc == null) {
+                    cancel();
+                    return;
+                }
+                w.spawnParticle(Particle.HEART, loc.clone().add(0, 2.0, 0), 2, 0.3, 0.2, 0.3, 0);
+                w.spawnParticle(Particle.END_ROD, loc.clone().add(0, 1, 0), 3, 0.5, 1.0, 0.5, 0.05);
+                t += 3;
+            }
+        }.runTaskTimer(plugin, 85, 3);
 
         return DUR;
     }

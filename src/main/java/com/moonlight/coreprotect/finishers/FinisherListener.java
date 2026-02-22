@@ -11,6 +11,7 @@ import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -35,6 +36,30 @@ public class FinisherListener implements Listener {
         return beingFinished.contains(uuid);
     }
 
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        Player player = event.getPlayer();
+        UUID uuid = player.getUniqueId();
+        
+        // If player was being finished, clean up their state immediately
+        if (beingFinished.contains(uuid)) {
+            beingFinished.remove(uuid);
+            
+            // Remove all effects and invulnerability
+            player.setInvulnerable(false);
+            player.setWalkSpeed(0.2f);
+            player.setFlySpeed(0.1f);
+            player.setGlowing(false);
+            player.removePotionEffect(PotionEffectType.SLOWNESS);
+            player.removePotionEffect(PotionEffectType.JUMP_BOOST);
+            player.removePotionEffect(PotionEffectType.LEVITATION);
+            player.removePotionEffect(PotionEffectType.BLINDNESS);
+            
+            // Kill them instantly so they don't rejoin invulnerable
+            player.setHealth(0);
+        }
+    }
+
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onBlockForm(EntityChangeBlockEvent event) {
         if (event.getEntity() instanceof FallingBlock) {
@@ -48,7 +73,8 @@ public class FinisherListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onDamage(EntityDamageEvent event) {
-        if (!(event.getEntity() instanceof Player)) return;
+        if (!(event.getEntity() instanceof Player))
+            return;
         Player victim = (Player) event.getEntity();
         if (beingFinished.contains(victim.getUniqueId())) {
             event.setCancelled(true);
@@ -66,7 +92,8 @@ public class FinisherListener implements Listener {
             }
         }
 
-        if (!(event.getEntity() instanceof Player)) return;
+        if (!(event.getEntity() instanceof Player))
+            return;
         Player victim = (Player) event.getEntity();
 
         // Already in a finisher animation
@@ -85,22 +112,101 @@ public class FinisherListener implements Listener {
                 killer = (Player) proj.getShooter();
             }
         }
-        if (killer == null) return;
+        if (killer == null)
+            return;
 
         // Check if this hit would kill the victim
         double finalDamage = event.getFinalDamage();
-        if (victim.getHealth() - finalDamage > 0) return;
+        if (victim.getHealth() - finalDamage > 0)
+            return;
 
         // Check if killer has a finisher
         FinisherManager manager = plugin.getFinisherManager();
         FinisherType finisher = manager.getSelectedFinisher(killer.getUniqueId());
-        if (finisher == null) return;
+        if (finisher == null)
+            return;
 
-        // === CANCEL DEATH, START FINISHER ===
+        // Check for Totem of Undying BEFORE starting any animation
+        boolean hasTotem = false;
+        boolean inMainHand = false;
+        org.bukkit.inventory.ItemStack mainHand = victim.getInventory().getItemInMainHand();
+        org.bukkit.inventory.ItemStack offHand = victim.getInventory().getItemInOffHand();
+
+        if (mainHand != null && mainHand.getType() == org.bukkit.Material.TOTEM_OF_UNDYING) {
+            hasTotem = true;
+            inMainHand = true;
+        } else if (offHand != null && offHand.getType() == org.bukkit.Material.TOTEM_OF_UNDYING) {
+            hasTotem = true;
+            inMainHand = false;
+        }
+
+        if (hasTotem) {
+            // === IMMEDIATE TOTEM COUNTER (PvP Optimization) ===
+            event.setCancelled(true);
+            beingFinished.add(victim.getUniqueId());
+
+            // Play immediate explosion feedback
+            effects.playTotemExplosion(victim.getLocation());
+
+            // Consume the totem
+            if (inMainHand) {
+                mainHand.setAmount(mainHand.getAmount() - 1);
+            } else {
+                offHand.setAmount(offHand.getAmount() - 1);
+            }
+
+            // Start accelerated counter animation (100 ticks = 5s)
+            int counterDuration = effects.playTotemCounter(victim, killer);
+
+            // Anime chat messages
+            String sep = ChatColor.DARK_GRAY + "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━";
+            String vName = ChatColor.GOLD + "" + ChatColor.BOLD + victim.getName();
+            String kName = ChatColor.RED + "" + ChatColor.BOLD + killer.getName();
+            String msg1 = "\n" + sep + "\n"
+                    + ChatColor.GOLD + "  ✦ " + ChatColor.YELLOW + "¡El Tótem de " + vName + ChatColor.YELLOW
+                    + " se ACTIVA!"
+                    + "\n" + sep + "\n";
+            for (Player p : org.bukkit.Bukkit.getOnlinePlayers())
+                p.sendMessage(msg1);
+
+            // Final message after duration
+            new BukkitRunnable() {
+                @Override
+                public void run() {
+                    if (!victim.isOnline())
+                        return;
+                    String msg2 = "\n" + sep + "\n"
+                            + ChatColor.RED + "  ☄ " + kName + ChatColor.GRAY + " no pudo matar a " + vName
+                            + "\n" + ChatColor.GOLD + "  ¡LA BATALLA CONTINÚA!"
+                            + "\n" + sep + "\n";
+                    for (Player p : org.bukkit.Bukkit.getOnlinePlayers())
+                        p.sendMessage(msg2);
+
+                    beingFinished.remove(victim.getUniqueId());
+                    victim.setInvulnerable(false);
+                    victim.setWalkSpeed(0.2f);
+                    victim.setFlySpeed(0.1f);
+                    victim.setGlowing(false);
+                    victim.removePotionEffect(PotionEffectType.SLOWNESS);
+                    victim.removePotionEffect(PotionEffectType.JUMP_BOOST);
+                    victim.removePotionEffect(PotionEffectType.LEVITATION);
+                    victim.removePotionEffect(PotionEffectType.BLINDNESS);
+
+                    // Restore to half health — SURVIVED
+                    double maxHp = victim.getMaxHealth();
+                    victim.setHealth(Math.min(maxHp, maxHp / 2.0));
+                    victim.setAbsorptionAmount(4.0);
+                }
+            }.runTaskLater(plugin, counterDuration);
+
+            return;
+        }
+
+        // === NO TOTEM: PLAY NORMAL FINISHER ===
         event.setCancelled(true);
         beingFinished.add(victim.getUniqueId());
 
-        // Freeze the victim completely
+        // Freeze victim
         victim.setHealth(1.0);
         victim.setInvulnerable(true);
         victim.setWalkSpeed(0f);
@@ -117,24 +223,22 @@ public class FinisherListener implements Listener {
                 + ChatColor.GRAY + " ejecuta a " + ChatColor.RED + "" + ChatColor.BOLD + victim.getName()
                 + "\n" + ChatColor.GRAY + "  con " + finisher.getDisplayName()
                 + "\n" + line + "\n";
-        for (Player online : org.bukkit.Bukkit.getOnlinePlayers()) {
+        for (Player online : org.bukkit.Bukkit.getOnlinePlayers())
             online.sendMessage(finisherMsg);
-        }
 
-        // Get animation duration and play
         int durationTicks = effects.play(finisher, victim, killer);
 
-        // Freeze loop: teleport victim back to origin every 2 ticks so they literally cannot move
+        // Freeze loop
         final org.bukkit.Location freezeLoc = victim.getLocation().clone();
         new BukkitRunnable() {
             int t = 0;
+
             @Override
             public void run() {
                 if (t >= durationTicks || !victim.isOnline() || !beingFinished.contains(victim.getUniqueId())) {
                     cancel();
                     return;
                 }
-                // Keep yaw/pitch but lock XZ position (Y is controlled by levitation)
                 org.bukkit.Location current = victim.getLocation();
                 if (Math.abs(current.getX() - freezeLoc.getX()) > 0.15
                         || Math.abs(current.getZ() - freezeLoc.getZ()) > 0.15) {
@@ -148,10 +252,13 @@ public class FinisherListener implements Listener {
             }
         }.runTaskTimer(plugin, 0, 2);
 
-        // After animation completes, kill the victim
+        // Kill after animation
         new BukkitRunnable() {
             @Override
             public void run() {
+                if (!victim.isOnline() || !beingFinished.contains(victim.getUniqueId()))
+                    return;
+
                 beingFinished.remove(victim.getUniqueId());
                 victim.setInvulnerable(false);
                 victim.setWalkSpeed(0.2f);
@@ -162,23 +269,27 @@ public class FinisherListener implements Listener {
                 victim.removePotionEffect(PotionEffectType.LEVITATION);
                 victim.removePotionEffect(PotionEffectType.BLINDNESS);
 
-                // Kill the victim
                 victim.setHealth(0);
             }
         }.runTaskLater(plugin, durationTicks + 5);
+
     }
 
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
-        if (!(event.getWhoClicked() instanceof Player)) return;
-        if (event.getView().getTitle() == null) return;
-        if (!event.getView().getTitle().equals(FinisherGUI.TITLE)) return;
+        if (!(event.getWhoClicked() instanceof Player))
+            return;
+        if (event.getView().getTitle() == null)
+            return;
+        if (!event.getView().getTitle().equals(FinisherGUI.TITLE))
+            return;
 
         event.setCancelled(true);
 
         Player player = (Player) event.getWhoClicked();
         ItemStack clicked = event.getCurrentItem();
-        if (clicked == null || !clicked.hasItemMeta()) return;
+        if (clicked == null || !clicked.hasItemMeta())
+            return;
 
         int slot = event.getRawSlot();
         FinisherManager manager = plugin.getFinisherManager();
@@ -193,7 +304,7 @@ public class FinisherListener implements Listener {
         }
 
         // Map slots to finisher types
-        int[] slots = {10, 12, 14, 16, 19, 21, 23, 25};
+        int[] slots = { 10, 12, 14, 16, 19, 21, 23, 25 };
         FinisherType[] types = FinisherType.values();
         FinisherType type = null;
         for (int i = 0; i < slots.length && i < types.length; i++) {
@@ -202,7 +313,8 @@ public class FinisherListener implements Listener {
                 break;
             }
         }
-        if (type == null) return;
+        if (type == null)
+            return;
 
         if (manager.isSelected(player.getUniqueId(), type)) {
             // Deselect
@@ -220,13 +332,15 @@ public class FinisherListener implements Listener {
             // Purchase
             double price = manager.getPrice(type);
             if (plugin.getEconomy().getBalance(player) < price) {
-                player.sendMessage(ChatColor.RED + "No tienes suficiente dinero. Necesitas " + ChatColor.GOLD + "$" + String.format("%,.0f", price) + ChatColor.RED + ".");
+                player.sendMessage(ChatColor.RED + "No tienes suficiente dinero. Necesitas " + ChatColor.GOLD + "$"
+                        + String.format("%,.0f", price) + ChatColor.RED + ".");
                 return;
             }
             plugin.getEconomy().withdrawPlayer(player, price);
             manager.purchaseFinisher(player.getUniqueId(), type);
             manager.selectFinisher(player.getUniqueId(), type);
-            player.sendMessage(ChatColor.GREEN + "" + ChatColor.BOLD + "¡Has comprado " + type.getDisplayName() + ChatColor.GREEN + "" + ChatColor.BOLD + "!");
+            player.sendMessage(ChatColor.GREEN + "" + ChatColor.BOLD + "¡Has comprado " + type.getDisplayName()
+                    + ChatColor.GREEN + "" + ChatColor.BOLD + "!");
             player.sendMessage(ChatColor.GRAY + "Se ha equipado automáticamente.");
             com.moonlight.coreprotect.effects.SoundManager.playUpgradePurchased(player.getLocation());
             new FinisherGUI(plugin).open(player);
