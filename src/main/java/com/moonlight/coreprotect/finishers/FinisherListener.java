@@ -231,29 +231,32 @@ public class FinisherListener implements Listener {
 
         int durationTicks = effects.play(finisher, victim, killer);
 
-        // Freeze loop
-        final org.bukkit.Location freezeLoc = victim.getLocation().clone();
-        new BukkitRunnable() {
-            int t = 0;
+        // Freeze loop — skip for spinning finishers (their spin teleport handles positioning)
+        boolean isSpinFinisher = finisher == FinisherType.VOID_INVOCATION || finisher == FinisherType.SOUL_VORTEX;
+        if (!isSpinFinisher) {
+            final org.bukkit.Location freezeLoc = victim.getLocation().clone();
+            new BukkitRunnable() {
+                int t = 0;
 
-            @Override
-            public void run() {
-                if (t >= durationTicks || !victim.isOnline() || !beingFinished.contains(victim.getUniqueId())) {
-                    cancel();
-                    return;
+                @Override
+                public void run() {
+                    if (t >= durationTicks || !victim.isOnline() || !beingFinished.contains(victim.getUniqueId())) {
+                        cancel();
+                        return;
+                    }
+                    org.bukkit.Location current = victim.getLocation();
+                    if (Math.abs(current.getX() - freezeLoc.getX()) > 0.15
+                            || Math.abs(current.getZ() - freezeLoc.getZ()) > 0.15) {
+                        org.bukkit.Location tp = freezeLoc.clone();
+                        tp.setY(current.getY());
+                        tp.setYaw(current.getYaw());
+                        tp.setPitch(current.getPitch());
+                        victim.teleport(tp);
+                    }
+                    t += 2;
                 }
-                org.bukkit.Location current = victim.getLocation();
-                if (Math.abs(current.getX() - freezeLoc.getX()) > 0.15
-                        || Math.abs(current.getZ() - freezeLoc.getZ()) > 0.15) {
-                    org.bukkit.Location tp = freezeLoc.clone();
-                    tp.setY(current.getY());
-                    tp.setYaw(current.getYaw());
-                    tp.setPitch(current.getPitch());
-                    victim.teleport(tp);
-                }
-                t += 2;
-            }
-        }.runTaskTimer(plugin, 0, 2);
+            }.runTaskTimer(plugin, 0, 2);
+        }
 
         // Kill after animation
         new BukkitRunnable() {
@@ -328,18 +331,21 @@ public class FinisherListener implements Listener {
             player.sendMessage(ChatColor.GOLD + "⚡ " + ChatColor.YELLOW + "Probando " + selected.getDisplayName() + ChatColor.YELLOW + "...");
             int dur = effects.play(selected, player, player);
 
-            final org.bukkit.Location freezeLoc = player.getLocation().clone();
-            new BukkitRunnable() {
-                int t = 0;
-                @Override public void run() {
-                    if (t >= dur || !player.isOnline() || !beingFinished.contains(player.getUniqueId())) { cancel(); return; }
-                    org.bukkit.Location cur = player.getLocation();
-                    if (Math.abs(cur.getX() - freezeLoc.getX()) > 0.15 || Math.abs(cur.getZ() - freezeLoc.getZ()) > 0.15) {
-                        org.bukkit.Location tp = freezeLoc.clone(); tp.setY(cur.getY()); tp.setYaw(cur.getYaw()); tp.setPitch(cur.getPitch()); player.teleport(tp);
+            boolean isTestSpin = selected == FinisherType.VOID_INVOCATION || selected == FinisherType.SOUL_VORTEX;
+            if (!isTestSpin) {
+                final org.bukkit.Location freezeLoc = player.getLocation().clone();
+                new BukkitRunnable() {
+                    int t = 0;
+                    @Override public void run() {
+                        if (t >= dur || !player.isOnline() || !beingFinished.contains(player.getUniqueId())) { cancel(); return; }
+                        org.bukkit.Location cur = player.getLocation();
+                        if (Math.abs(cur.getX() - freezeLoc.getX()) > 0.15 || Math.abs(cur.getZ() - freezeLoc.getZ()) > 0.15) {
+                            org.bukkit.Location tp = freezeLoc.clone(); tp.setY(cur.getY()); tp.setYaw(cur.getYaw()); tp.setPitch(cur.getPitch()); player.teleport(tp);
+                        }
+                        t += 2;
                     }
-                    t += 2;
-                }
-            }.runTaskTimer(plugin, 0, 2);
+                }.runTaskTimer(plugin, 0, 2);
+            }
 
             new BukkitRunnable() {
                 @Override public void run() {
