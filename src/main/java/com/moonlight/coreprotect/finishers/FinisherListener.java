@@ -232,7 +232,9 @@ public class FinisherListener implements Listener {
         int durationTicks = effects.play(finisher, victim, killer);
 
         // Freeze loop — skip for spinning finishers (their spin teleport handles positioning)
-        boolean isSpinFinisher = finisher == FinisherType.VOID_INVOCATION || finisher == FinisherType.SOUL_VORTEX;
+        boolean isSpinFinisher = finisher == FinisherType.VOID_INVOCATION || finisher == FinisherType.SOUL_VORTEX
+                || finisher == FinisherType.ORBITAL_STRIKE || finisher == FinisherType.DRAGON_WRATH
+                || finisher == FinisherType.APOCALYPSE;
         if (!isSpinFinisher) {
             final org.bukkit.Location freezeLoc = victim.getLocation().clone();
             new BukkitRunnable() {
@@ -331,7 +333,9 @@ public class FinisherListener implements Listener {
             player.sendMessage(ChatColor.GOLD + "⚡ " + ChatColor.YELLOW + "Probando " + selected.getDisplayName() + ChatColor.YELLOW + "...");
             int dur = effects.play(selected, player, player);
 
-            boolean isTestSpin = selected == FinisherType.VOID_INVOCATION || selected == FinisherType.SOUL_VORTEX;
+            boolean isTestSpin = selected == FinisherType.VOID_INVOCATION || selected == FinisherType.SOUL_VORTEX
+                    || selected == FinisherType.ORBITAL_STRIKE || selected == FinisherType.DRAGON_WRATH
+                    || selected == FinisherType.APOCALYPSE;
             if (!isTestSpin) {
                 final org.bukkit.Location freezeLoc = player.getLocation().clone();
                 new BukkitRunnable() {
@@ -375,7 +379,7 @@ public class FinisherListener implements Listener {
         }
 
         // Map slots to finisher types
-        int[] slots = { 10, 12, 14, 16, 19, 21, 23, 25, 28, 30, 32 };
+        int[] slots = { 10, 12, 14, 16, 19, 21, 23, 25, 28, 30, 32, 34 };
         FinisherType[] types = FinisherType.values();
         FinisherType type = null;
         for (int i = 0; i < slots.length && i < types.length; i++) {

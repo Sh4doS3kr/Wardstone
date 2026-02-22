@@ -29,6 +29,7 @@ public class FinisherEffects {
             case SOUL_VORTEX: return playSoulVortex(victim);
             case WITHER_STORM: return playWitherStorm(victim);
             case SCULK_RESONANCE: return playSculkResonance(victim);
+            case APOCALYPSE: return playApocalypse(victim);
             default: return 40;
         }
     }
@@ -273,6 +274,134 @@ public class FinisherEffects {
         new BukkitRunnable(){int t=0;public void run(){if(t>=120||!victim.isOnline()){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}w.spawnParticle(Particle.DUST,l.clone().add(0,0.5,0),12,0.6,0.5,0.6,0,new Particle.DustOptions(Color.fromRGB(0,60,70),1.8f));w.spawnParticle(Particle.SCULK_CHARGE_POP,l.clone().add(0,0.3,0),6,1.0,0.3,1.0,0.01);if(t%6==0)w.playSound(l,Sound.BLOCK_SCULK_SENSOR_CLICKING,0.4f,1.0f);t+=2;}}.runTaskTimer(plugin,45,2);
         new BukkitRunnable(){public void run(){Location l=vLoc(victim);if(l==null)return;w.spawnParticle(Particle.SONIC_BOOM,l.clone().add(0,0.5,0),6,1.5,0.5,1.5,0);w.spawnParticle(Particle.SCULK_CHARGE_POP,l,400,6,1.5,6,0.12);w.spawnParticle(Particle.DUST,l,500,6,2,6,0,new Particle.DustOptions(Color.fromRGB(0,80,100),3.5f));w.spawnParticle(Particle.EXPLOSION_EMITTER,l,5,1.5,0.3,1.5,0);w.playSound(l,Sound.ENTITY_WARDEN_SONIC_BOOM,2.0f,0.3f);w.playSound(l,Sound.ENTITY_GENERIC_EXPLODE,1.5f,0.5f);w.playSound(l,Sound.BLOCK_SCULK_CATALYST_BLOOM,1.5f,0.4f);for(int b=0;b<55;b++){double a=(Math.PI*2/55)*b;double sp=0.7+rng().nextDouble(1.1);ge(w,l.clone().add(0,0.3,0),rm(bm),Math.cos(a)*sp,rng().nextDouble(0.1,0.45),Math.sin(a)*sp,48+rng().nextInt(22));}}}.runTaskLater(plugin,168);
         new BukkitRunnable(){int t=0;public void run(){if(t>=25){cancel();return;}Location l=vLoc(victim);if(l==null)l=o;w.spawnParticle(Particle.SCULK_CHARGE_POP,l,18-t,4,0.5,4,0.02);if(t%8==0)w.playSound(l,Sound.BLOCK_SCULK_SENSOR_CLICKING,0.3f,1.5f);t+=3;}}.runTaskTimer(plugin,173,3);
+        return D;
+    }
+
+    // === 12. APOCALYPSE — THE ULTIMATE FINISHER (sky+ground, 260t) ===
+    private int playApocalypse(Player victim) {
+        final int D=260; Location o=victim.getLocation().clone(); World w=o.getWorld(); if(w==null)return 20;
+        w.playSound(o,Sound.ENTITY_WITHER_SPAWN,1.5f,0.3f);w.playSound(o,Sound.ENTITY_ENDER_DRAGON_GROWL,1.5f,0.4f);w.playSound(o,Sound.ENTITY_LIGHTNING_BOLT_THUNDER,1.5f,0.5f);
+        Material[] pm={Material.GOLD_BLOCK,Material.DIAMOND_BLOCK,Material.EMERALD_BLOCK,Material.NETHERITE_BLOCK,Material.BEACON,Material.CRYING_OBSIDIAN,Material.AMETHYST_BLOCK,Material.LAPIS_BLOCK};
+        Material[] fire={Material.MAGMA_BLOCK,Material.ORANGE_CONCRETE,Material.RED_CONCRETE};
+        Material[] ice={Material.BLUE_ICE,Material.PACKED_ICE,Material.LIGHT_BLUE_CONCRETE};
+        Material[] soul={Material.SOUL_SAND,Material.SOUL_SOIL,Material.CYAN_CONCRETE};
+        Material[] vd={Material.OBSIDIAN,Material.CRYING_OBSIDIAN,Material.PURPLE_CONCRETE};
+        // Phase 1: Reality cracks — 8 golden crack lines on ground + rumble (0-50)
+        new BukkitRunnable(){int t=0;public void run(){if(t>=50||!victim.isOnline()){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}
+            double len=0.5+t*0.14;
+            for(int cr=0;cr<8;cr++){double a=(Math.PI*2/8)*cr+Math.sin(t*0.05)*0.1;
+                for(double d=0.3;d<len;d+=0.35){w.spawnParticle(Particle.DUST,l.clone().add(Math.cos(a)*d,0.06,Math.sin(a)*d),3,0.04,0.01,0.04,0,new Particle.DustOptions(Color.fromRGB(255,200,0),2.5f));w.spawnParticle(Particle.END_ROD,l.clone().add(Math.cos(a)*d,0.1,Math.sin(a)*d),1,0.02,0.02,0.02,0.005);}
+                if(t%6==0){double tip=len-rng().nextDouble(0.3);if(tip<0.3)tip=0.3;gf(w,l.clone().add(Math.cos(a)*tip,-0.1,Math.sin(a)*tip),rm(pm),0,0,0,140);}
+            }
+            w.spawnParticle(Particle.FLASH,l,1,0,0,0,0);
+            if(t%4==0){w.playSound(l,Sound.ENTITY_LIGHTNING_BOLT_IMPACT,0.5f,0.4f+t*0.02f);w.spawnParticle(Particle.ELECTRIC_SPARK,l.clone().add(0,0.2,0),20,len*0.4,0.1,len*0.4,0.04);}
+            if(t%8==0)w.strikeLightningEffect(l.clone().add(rng().nextDouble(-3,3),0,rng().nextDouble(-3,3)));
+            t+=2;
+        }}.runTaskTimer(plugin,0,2);
+        // Phase 2: 4 elemental pillars — fire/ice/soul/void at cardinal dirs (20-90)
+        new BukkitRunnable(){int t=0;public void run(){if(t>=70||!victim.isOnline()){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}
+            double[][] dirs={{3.5,0},{0,3.5},{-3.5,0},{0,-3.5}};
+            Material[][] elMats={fire,ice,soul,vd};
+            Particle[] elParts={Particle.FLAME,Particle.SNOWFLAKE,Particle.SOUL_FIRE_FLAME,Particle.DRAGON_BREATH};
+            Color[] elCols={Color.fromRGB(255,80,0),Color.fromRGB(100,200,255),Color.fromRGB(0,200,200),Color.fromRGB(120,0,180)};
+            for(int p=0;p<4;p++){
+                Location base=l.clone().add(dirs[p][0],0,dirs[p][1]);
+                double h=t*0.08;if(h>5)h=5;
+                for(double y=0;y<h;y+=0.3)w.spawnParticle(elParts[p],base.clone().add(0,y,0),3,0.06,0.04,0.06,0.008);
+                if(t%4==0){double yy=(t/4)*0.5;if(yy>5)yy=5;gf(w,base.clone().add(0,yy,0),rm(elMats[p]),0,0,0,130);}
+                w.spawnParticle(Particle.DUST,base.clone().add(0,h*0.5,0),5,0.1,h*0.3,0.1,0,new Particle.DustOptions(elCols[p],2.0f));
+            }
+            // Connecting beams between pillars
+            if(t%6==0)for(int p=0;p<4;p++){int np=(p+1)%4;Location a2=l.clone().add(dirs[p][0],2,dirs[p][1]);Location b2=l.clone().add(dirs[np][0],2,dirs[np][1]);Vector dir=b2.toVector().subtract(a2.toVector());for(double d=0;d<1;d+=0.1){Location pt=a2.clone().add(dir.clone().multiply(d));w.spawnParticle(Particle.ELECTRIC_SPARK,pt,2,0.05,0.05,0.05,0.01);}}
+            if(t%12==0){w.playSound(l,Sound.BLOCK_BEACON_ACTIVATE,0.6f,0.8f+t*0.015f);w.playSound(l,Sound.ENTITY_BLAZE_AMBIENT,0.4f,0.6f);}
+            t+=2;
+        }}.runTaskTimer(plugin,20,2);
+        // Phase 3: Levitation + golden beacon (tick 65)
+        new BukkitRunnable(){public void run(){if(!victim.isOnline())return;victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION,190,2,false,false,false));Location l=vLoc(victim);if(l!=null){w.playSound(l,Sound.ITEM_TRIDENT_THUNDER,1.5f,1.2f);w.spawnParticle(Particle.FLASH,l,5,0,0,0,0);w.spawnParticle(Particle.END_ROD,l,80,0.5,0.5,0.5,0.15);}}}.runTaskLater(plugin,65);
+        // Phase 4: Golden beacon + energy rings ascending (70-200)
+        new BukkitRunnable(){int t=0;public void run(){if(t>=130||!victim.isOnline()){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}
+            // Thick golden beam
+            for(double y=-3;y<40;y+=0.4){double wb=Math.sin((y+t)*0.3)*0.12;w.spawnParticle(Particle.DUST,l.clone().add(wb,y,wb),3,0.15,0.06,0.15,0,new Particle.DustOptions(Color.fromRGB(255,200,50),2.5f));if(y<8)w.spawnParticle(Particle.END_ROD,l.clone().add(wb*0.5,y,wb*0.5),1,0.08,0.04,0.08,0.003);}
+            // 3 ascending energy rings at different speeds
+            for(int ring=0;ring<3;ring++){double ry=(t*(0.6+ring*0.3)+ring*8)%35;int pts=16+ring*4;double rr=1.5+ring*0.8;Color rc=ring==0?Color.fromRGB(255,215,0):ring==1?Color.fromRGB(255,100,50):Color.fromRGB(100,200,255);
+                for(int i=0;i<pts;i++){double a=(Math.PI*2/pts)*i+t*(0.15+ring*0.08);w.spawnParticle(Particle.DUST,l.clone().add(Math.cos(a)*rr,ry,Math.sin(a)*rr),2,0.04,0.04,0.04,0,new Particle.DustOptions(rc,1.8f));}}
+            if(t%8==0)w.playSound(l,Sound.BLOCK_BEACON_AMBIENT,1.0f,1.5f+t*0.005f);
+            t+=2;
+        }}.runTaskTimer(plugin,70,2);
+        // Phase 5: TRIPLE block tornado — 3 rings at different heights/speeds (80-210)
+        new BukkitRunnable(){int t=0;public void run(){if(t>=130||!victim.isOnline()){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}
+            // Inner ring — fast, close, low
+            if(t%3==0)for(int b=0;b<3;b++){double a=t*0.55+b*Math.PI*2/3;double r=1.8;gf(w,l.clone().add(Math.cos(a)*r,Math.sin(t*0.08)*1.5,Math.sin(a)*r),rm(pm),0,0.015,0,16);}
+            // Middle ring — medium speed, wider
+            if(t%4==0)for(int b=0;b<4;b++){double a=t*0.35+b*Math.PI/2;double r=3.2;gf(w,l.clone().add(Math.cos(a)*r,1+Math.sin(t*0.06+b)*2,Math.sin(a)*r),rm(pm),0,0.02,0,18);}
+            // Outer ring — slow, widest, highest
+            if(t%5==0)for(int b=0;b<5;b++){double a=t*0.2+b*Math.PI*2/5;double r=4.5;gf(w,l.clone().add(Math.cos(a)*r,2+Math.sin(t*0.04+b)*3,Math.sin(a)*r),rm(pm),0,0.025,0,22);}
+            // Particle tornado trails
+            for(int arm=0;arm<6;arm++){double a=t*0.45+arm*Math.PI/3;for(double y=0;y<6;y+=0.5){double r=1.5+y*0.5;w.spawnParticle(Particle.END_ROD,l.clone().add(Math.cos(a+y*0.4)*r,y-1,Math.sin(a+y*0.4)*r),1,0.03,0.03,0.03,0.003);}}
+            // Blocks ascending through beam
+            if(t%8==0)for(int b=0;b<2;b++)gb(w,l.clone().add(rng().nextDouble(-1.5,1.5),-2,rng().nextDouble(-1.5,1.5)),rm(pm),0,rng().nextDouble(0.5,1.3),0,55);
+            if(t%6==0)w.playSound(l,Sound.ENTITY_ENDER_DRAGON_FLAP,0.5f,1.0f+t*0.005f);
+            t+=2;
+        }}.runTaskTimer(plugin,80,2);
+        // Phase 6: Stronger lev + intensify (tick 130)
+        new BukkitRunnable(){public void run(){if(!victim.isOnline())return;victim.removePotionEffect(PotionEffectType.LEVITATION);victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION,125,4,false,false,false));Location l=vLoc(victim);if(l!=null){w.playSound(l,Sound.ENTITY_WARDEN_SONIC_BOOM,1.0f,1.5f);w.spawnParticle(Particle.SONIC_BOOM,l,3,0.5,0.5,0.5,0);}}}.runTaskLater(plugin,130);
+        // Phase 7: Block sphere forming + ALL particles (150-210)
+        new BukkitRunnable(){int t=0;public void run(){if(t>=60||!victim.isOnline()){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}
+            double sR=3.5-t*0.04;if(sR<0.8)sR=0.8;
+            // Sphere of blocks
+            if(t%3==0)for(int b=0;b<6;b++){double phi=rng().nextDouble(Math.PI);double theta=rng().nextDouble(Math.PI*2);double x=Math.sin(phi)*Math.cos(theta)*sR;double y2=Math.cos(phi)*sR;double z=Math.sin(phi)*Math.sin(theta)*sR;gf(w,l.clone().add(x,y2,z),rm(pm),0,0,0,50-t/2);}
+            // ALL particle types
+            w.spawnParticle(Particle.END_ROD,l,12,sR*0.6,sR*0.6,sR*0.6,0.03);
+            w.spawnParticle(Particle.DUST,l,15,sR*0.5,sR*0.5,sR*0.5,0,new Particle.DustOptions(Color.fromRGB(255,200,50),2.2f));
+            w.spawnParticle(Particle.FLAME,l,8,sR*0.4,sR*0.4,sR*0.4,0.02);
+            w.spawnParticle(Particle.SOUL_FIRE_FLAME,l,6,sR*0.4,sR*0.4,sR*0.4,0.02);
+            w.spawnParticle(Particle.DRAGON_BREATH,l,8,sR*0.4,sR*0.4,sR*0.4,0.01);
+            w.spawnParticle(Particle.ELECTRIC_SPARK,l,10,sR*0.5,sR*0.5,sR*0.5,0.05);
+            if(t%4==0){w.spawnParticle(Particle.SONIC_BOOM,l,1,0,0,0,0);w.playSound(l,Sound.ENTITY_WARDEN_HEARTBEAT,1.0f,0.5f+t*0.015f);}
+            if(t%8==0)w.strikeLightningEffect(l.clone().add(rng().nextDouble(-2,2),0,rng().nextDouble(-2,2)));
+            t+=2;
+        }}.runTaskTimer(plugin,150,2);
+        // Phase 8: SUPERNOVA — the biggest explosion possible (tick 215)
+        new BukkitRunnable(){public void run(){Location l=vLoc(victim);if(l==null)return;
+            // Particles — EVERYTHING
+            w.spawnParticle(Particle.END_ROD,l,600,8,8,8,0.4);
+            w.spawnParticle(Particle.DUST,l,500,7,7,7,0,new Particle.DustOptions(Color.fromRGB(255,215,0),4.0f));
+            w.spawnParticle(Particle.DUST,l,400,6,6,6,0,new Particle.DustOptions(Color.WHITE,3.5f));
+            w.spawnParticle(Particle.DUST,l,300,6,6,6,0,new Particle.DustOptions(Color.fromRGB(255,50,0),3.0f));
+            w.spawnParticle(Particle.FLAME,l,200,6,6,6,0.15);
+            w.spawnParticle(Particle.SOUL_FIRE_FLAME,l,150,5,5,5,0.12);
+            w.spawnParticle(Particle.DRAGON_BREATH,l,150,5,5,5,0.1);
+            w.spawnParticle(Particle.ELECTRIC_SPARK,l,200,6,6,6,0.2);
+            w.spawnParticle(Particle.SNOWFLAKE,l,100,5,5,5,0.1);
+            w.spawnParticle(Particle.EXPLOSION_EMITTER,l,12,3,3,3,0);
+            w.spawnParticle(Particle.FLASH,l,10,1,1,1,0);
+            w.spawnParticle(Particle.SONIC_BOOM,l,5,2,2,2,0);
+            w.spawnParticle(Particle.TOTEM_OF_UNDYING,l,200,5,5,5,0.5);
+            // Sounds — EVERYTHING
+            w.playSound(l,Sound.ENTITY_GENERIC_EXPLODE,2.0f,0.3f);
+            w.playSound(l,Sound.ENTITY_LIGHTNING_BOLT_THUNDER,2.0f,0.4f);
+            w.playSound(l,Sound.ENTITY_ENDER_DRAGON_DEATH,1.5f,0.6f);
+            w.playSound(l,Sound.ENTITY_WITHER_DEATH,1.5f,0.5f);
+            w.playSound(l,Sound.ITEM_TRIDENT_THUNDER,2.0f,0.3f);
+            w.playSound(l,Sound.ENTITY_WARDEN_SONIC_BOOM,2.0f,0.4f);
+            // 80 blocks flying in ALL directions — the biggest block burst
+            for(int b=0;b<80;b++){double phi=rng().nextDouble(Math.PI);double theta=rng().nextDouble(Math.PI*2);double sp=0.8+rng().nextDouble(1.8);double vx=Math.sin(phi)*Math.cos(theta)*sp;double vy=Math.cos(phi)*sp*0.6+rng().nextDouble(0.3);double vz=Math.sin(phi)*Math.sin(theta)*sp;ge(w,l.clone().add(0,0.5,0),rm(pm),vx,vy,vz,50+rng().nextInt(25));}
+            // 6 lightning strikes
+            for(int i=0;i<6;i++)w.strikeLightningEffect(l.clone().add(rng().nextDouble(-4,4),0,rng().nextDouble(-4,4)));
+        }}.runTaskLater(plugin,215);
+        // Phase 9: Firework cascade + aftershock (220-255)
+        new BukkitRunnable(){int t=0;public void run(){if(t>=35){cancel();return;}Location l=vLoc(victim);if(l==null)l=o.clone().add(0,6,0);
+            // Firework bursts
+            for(int f=0;f<6;f++){Location fl=l.clone().add(rng().nextDouble(-7,7),rng().nextDouble(-2,8),rng().nextDouble(-7,7));
+                Color[] cs={Color.YELLOW,Color.RED,Color.AQUA,Color.FUCHSIA,Color.WHITE,Color.ORANGE};Color c=cs[rng().nextInt(cs.length)];
+                w.spawnParticle(Particle.DUST,fl,20,1.2,1.2,1.2,0,new Particle.DustOptions(c,2.5f));w.spawnParticle(Particle.END_ROD,fl,15,0.8,0.8,0.8,0.1);}
+            if(t%3==0){w.playSound(l,Sound.ENTITY_FIREWORK_ROCKET_BLAST,1.0f,0.6f+t*0.03f);w.playSound(l,Sound.ENTITY_FIREWORK_ROCKET_TWINKLE,0.8f,0.8f+t*0.02f);}
+            // Lingering golden dust
+            w.spawnParticle(Particle.DUST,l,40-t,6,6,6,0,new Particle.DustOptions(Color.fromRGB(255,200,50),1.5f));
+            w.spawnParticle(Particle.END_ROD,l,15-t/3,4,4,4,0.04);
+            if(t%6==0&&t<20)gb(w,l.clone().add(rng().nextDouble(-3,3),rng().nextDouble(-1,3),rng().nextDouble(-3,3)),rm(pm),rng().nextDouble(-0.5,0.5),rng().nextDouble(0.2,0.8),rng().nextDouble(-0.5,0.5),35);
+            t+=2;
+        }}.runTaskTimer(plugin,220,2);
         return D;
     }
 

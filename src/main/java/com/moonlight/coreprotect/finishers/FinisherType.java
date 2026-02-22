@@ -146,7 +146,21 @@ public enum FinisherType {
                     "",
                     ChatColor.DARK_PURPLE + "Tipo: " + ChatColor.DARK_AQUA + "Suelo"
             },
-            100000);
+            100000),
+
+    APOCALYPSE("apocalypse",
+            ChatColor.GOLD + "" + ChatColor.BOLD + "💥 Apocalipsis Divino",
+            Material.NETHER_STAR,
+            new String[]{
+                    ChatColor.GRAY + "La realidad colapsa. Pilares",
+                    ChatColor.GRAY + "elementales, un tornado de",
+                    ChatColor.GRAY + "bloques premium y una supernova",
+                    ChatColor.GRAY + "que destruye todo a su paso.",
+                    "",
+                    ChatColor.GOLD + "★ " + ChatColor.RED + "EL FINISHER DEFINITIVO",
+                    ChatColor.DARK_PURPLE + "Tipo: " + ChatColor.GOLD + "Celestial + Suelo"
+            },
+            250000);
 
     private final String id;
     private final String displayName;
