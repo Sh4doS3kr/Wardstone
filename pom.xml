@@ -5,11 +5,11 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.moonlight</groupId>
-    <artifactId>CoreProtect</artifactId>
+    <artifactId>Wardstone</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
 
-    <name>CoreProtect</name>
+    <name>Wardstone</name>
     <description>Plugin de nucleos de proteccion con 20 niveles y animaciones de particulas</description>
 
     <properties>
