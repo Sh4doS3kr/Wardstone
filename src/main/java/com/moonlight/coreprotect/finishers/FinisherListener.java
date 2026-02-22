@@ -302,13 +302,30 @@ public class FinisherListener implements Listener {
         int slot = event.getRawSlot();
         FinisherManager manager = plugin.getFinisherManager();
 
-        // Test button
-        if (slot == 46) {
-            FinisherType selected = manager.getSelectedFinisher(player.getUniqueId());
-            if (selected == null) {
-                player.sendMessage(ChatColor.RED + "No tienes ningún finisher equipado para probar.");
-                return;
+        // Deselect button
+        if (slot == 49) {
+            manager.deselectFinisher(player.getUniqueId());
+            player.sendMessage(ChatColor.YELLOW + "Has quitado tu finisher activo.");
+            com.moonlight.coreprotect.effects.SoundManager.playGUIClick(player.getLocation());
+            new FinisherGUI(plugin).open(player);
+            return;
+        }
+
+        // Map slots to finisher types
+        int[] slots = { 10, 12, 14, 16, 19, 21, 23, 25, 28, 30, 32, 34 };
+        FinisherType[] types = FinisherType.values();
+        FinisherType type = null;
+        for (int i = 0; i < slots.length && i < types.length; i++) {
+            if (slot == slots[i]) {
+                type = types[i];
+                break;
             }
+        }
+        if (type == null)
+            return;
+
+        // Right-click = preview (no purchase needed)
+        if (event.isRightClick()) {
             long now = System.currentTimeMillis();
             Long lastUse = testCooldowns.get(player.getUniqueId());
             if (lastUse != null && now - lastUse < 60000) {
@@ -330,13 +347,14 @@ public class FinisherListener implements Listener {
             player.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 600, 255, false, false, false));
             player.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 600, 200, false, false, false));
 
-            player.sendMessage(ChatColor.GOLD + "⚡ " + ChatColor.YELLOW + "Probando " + selected.getDisplayName() + ChatColor.YELLOW + "...");
-            int dur = effects.play(selected, player, player);
+            final FinisherType previewType = type;
+            player.sendMessage(ChatColor.GOLD + "⚡ " + ChatColor.YELLOW + "Probando " + previewType.getDisplayName() + ChatColor.YELLOW + "...");
+            int dur = effects.play(previewType, player, player);
 
-            boolean isTestSpin = selected == FinisherType.VOID_INVOCATION || selected == FinisherType.SOUL_VORTEX
-                    || selected == FinisherType.ORBITAL_STRIKE || selected == FinisherType.DRAGON_WRATH
-                    || selected == FinisherType.APOCALYPSE;
-            if (!isTestSpin) {
+            boolean skipFreeze = previewType == FinisherType.VOID_INVOCATION || previewType == FinisherType.SOUL_VORTEX
+                    || previewType == FinisherType.ORBITAL_STRIKE || previewType == FinisherType.DRAGON_WRATH
+                    || previewType == FinisherType.APOCALYPSE;
+            if (!skipFreeze) {
                 final org.bukkit.Location freezeLoc = player.getLocation().clone();
                 new BukkitRunnable() {
                     int t = 0;
@@ -369,28 +387,7 @@ public class FinisherListener implements Listener {
             return;
         }
 
-        // Deselect button
-        if (slot == 49) {
-            manager.deselectFinisher(player.getUniqueId());
-            player.sendMessage(ChatColor.YELLOW + "Has quitado tu finisher activo.");
-            com.moonlight.coreprotect.effects.SoundManager.playGUIClick(player.getLocation());
-            new FinisherGUI(plugin).open(player);
-            return;
-        }
-
-        // Map slots to finisher types
-        int[] slots = { 10, 12, 14, 16, 19, 21, 23, 25, 28, 30, 32, 34 };
-        FinisherType[] types = FinisherType.values();
-        FinisherType type = null;
-        for (int i = 0; i < slots.length && i < types.length; i++) {
-            if (slot == slots[i]) {
-                type = types[i];
-                break;
-            }
-        }
-        if (type == null)
-            return;
-
+        // Left-click = normal buy/equip/deselect
         if (manager.isSelected(player.getUniqueId(), type)) {
             // Deselect
             manager.deselectFinisher(player.getUniqueId());

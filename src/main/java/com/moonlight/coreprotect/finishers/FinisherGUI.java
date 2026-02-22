@@ -84,19 +84,6 @@ public class FinisherGUI {
         deselect.setItemMeta(deselectMeta);
         inv.setItem(49, deselect);
 
-        // Test button
-        ItemStack testBtn = new ItemStack(Material.CLOCK);
-        ItemMeta testMeta = testBtn.getItemMeta();
-        testMeta.setDisplayName(ChatColor.GOLD + "" + ChatColor.BOLD + "⚡ Probar Finisher");
-        testMeta.setLore(Arrays.asList(
-                "",
-                ChatColor.GRAY + "Prueba tu finisher equipado",
-                ChatColor.GRAY + "en ti mismo sin morir.",
-                "",
-                ChatColor.DARK_GRAY + "Cooldown: 60 segundos"
-        ));
-        testBtn.setItemMeta(testMeta);
-        inv.setItem(46, testBtn);
 
         player.openInventory(inv);
     }
@@ -118,18 +105,20 @@ public class FinisherGUI {
         if (selected) {
             meta.setDisplayName(ChatColor.GREEN + "" + ChatColor.BOLD + "✔ " + type.getDisplayName());
             lore.add(ChatColor.GREEN + "" + ChatColor.BOLD + "✔ EQUIPADO");
-            lore.add(ChatColor.DARK_GRAY + "Click para desequipar");
+            lore.add(ChatColor.DARK_GRAY + "Click izq. para desequipar");
             meta.setEnchantmentGlintOverride(true);
         } else if (owned) {
             meta.setDisplayName(ChatColor.AQUA + "" + ChatColor.BOLD + "★ " + type.getDisplayName());
             lore.add(ChatColor.AQUA + "" + ChatColor.BOLD + "★ DESBLOQUEADO");
-            lore.add(ChatColor.YELLOW + "▶ Click para equipar");
+            lore.add(ChatColor.YELLOW + "▶ Click izq. para equipar");
         } else {
             meta.setDisplayName(ChatColor.RED + "" + ChatColor.BOLD + "✖ " + type.getDisplayName());
             lore.add(ChatColor.GRAY + "Precio: " + ChatColor.GOLD + "$" + PRICE_FORMAT.format(price));
             lore.add("");
-            lore.add(ChatColor.YELLOW + "▶ Click para comprar");
+            lore.add(ChatColor.YELLOW + "▶ Click izq. para comprar");
         }
+        lore.add("");
+        lore.add(ChatColor.GOLD + "⚡ Click derecho para probar");
 
         meta.setLore(lore);
         item.setItemMeta(meta);
