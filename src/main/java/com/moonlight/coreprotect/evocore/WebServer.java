@@ -15,6 +15,7 @@ import java.io.*;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
@@ -25,6 +26,27 @@ public class WebServer {
     private final int port;
     private HttpServer server;
 
+    // Cache de respuestas: evita recalcular en cada request
+    private final Map<String, CachedResponse> responseCache = new ConcurrentHashMap<>();
+    private static final long CACHE_TTL_MS = 10_000; // 10 segundos
+
+    // Rate limiter por IP: máximo 60 requests por minuto
+    private final Map<String, List<Long>> rateLimitMap = new ConcurrentHashMap<>();
+    private static final int MAX_REQUESTS_PER_MINUTE = 60;
+    private static final long RATE_WINDOW_MS = 60_000;
+
+    private static class CachedResponse {
+        final String json;
+        final long timestamp;
+        CachedResponse(String json) {
+            this.json = json;
+            this.timestamp = System.currentTimeMillis();
+        }
+        boolean isExpired() {
+            return System.currentTimeMillis() - timestamp > CACHE_TTL_MS;
+        }
+    }
+
     public WebServer(CoreProtectPlugin plugin, EvoCore evoCore, int port) {
         this.plugin = plugin;
         this.evoCore = evoCore;
@@ -34,7 +56,7 @@ public class WebServer {
     public void start() {
         try {
             server = HttpServer.create(new InetSocketAddress("0.0.0.0", port), 0);
-            server.setExecutor(Executors.newFixedThreadPool(4));
+            server.setExecutor(Executors.newFixedThreadPool(8));
 
             // API endpoints
             server.createContext("/api/zones", this::handleZones);
@@ -66,10 +88,11 @@ public class WebServer {
 
     private void handleOverview(HttpExchange exchange) throws IOException {
         if (!checkGet(exchange)) return;
+        String cached = getCached("overview");
+        if (cached != null) { sendJson(exchange, cached); return; }
+
         DataCollector dc = evoCore.getDataCollector();
         AnalyticsEngine ae = evoCore.getAnalyticsEngine();
-        // AutoEventManager desactivado - sistema de oleadas eliminado
-        // AutoEventManager aem = evoCore.getAutoEventManager();
 
         StringBuilder json = new StringBuilder("{");
         json.append("\"onlinePlayers\":").append(dc.getOnlinePlayers()).append(",");
@@ -77,15 +100,20 @@ public class WebServer {
         json.append("\"totalMobKills\":").append(dc.getTotalMobKills()).append(",");
         json.append("\"totalBlocksBroken\":").append(dc.getTotalBlocksBroken()).append(",");
         json.append("\"totalBlocksPlaced\":").append(dc.getTotalBlocksPlaced()).append(",");
-        json.append("\"activeInvasions\":0,"); // Siempre 0 - sistema desactivado
-        json.append("\"activeTreasures\":0,"); // Siempre 0 - sistema desactivado
+        json.append("\"activeInvasions\":0,");
+        json.append("\"activeTreasures\":0,");
         json.append("\"alerts\":").append(listToJsonArray(ae.getAlerts()));
         json.append("}");
-        sendJson(exchange, json.toString());
+        String result = json.toString();
+        putCache("overview", result);
+        sendJson(exchange, result);
     }
 
     private void handleZones(HttpExchange exchange) throws IOException {
         if (!checkGet(exchange)) return;
+        String cached = getCached("zones");
+        if (cached != null) { sendJson(exchange, cached); return; }
+
         DataCollector dc = evoCore.getDataCollector();
         AnalyticsEngine ae = evoCore.getAnalyticsEngine();
 
@@ -119,11 +147,16 @@ public class WebServer {
             json.append("}");
         }
         json.append("]");
-        sendJson(exchange, json.toString());
+        String result = json.toString();
+        putCache("zones", result);
+        sendJson(exchange, result);
     }
 
     private void handleMobs(HttpExchange exchange) throws IOException {
         if (!checkGet(exchange)) return;
+        String cached = getCached("mobs");
+        if (cached != null) { sendJson(exchange, cached); return; }
+
         DataCollector dc = evoCore.getDataCollector();
         AnalyticsEngine ae = evoCore.getAnalyticsEngine();
         Map<EntityType, String> statuses = ae.getMobStatuses();
@@ -149,11 +182,16 @@ public class WebServer {
             json.append("}");
         }
         json.append("]");
-        sendJson(exchange, json.toString());
+        String result = json.toString();
+        putCache("mobs", result);
+        sendJson(exchange, result);
     }
 
     private void handleItems(HttpExchange exchange) throws IOException {
         if (!checkGet(exchange)) return;
+        String cached = getCached("items");
+        if (cached != null) { sendJson(exchange, cached); return; }
+
         DataCollector dc = evoCore.getDataCollector();
 
         StringBuilder json = new StringBuilder("[");
@@ -179,11 +217,16 @@ public class WebServer {
             json.append("}");
         }
         json.append("]");
-        sendJson(exchange, json.toString());
+        String result = json.toString();
+        putCache("items", result);
+        sendJson(exchange, result);
     }
 
     private void handleEconomy(HttpExchange exchange) throws IOException {
         if (!checkGet(exchange)) return;
+        String cached = getCached("economy");
+        if (cached != null) { sendJson(exchange, cached); return; }
+
         DataCollector dc = evoCore.getDataCollector();
 
         // Top items by demand
@@ -206,11 +249,16 @@ public class WebServer {
                     .append("}");
         }
         json.append("]}");
-        sendJson(exchange, json.toString());
+        String result = json.toString();
+        putCache("economy", result);
+        sendJson(exchange, result);
     }
 
     private void handleMeta(HttpExchange exchange) throws IOException {
         if (!checkGet(exchange)) return;
+        String cached = getCached("meta");
+        if (cached != null) { sendJson(exchange, cached); return; }
+
         DataCollector dc = evoCore.getDataCollector();
 
         // Top equipped weapons
@@ -228,13 +276,20 @@ public class WebServer {
                     .append("\",\"count\":").append(entry.getValue()).append("}");
         }
         json.append("]}");
-        sendJson(exchange, json.toString());
+        String result = json.toString();
+        putCache("meta", result);
+        sendJson(exchange, result);
     }
 
     private void handleAlerts(HttpExchange exchange) throws IOException {
         if (!checkGet(exchange)) return;
+        String cached = getCached("alerts");
+        if (cached != null) { sendJson(exchange, cached); return; }
+
         List<String> alerts = evoCore.getAnalyticsEngine().getAlerts();
-        sendJson(exchange, listToJsonArray(alerts));
+        String result = listToJsonArray(alerts);
+        putCache("alerts", result);
+        sendJson(exchange, result);
     }
 
     // --- Dashboard HTML ---
@@ -497,7 +552,7 @@ public class WebServer {
 + "}\n"
 + "\n"
 + "loadAll();\n"
-+ "setInterval(loadAll, 15000);\n"
++ "setInterval(loadAll, 30000);\n"
 + "</script>\n"
 + "</body>\n"
 + "</html>";
@@ -509,6 +564,32 @@ public class WebServer {
         if (!"GET".equals(exchange.getRequestMethod())) {
             exchange.sendResponseHeaders(405, -1);
             return false;
+        }
+        // Rate limiting por IP
+        String ip = exchange.getRemoteAddress().getAddress().getHostAddress();
+        if (!checkRateLimit(ip)) {
+            String msg = "{\"error\":\"Too many requests. Espera un momento.\"}";
+            exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
+            exchange.getResponseHeaders().set("Retry-After", "10");
+            byte[] bytes = msg.getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(429, bytes.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(bytes);
+            }
+            return false;
+        }
+        return true;
+    }
+
+    private boolean checkRateLimit(String ip) {
+        long now = System.currentTimeMillis();
+        List<Long> timestamps = rateLimitMap.computeIfAbsent(ip, k -> Collections.synchronizedList(new ArrayList<>()));
+        synchronized (timestamps) {
+            timestamps.removeIf(t -> now - t > RATE_WINDOW_MS);
+            if (timestamps.size() >= MAX_REQUESTS_PER_MINUTE) {
+                return false;
+            }
+            timestamps.add(now);
         }
         return true;
     }
@@ -552,5 +633,17 @@ public class WebServer {
         }
         sb.append("]");
         return sb.toString();
+    }
+
+    // --- Cache helpers ---
+
+    private String getCached(String key) {
+        CachedResponse cr = responseCache.get(key);
+        if (cr != null && !cr.isExpired()) return cr.json;
+        return null;
+    }
+
+    private void putCache(String key, String json) {
+        responseCache.put(key, new CachedResponse(json));
     }
 }

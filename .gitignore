@@ -1,3 +1,5 @@
+# ===== SOLO SUBIR EL PLUGIN (src/main + build files) =====
+
 # Build output
 build/
 target/
@@ -18,20 +20,18 @@ target/
 Thumbs.db
 desktop.ini
 
-# Logs
+# Logs y archivos temporales
 *.log
+*.txt
 err.txt
 
-# Dependencies (downloaded locally)
+# Dependencies
 libs/
+lib/
 org/
 
 # Gradle
 .gradle/
-build_output.log
-
-# Maven
-spigot-metadata.xml
 
 # Node / Web
 node_modules/
@@ -40,3 +40,47 @@ web/
 # Misc
 *.bak
 *.tmp
+*.mp3
+*.csv
+*.cmd
+
+# ===== CONFIGS DE SERVIDOR (NO SUBIR) =====
+ModelEngine/
+MythicMobs/
+Nexo/
+MCPets/
+ExcellentCrates/
+MicePack/
+skeleton_mobs-amonde/
+Rank Icons/
+bolsa-web/
+discord_bot/
+holograms.yml
+discord_config_example.yml
+
+# ===== DOCS/GUIAS (NO SUBIR) =====
+ANUNCIO_EL_ERRANTE.md
+BUG_FIXES_SUMMARY.md
+CHANGELOG.md
+CHANGELOG_COMUNIDAD.md
+DISCORD_BOT_SETUP.md
+GUIA_DISCORD_BOT.md
+HUGE_UPDATE_v2.1.md
+MISION3_ARQUITECTO.md
+MISION_DESPERTAR_ABISMO.md
+TUTORIAL.md
+UPDATE_v2.0.md
+historias_misiones.md
+
+# ===== SCRIPTS DE BUILD (NO SUBIR) =====
+build_*.ps1
+build_*.log
+build_*.txt
+build_mg_test.ps1
+build_minigames_fix.ps1
+build_safe.ps1
+build_shaded.ps1
+fix_*.ps1
+download_spigot.ps1
+temp_*.java
+spigot-metadata.xml

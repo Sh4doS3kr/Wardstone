@@ -65,15 +65,20 @@ public class VipAnimation {
 
         new BukkitRunnable() {
             int tick = 0;
+            boolean completed = false;
             @Override
             public void run() {
-                if (stand.isDead() || !stand.isValid()) { cancel(); return; }
+                if (stand.isDead() || !stand.isValid() || tick >= 200) {
+                    if (!stand.isDead() && stand.isValid()) stand.remove();
+                    if (!completed) { completed = true; if (onComplete != null) onComplete.run(); }
+                    cancel(); return;
+                }
                 Location current = stand.getLocation();
 
                 if (current.getY() <= target.getY() + 0.5) {
                     stand.remove();
                     lunaImpact(target);
-                    if (onComplete != null) onComplete.run();
+                    if (!completed) { completed = true; if (onComplete != null) onComplete.run(); }
                     cancel();
                     return;
                 }
@@ -158,15 +163,20 @@ public class VipAnimation {
 
         new BukkitRunnable() {
             int tick = 0;
+            boolean completed = false;
             @Override
             public void run() {
-                if (stand.isDead() || !stand.isValid()) { cancel(); return; }
+                if (stand.isDead() || !stand.isValid() || tick >= 200) {
+                    if (!stand.isDead() && stand.isValid()) stand.remove();
+                    if (!completed) { completed = true; if (onComplete != null) onComplete.run(); }
+                    cancel(); return;
+                }
                 Location current = stand.getLocation();
 
                 if (current.getY() <= target.getY() + 0.5) {
                     stand.remove();
                     novaImpact(target);
-                    if (onComplete != null) onComplete.run();
+                    if (!completed) { completed = true; if (onComplete != null) onComplete.run(); }
                     cancel();
                     return;
                 }
@@ -276,15 +286,20 @@ public class VipAnimation {
 
         new BukkitRunnable() {
             int tick = 0;
+            boolean completed = false;
             @Override
             public void run() {
-                if (stand.isDead() || !stand.isValid()) { cancel(); return; }
+                if (stand.isDead() || !stand.isValid() || tick >= 200) {
+                    if (!stand.isDead() && stand.isValid()) stand.remove();
+                    if (!completed) { completed = true; if (onComplete != null) onComplete.run(); }
+                    cancel(); return;
+                }
                 Location current = stand.getLocation();
 
                 if (current.getY() <= target.getY() + 0.5) {
                     stand.remove();
                     eclipseImpact(target);
-                    if (onComplete != null) onComplete.run();
+                    if (!completed) { completed = true; if (onComplete != null) onComplete.run(); }
                     cancel();
                     return;
                 }
@@ -326,7 +341,7 @@ public class VipAnimation {
 
                 // Lightning flickers
                 if (tick % 12 == 0 && tick > 10) {
-                    target.getWorld().spawnParticle(Particle.FLASH, current.clone().add(0, 1.5, 0), 1, 0, 0, 0, 0);
+                    target.getWorld().spawnParticle(Particle.END_ROD, current.clone().add(0, 1.5, 0), 1, 0, 0, 0, 0);
                 }
 
                 tick++;
@@ -411,15 +426,20 @@ public class VipAnimation {
 
         new BukkitRunnable() {
             int tick = 0;
+            boolean completed = false;
             @Override
             public void run() {
-                if (stand.isDead() || !stand.isValid()) { cancel(); return; }
+                if (stand.isDead() || !stand.isValid() || tick >= 200) {
+                    if (!stand.isDead() && stand.isValid()) stand.remove();
+                    if (!completed) { completed = true; moonLordImpact(target); if (onComplete != null) onComplete.run(); }
+                    cancel(); return;
+                }
                 Location current = stand.getLocation();
 
                 if (current.getY() <= target.getY() + 0.5) {
                     stand.remove();
                     moonLordImpact(target);
-                    if (onComplete != null) onComplete.run();
+                    if (!completed) { completed = true; if (onComplete != null) onComplete.run(); }
                     cancel();
                     return;
                 }
@@ -487,7 +507,7 @@ public class VipAnimation {
         target.getWorld().spawnParticle(Particle.TOTEM_OF_UNDYING, center, 400, 3, 3, 3, 0.8);
         target.getWorld().spawnParticle(Particle.END_ROD, center, 200, 3, 4, 3, 0.15);
         target.getWorld().spawnParticle(Particle.DRAGON_BREATH, center, 150, 2, 2, 2, 0.1);
-        target.getWorld().spawnParticle(Particle.FLASH, center, 8, 0, 0, 0, 0);
+        target.getWorld().spawnParticle(Particle.END_ROD, center, 8, 0, 0, 0, 0);
 
         // Triple-layer shockwave (purple, gold, white)
         Particle.DustOptions purple = new Particle.DustOptions(Color.fromRGB(150, 50, 255), 2.5f);
@@ -589,9 +609,10 @@ public class VipAnimation {
             boolean transformed = false;
             @Override
             public void run() {
+                try {
                 if (tick >= 300 || stand.isDead()) {
                     if (!stand.isDead()) stand.remove();
-                    lunaImpact(center);
+                    try { lunaImpact(center); } catch (Exception ignored) {}
                     new BukkitRunnable() { @Override public void run() {
                         center.getBlock().setType(newMat);
                         if (onComplete != null) onComplete.run();
@@ -623,12 +644,19 @@ public class VipAnimation {
                 if (!transformed && tick >= 200) {
                     stand.setHelmet(new ItemStack(newMat));
                     transformed = true;
-                    center.getWorld().spawnParticle(Particle.FLASH, pc, 2, 0, 0, 0, 0);
+                    center.getWorld().spawnParticle(Particle.END_ROD, pc, 2, 0, 0, 0, 0);
                     SoundManager.playUpgradeTransform(center);
                 }
 
                 if (tick % 40 == 0) SoundManager.playUpgradeAmbient(center, tick);
                 tick++;
+                } catch (Exception e) {
+                    plugin.getLogger().warning("Error in Luna upgrade animation, restoring block: " + e.getMessage());
+                    if (!stand.isDead()) stand.remove();
+                    center.getBlock().setType(newMat);
+                    if (onComplete != null) onComplete.run();
+                    cancel();
+                }
             }
         }.runTaskTimer(plugin, 0L, 1L);
     }
@@ -642,9 +670,10 @@ public class VipAnimation {
             boolean transformed = false;
             @Override
             public void run() {
+                try {
                 if (tick >= 350 || stand.isDead()) {
                     if (!stand.isDead()) stand.remove();
-                    novaImpact(center);
+                    try { novaImpact(center); } catch (Exception ignored) {}
                     new BukkitRunnable() { @Override public void run() {
                         center.getBlock().setType(newMat);
                         if (onComplete != null) onComplete.run();
@@ -681,6 +710,13 @@ public class VipAnimation {
 
                 if (tick % 40 == 0) SoundManager.playUpgradeAmbient(center, tick);
                 tick++;
+                } catch (Exception e) {
+                    plugin.getLogger().warning("Error in Nova upgrade animation, restoring block: " + e.getMessage());
+                    if (!stand.isDead()) stand.remove();
+                    center.getBlock().setType(newMat);
+                    if (onComplete != null) onComplete.run();
+                    cancel();
+                }
             }
         }.runTaskTimer(plugin, 0L, 1L);
     }
@@ -694,9 +730,10 @@ public class VipAnimation {
             boolean transformed = false;
             @Override
             public void run() {
+                try {
                 if (tick >= 350 || stand.isDead()) {
                     if (!stand.isDead()) stand.remove();
-                    eclipseImpact(center);
+                    try { eclipseImpact(center); } catch (Exception ignored) {}
                     new BukkitRunnable() { @Override public void run() {
                         center.getBlock().setType(newMat);
                         if (onComplete != null) onComplete.run();
@@ -735,6 +772,13 @@ public class VipAnimation {
 
                 if (tick % 40 == 0) SoundManager.playUpgradeAmbient(center, tick);
                 tick++;
+                } catch (Exception e) {
+                    plugin.getLogger().warning("Error in Eclipse upgrade animation, restoring block: " + e.getMessage());
+                    if (!stand.isDead()) stand.remove();
+                    center.getBlock().setType(newMat);
+                    if (onComplete != null) onComplete.run();
+                    cancel();
+                }
             }
         }.runTaskTimer(plugin, 0L, 1L);
     }
@@ -748,9 +792,10 @@ public class VipAnimation {
             boolean transformed = false;
             @Override
             public void run() {
+                try {
                 if (tick >= 400 || stand.isDead()) {
                     if (!stand.isDead()) stand.remove();
-                    moonLordImpact(center);
+                    try { moonLordImpact(center); } catch (Exception ignored) {}
                     new BukkitRunnable() { @Override public void run() {
                         center.getBlock().setType(newMat);
                         if (onComplete != null) onComplete.run();
@@ -798,7 +843,7 @@ public class VipAnimation {
                     stand.setHelmet(new ItemStack(newMat));
                     transformed = true;
                     center.getWorld().spawnParticle(Particle.TOTEM_OF_UNDYING, pc, 150, 1, 1, 1, 0.5);
-                    center.getWorld().spawnParticle(Particle.FLASH, pc, 5, 0, 0, 0, 0);
+                    center.getWorld().spawnParticle(Particle.END_ROD, pc, 5, 0, 0, 0, 0);
                     SoundManager.playUpgradeTransform(center);
                 }
 
@@ -807,6 +852,13 @@ public class VipAnimation {
                     center.getWorld().playSound(center, Sound.BLOCK_BEACON_AMBIENT, 1.0f, 0.5f + tick * 0.005f);
                 }
                 tick++;
+                } catch (Exception e) {
+                    plugin.getLogger().warning("Error in MoonLord upgrade animation, restoring block: " + e.getMessage());
+                    if (!stand.isDead()) stand.remove();
+                    center.getBlock().setType(newMat);
+                    if (onComplete != null) onComplete.run();
+                    cancel();
+                }
             }
         }.runTaskTimer(plugin, 0L, 1L);
     }

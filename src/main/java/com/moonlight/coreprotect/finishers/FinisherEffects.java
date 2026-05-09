@@ -1,1178 +1,557 @@
 package com.moonlight.coreprotect.finishers;
 
+import com.moonlight.coreprotect.CoreProtectPlugin;
 import org.bukkit.*;
 import org.bukkit.entity.FallingBlock;
 import org.bukkit.entity.Player;
+import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
-
+import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class FinisherEffects {
-
     private final Plugin plugin;
-
-    public FinisherEffects(Plugin plugin) {
-        this.plugin = plugin;
-    }
+    public static final String GHOST_TAG = "finisher_ghost";
+    public FinisherEffects(Plugin plugin) { this.plugin = plugin; }
 
     public int play(FinisherType type, Player victim, Player killer) {
+        // Marcar jugador para permitir teletransportes de finisher
+        victim.setMetadata("finisher_teleport", new FixedMetadataValue(plugin, true));
+        
+        int dur;
         switch (type) {
-            case THUNDER_JUDGMENT:  return playThunder(victim);
-            case VOID_INVOCATION:  return playVoid(victim);
-            case BLOOD_ERUPTION:   return playBlood(victim);
-            case SHATTERED_AMETHYST: return playAmethyst(victim);
-            case ORBITAL_STRIKE:   return playOrbital(victim);
-            case HELLFIRE:         return playHellfire(victim);
-            case ICE_STORM:        return playIce(victim);
-            case DRAGON_WRATH:     return playDragon(victim);
-            default: return 40;
+            case THUNDER_JUDGMENT: dur = playThunder(victim); break;
+            case VOID_INVOCATION: dur = playVoid(victim); break;
+            case BLOOD_ERUPTION: dur = playBlood(victim); break;
+            case SHATTERED_AMETHYST: dur = playAmethyst(victim); break;
+            case ORBITAL_STRIKE: dur = playOrbital(victim); break;
+            case HELLFIRE: dur = playHellfire(victim); break;
+            case ICE_STORM: dur = playIce(victim); break;
+            case DRAGON_WRATH: dur = playDragon(victim); break;
+            case SOUL_VORTEX: dur = playSoulVortex(victim); break;
+            case WITHER_STORM: dur = playWitherStorm(victim); break;
+            case SCULK_RESONANCE: dur = playSculkResonance(victim); break;
+            case APOCALYPSE: dur = playApocalypse(victim); break;
+            default: dur = 40; break;
         }
+        scheduleGhostCleanup(victim, dur);
+        
+        // Programar remoción de metadata
+        scheduleMetadataCleanup(victim, dur);
+        
+        return dur;
+    }
+
+    private void scheduleGhostCleanup(Player victim, int delay) {
+        final Location origin = victim.getLocation().clone();
+        final World w = origin.getWorld();
+        if (w == null) return;
+        int[] sweeps = {delay + 2, delay + 25, delay + 50, delay + 80};
+        for (int tick : sweeps) {
+            new BukkitRunnable() {
+                public void run() {
+                    if (!w.isChunkLoaded(origin.getBlockX() >> 4, origin.getBlockZ() >> 4)) return;
+                    for (org.bukkit.entity.Entity e : w.getNearbyEntities(origin, 30, 30, 30)) {
+                        if (e instanceof FallingBlock && e.hasMetadata(GHOST_TAG)) {
+                            e.remove();
+                        }
+                    }
+                }
+            }.runTaskLater(plugin, tick);
+        }
+    }
+    
+    public void immediateGhostCleanup(Location location) {
+        if (location == null) return;
+        final World w = location.getWorld();
+        if (w == null) return;
+        
+        // Limpieza AGRESIVA inmediata en un radio de 100 bloques
+        int cleaned = 0;
+        for (org.bukkit.entity.Entity e : w.getNearbyEntities(location, 100, 100, 100)) {
+            if (e instanceof FallingBlock && e.hasMetadata(GHOST_TAG)) {
+                e.remove();
+                cleaned++;
+            }
+        }
+        
+        // Múltiples pasadas para asegurar limpieza completa
+        for (int delay = 1; delay <= 10; delay++) {
+            new BukkitRunnable() {
+                public void run() {
+                    if (!w.isChunkLoaded(location.getBlockX() >> 4, location.getBlockZ() >> 4)) return;
+                    int passCleaned = 0;
+                    for (org.bukkit.entity.Entity e : w.getNearbyEntities(location, 100, 100, 100)) {
+                        if (e instanceof FallingBlock && e.hasMetadata(GHOST_TAG)) {
+                            w.spawnParticle(Particle.CLOUD, e.getLocation(), 3, 0.1, 0.1, 0.1, 0.01);
+                            e.remove();
+                            passCleaned++;
+                        }
+                    }
+                    if (passCleaned > 0) {
+                        // Si encontramos bloques, programar más limpieza
+                        new BukkitRunnable() {
+                            public void run() {
+                                for (org.bukkit.entity.Entity e : w.getNearbyEntities(location, 100, 100, 100)) {
+                                    if (e instanceof FallingBlock && e.hasMetadata(GHOST_TAG)) {
+                                        e.remove();
+                                    }
+                                }
+                            }
+                        }.runTaskLater(plugin, 5L);
+                    }
+                }
+            }.runTaskLater(plugin, delay * 2L);
+        }
+    }
+    
+    private void scheduleMetadataCleanup(Player victim, int delay) {
+        // Remover metadata después de que termine el finisher
+        new BukkitRunnable() {
+            public void run() {
+                if (victim.isOnline() && victim.hasMetadata("finisher_teleport")) {
+                    victim.removeMetadata("finisher_teleport", plugin);
+                }
+            }
+        }.runTaskLater(plugin, delay + 20); // 20 ticks extra de seguridad
     }
 
     private Location vLoc(Player v) { return v.isOnline() ? v.getLocation() : null; }
     private ThreadLocalRandom rng() { return ThreadLocalRandom.current(); }
+    private Material rm(Material[] m) { return m[rng().nextInt(m.length)]; }
 
-    private void spawnBlock(World w, Location loc, Material mat, double vx, double vy, double vz, int lifetime) {
-        FallingBlock fb = w.spawnFallingBlock(loc, mat.createBlockData());
-        fb.setDropItem(false);
-        fb.setHurtEntities(false);
+    private FallingBlock gb(World w, Location l, Material m, double vx, double vy, double vz, int life) {
+        FallingBlock fb = w.spawnFallingBlock(l, m.createBlockData());
+        fb.setDropItem(false); fb.setHurtEntities(false);
+        fb.setMetadata(GHOST_TAG, new FixedMetadataValue(plugin, true));
         fb.setVelocity(new Vector(vx, vy, vz));
-        new BukkitRunnable() {
-            @Override public void run() {
-                if (!fb.isDead()) {
-                    Location deathLoc = fb.getLocation();
-                    // Small explosion on landing
-                    w.spawnParticle(Particle.EXPLOSION_EMITTER, deathLoc, 1, 0.3, 0.3, 0.3, 0);
-                    w.spawnParticle(Particle.CLOUD, deathLoc, 8, 0.4, 0.4, 0.4, 0.02);
-                    w.playSound(deathLoc, Sound.ENTITY_GENERIC_EXPLODE, 0.4f, 1.5f);
-                    fb.remove();
-                }
-            }
-        }.runTaskLater(plugin, lifetime);
+        new BukkitRunnable(){public void run(){if(!fb.isDead()){w.spawnParticle(Particle.CLOUD,fb.getLocation(),4,0.2,0.2,0.2,0.01);fb.remove();}}}.runTaskLater(plugin, life);
+        return fb;
+    }
+    private FallingBlock gf(World w, Location l, Material m, double vx, double vy, double vz, int life) {
+        FallingBlock fb = w.spawnFallingBlock(l, m.createBlockData());
+        fb.setDropItem(false); fb.setHurtEntities(false); fb.setGravity(false);
+        fb.setMetadata(GHOST_TAG, new FixedMetadataValue(plugin, true));
+        fb.setVelocity(new Vector(vx, vy, vz));
+        new BukkitRunnable(){public void run(){if(!fb.isDead()){w.spawnParticle(Particle.CLOUD,fb.getLocation(),3,0.15,0.15,0.15,0.01);fb.remove();}}}.runTaskLater(plugin, life);
+        return fb;
+    }
+    private void ge(World w, Location l, Material m, double vx, double vy, double vz, int life) {
+        FallingBlock fb = w.spawnFallingBlock(l, m.createBlockData());
+        fb.setDropItem(false); fb.setHurtEntities(false);
+        fb.setMetadata(GHOST_TAG, new FixedMetadataValue(plugin, true));
+        fb.setVelocity(new Vector(vx, vy, vz));
+        new BukkitRunnable(){public void run(){if(!fb.isDead()){Location d=fb.getLocation();w.spawnParticle(Particle.EXPLOSION_EMITTER,d,1);w.spawnParticle(Particle.CLOUD,d,6,0.3,0.3,0.3,0.02);w.playSound(d,Sound.ENTITY_GENERIC_EXPLODE,0.25f,1.5f);fb.remove();}}}.runTaskLater(plugin, life);
     }
 
-    // ========================================================================
-    //  1. EL JUICIO DEL TRUENO  (10s = 200 ticks)
-    // ========================================================================
+    // === 1. THUNDER — ELECTRIC CAGE (ground, 200t) ===
     private int playThunder(Player victim) {
-        final int DUR = 200;
-        Location origin = victim.getLocation().clone();
-        World w = origin.getWorld();
-        if (w == null) return 20;
-
-        // Levitate victim
-        victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, 160, 2, false, false, false));
-        w.playSound(origin, Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 1.0f, 0.4f);
-        w.playSound(origin, Sound.ENTITY_WARDEN_EMERGE, 0.6f, 1.5f);
-
-        // Phase 1: Constant electric storm aura (0-200)
-        new BukkitRunnable() {
-            int t = 0;
-            @Override public void run() {
-                if (t >= DUR || !victim.isOnline()) { cancel(); return; }
-                Location loc = vLoc(victim);
-                if (loc == null) { cancel(); return; }
-
-                // 3 spinning electric rings
-                for (int ring = 0; ring < 3; ring++) {
-                    double a = t * (0.3 + ring * 0.15) + ring * 2.0;
-                    double r = 1.5 + Math.sin(t * 0.08 + ring) * 0.6;
-                    double x = Math.cos(a) * r;
-                    double z = Math.sin(a) * r;
-                    double y = ring * 0.6 + 0.3;
-                    w.spawnParticle(Particle.ELECTRIC_SPARK, loc.clone().add(x, y, z), 8, 0.15, 0.2, 0.15, 0.03);
-                    w.spawnParticle(Particle.ELECTRIC_SPARK, loc.clone().add(-x, y + 0.5, -z), 6, 0.1, 0.3, 0.1, 0.02);
-                }
-
-                // Storm clouds
-                if (t % 4 == 0) {
-                    w.spawnParticle(Particle.CLOUD, loc.clone().add(0, -0.5, 0), 15, 2.0, 0.3, 2.0, 0.02);
-                    w.spawnParticle(Particle.DUST, loc.clone().add(0, 3, 0), 8, 2.5, 0.5, 2.5, 0,
-                            new Particle.DustOptions(Color.fromRGB(40, 40, 60), 3.0f));
-                }
-
-                // Random sparks flying off
-                if (t % 3 == 0) {
-                    double sx = rng().nextDouble(-2, 2), sz = rng().nextDouble(-2, 2);
-                    w.spawnParticle(Particle.ELECTRIC_SPARK, loc.clone().add(sx, rng().nextDouble(0, 2.5), sz),
-                            12, 0.3, 0.3, 0.3, 0.06);
-                }
-
-                if (t % 15 == 0) w.playSound(loc, Sound.BLOCK_RESPAWN_ANCHOR_CHARGE, 0.8f, 2.0f);
-                t += 2;
-            }
-        }.runTaskTimer(plugin, 0, 2);
-
-        // Phase 2: 10 lightning bolts (ticks 20-160, closer and closer)
-        int[] bolts = {20, 35, 48, 60, 72, 85, 100, 115, 130, 145};
-        for (int i = 0; i < bolts.length; i++) {
-            final int idx = i;
-            new BukkitRunnable() {
-                @Override public void run() {
-                    Location loc = vLoc(victim);
-                    if (loc == null) return;
-                    double spread = 3.0 * (1.0 - idx / 10.0);
-                    double ox = rng().nextDouble(-spread, spread);
-                    double oz = rng().nextDouble(-spread, spread);
-                    Location strike = loc.clone().add(ox, 0, oz);
-                    w.strikeLightningEffect(strike);
-                    w.spawnParticle(Particle.ELECTRIC_SPARK, strike.clone().add(0, 1, 0),
-                            40 + idx * 8, 1.5, 2.0, 1.5, 0.08);
-
-                    // Flying copper/iron blocks from each bolt
-                    Material[] mats = {Material.OXIDIZED_COPPER, Material.COPPER_BLOCK, Material.LIGHTNING_ROD};
-                    for (int b = 0; b < 2 + idx / 3; b++) {
-                        spawnBlock(w, strike.clone().add(0, 1, 0),
-                                mats[rng().nextInt(mats.length)],
-                                rng().nextDouble(-0.7, 0.7), rng().nextDouble(0.5, 1.2), rng().nextDouble(-0.7, 0.7),
-                                50 + rng().nextInt(20));
-                    }
-                }
-            }.runTaskLater(plugin, bolts[i]);
-        }
-
-        // Phase 3: Stronger levitation at midpoint
-        new BukkitRunnable() {
-            @Override public void run() {
-                if (!victim.isOnline()) return;
-                victim.removePotionEffect(PotionEffectType.LEVITATION);
-                victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, 80, 3, false, false, false));
-            }
-        }.runTaskLater(plugin, 100);
-
-        // Phase 4: FINAL triple strike (tick 160)
-        new BukkitRunnable() {
-            @Override public void run() {
-                Location loc = vLoc(victim);
-                if (loc == null) return;
-                for (int i = 0; i < 3; i++) w.strikeLightningEffect(loc);
-                w.spawnParticle(Particle.ELECTRIC_SPARK, loc.clone().add(0, 1, 0), 300, 4.0, 3.0, 4.0, 0.15);
-                w.spawnParticle(Particle.CLOUD, loc, 100, 3.0, 2.0, 3.0, 0.08);
-                w.spawnParticle(Particle.EXPLOSION_EMITTER, loc, 5, 1.0, 1.0, 1.0, 0);
-                w.spawnParticle(Particle.FLASH, loc, 3, 0, 0, 0, 0);
-                w.playSound(loc, Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 2.0f, 0.5f);
-                w.playSound(loc, Sound.ENTITY_GENERIC_EXPLODE, 1.5f, 0.8f);
-
-                // Massive block explosion
-                Material[] debris = {Material.OXIDIZED_COPPER, Material.COPPER_BLOCK, Material.IRON_BLOCK,
-                        Material.GOLD_BLOCK, Material.LIGHTNING_ROD};
-                for (int b = 0; b < 15; b++) {
-                    spawnBlock(w, loc.clone().add(0, 2, 0), debris[rng().nextInt(debris.length)],
-                            rng().nextDouble(-1.2, 1.2), rng().nextDouble(0.6, 1.8), rng().nextDouble(-1.2, 1.2),
-                            55 + rng().nextInt(25));
-                }
-            }
-        }.runTaskLater(plugin, 160);
-
-        // Phase 5: Aftershock sparks (165-195)
-        new BukkitRunnable() {
-            int t = 0;
-            @Override public void run() {
-                if (t >= 35) { cancel(); return; }
-                Location loc = vLoc(victim);
-                if (loc == null) loc = origin.clone().add(0, 3, 0);
-                w.spawnParticle(Particle.ELECTRIC_SPARK, loc, 30 - t, 3.0, 3.0, 3.0, 0.05);
-                if (t % 8 == 0) w.playSound(loc, Sound.ENTITY_LIGHTNING_BOLT_IMPACT, 0.5f, 1.5f);
-                t += 3;
-            }
-        }.runTaskTimer(plugin, 165, 3);
-
-        return DUR;
+        final int D=200; Location o=victim.getLocation().clone(); World w=o.getWorld(); if(w==null)return 20;
+        w.playSound(o,Sound.ENTITY_LIGHTNING_BOLT_THUNDER,1.2f,0.3f); w.playSound(o,Sound.ENTITY_WARDEN_EMERGE,0.6f,1.2f);
+        Material[] bm={Material.COPPER_BLOCK,Material.OXIDIZED_COPPER,Material.WEATHERED_COPPER,Material.CUT_COPPER,Material.LIGHTNING_ROD,Material.IRON_BLOCK};
+        new BukkitRunnable(){int t=0;public void run(){
+            if(t>=80||!victim.isOnline()){cancel();return;} Location l=vLoc(victim);if(l==null){cancel();return;}
+            double r=4.0-t*0.03;
+            for(int i=0;i<32;i++){double a=(Math.PI*2/32)*i+t*0.1;w.spawnParticle(Particle.ELECTRIC_SPARK,l.clone().add(Math.cos(a)*r,0.1,Math.sin(a)*r),4,0.06,0.03,0.06,0.015);}
+            if(t%4==0)for(int p=0;p<8;p++){double a=(Math.PI*2/8)*p+t*0.04;for(double y=0;y<4;y+=0.4)w.spawnParticle(Particle.ELECTRIC_SPARK,l.clone().add(Math.cos(a)*r,y,Math.sin(a)*r),3,0.03,0.1,0.03,0.01);}
+            if(t%6==0)for(int p=0;p<8;p++){double a=(Math.PI*2/8)*p;double yy=(t/6)*1.0;if(yy>5)yy=5;gf(w,l.clone().add(Math.cos(a)*r,yy,Math.sin(a)*r),rm(bm),0,0,0,130);}
+            if(t%4==0){w.spawnParticle(Particle.CLOUD,l.clone().add(0,5,0),15,3,0.3,3,0.02);w.spawnParticle(Particle.DUST,l.clone().add(0,5.5,0),10,3.5,0.4,3.5,new Particle.DustOptions(Color.fromRGB(25,25,45),4.0f));}
+            if(t%12==0)w.playSound(l,Sound.BLOCK_RESPAWN_ANCHOR_CHARGE,0.8f,1.5f+t*0.01f);
+            t+=2;
+        }}.runTaskTimer(plugin,0,2);
+        int[] bolts={15,25,35,45,55,65,75,85,98,110,120,130,140,150};
+        for(int i=0;i<bolts.length;i++){final int idx=i;new BukkitRunnable(){public void run(){
+            Location l=vLoc(victim);if(l==null)return;double sp2=4.0*(1.0-idx/(double)bolts.length);double a=rng().nextDouble(Math.PI*2);
+            Location st=l.clone().add(Math.cos(a)*sp2,0,Math.sin(a)*sp2);w.strikeLightningEffect(st);
+            w.spawnParticle(Particle.ELECTRIC_SPARK,st.clone().add(0,0.5,0),60+idx*5,1.2,2,1.2,0.1);
+            for(int b=0;b<4+idx/2;b++)gb(w,st.clone().add(0,0.5,0),rm(bm),rng().nextDouble(-0.8,0.8),rng().nextDouble(0.3,1.0),rng().nextDouble(-0.8,0.8),45+rng().nextInt(20));
+        }}.runTaskLater(plugin,bolts[idx]);}
+        new BukkitRunnable(){public void run(){
+            Location l=vLoc(victim);if(l==null)return;for(int i=0;i<6;i++)w.strikeLightningEffect(l);
+            w.spawnParticle(Particle.ELECTRIC_SPARK,l.clone().add(0,0.5,0),600,6,3,6,0.25);w.spawnParticle(Particle.CLOUD,l,150,4,2,4,0.1);
+            w.spawnParticle(Particle.EXPLOSION_EMITTER,l,8);w.spawnParticle(Particle.END_ROD,l,5);
+            w.playSound(l,Sound.ENTITY_LIGHTNING_BOLT_THUNDER,2.0f,0.3f);w.playSound(l,Sound.ENTITY_GENERIC_EXPLODE,2.0f,0.6f);
+            for(int b=0;b<50;b++){double a=(Math.PI*2/50)*b;double sp=0.7+rng().nextDouble(1.0);ge(w,l.clone().add(0,0.5,0),rm(bm),Math.cos(a)*sp,rng().nextDouble(0.15,0.6),Math.sin(a)*sp,48+rng().nextInt(22));}
+        }}.runTaskLater(plugin,165);
+        new BukkitRunnable(){int t=0;public void run(){if(t>=30){cancel();return;}Location l=vLoc(victim);if(l==null)l=o;w.spawnParticle(Particle.ELECTRIC_SPARK,l,50-t*2,5,0.5,5,0.04);if(t%6==0)w.playSound(l,Sound.ENTITY_LIGHTNING_BOLT_IMPACT,0.4f,1.5f);t+=3;}}.runTaskTimer(plugin,170,3);
+        return D;
     }
 
-    // ========================================================================
-    //  2. INVOCACIÓN DEL VACÍO  (10s = 200 ticks)
-    // ========================================================================
+    // === 2. VOID — SPINNING VORTEX (ground+spin, 200t) ===
     private int playVoid(Player victim) {
-        final int DUR = 200;
-        Location origin = victim.getLocation().clone();
-        World w = origin.getWorld();
-        if (w == null) return 20;
-
-        w.playSound(origin, Sound.ENTITY_ENDERMAN_TELEPORT, 1.2f, 0.2f);
-        w.playSound(origin, Sound.ENTITY_WARDEN_EMERGE, 1.0f, 0.4f);
-
-        // Phase 1: Dark ground circle + rising darkness (0-60)
-        new BukkitRunnable() {
-            int t = 0;
-            @Override public void run() {
-                if (t >= 60 || !victim.isOnline()) { cancel(); return; }
-                Location loc = vLoc(victim);
-                if (loc == null) { cancel(); return; }
-
-                double radius = 3.0 - (t * 0.03);
-                for (int i = 0; i < 16; i++) {
-                    double a = (Math.PI * 2 / 16) * i + (t * 0.08);
-                    double x = Math.cos(a) * radius, z = Math.sin(a) * radius;
-                    w.spawnParticle(Particle.DRAGON_BREATH, loc.clone().add(x, 0.1, z), 3, 0.05, 0.05, 0.05, 0.003);
-                    w.spawnParticle(Particle.SQUID_INK, loc.clone().add(x * 0.5, 0.3 + t * 0.03, z * 0.5),
-                            2, 0.1, 0.15, 0.1, 0.008);
-                }
-                w.spawnParticle(Particle.PORTAL, loc.clone().add(0, 1, 0), 20, 1.0, 1.0, 1.0, 0.8);
-
-                // Obsidian blocks rising from ground
-                if (t % 12 == 0) {
-                    double bx = rng().nextDouble(-2, 2), bz = rng().nextDouble(-2, 2);
-                    spawnBlock(w, loc.clone().add(bx, -0.5, bz), Material.OBSIDIAN,
-                            0, rng().nextDouble(0.3, 0.6), 0, 50);
-                }
-
-                if (t % 12 == 0) w.playSound(loc, Sound.BLOCK_PORTAL_AMBIENT, 0.6f, 0.3f + t * 0.015f);
-                t += 2;
-            }
-        }.runTaskTimer(plugin, 0, 2);
-
-        // Phase 2: Victim levitates (tick 40)
-        new BukkitRunnable() {
-            @Override public void run() {
-                if (!victim.isOnline()) return;
-                victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, 140, 2, false, false, false));
-                Location loc = vLoc(victim);
-                if (loc != null) {
-                    w.playSound(loc, Sound.ENTITY_ENDERMAN_SCREAM, 0.8f, 0.2f);
-                    w.spawnParticle(Particle.SONIC_BOOM, loc, 1, 0, 0, 0, 0);
-                }
-            }
-        }.runTaskLater(plugin, 40);
-
-        // Phase 3: Intense multi-spiral vortex + flying end stone (60-170)
-        new BukkitRunnable() {
-            int t = 0;
-            @Override public void run() {
-                if (t >= 110 || !victim.isOnline()) { cancel(); return; }
-                Location loc = vLoc(victim);
-                if (loc == null) { cancel(); return; }
-
-                // 6 spiraling arms
-                for (int arm = 0; arm < 6; arm++) {
-                    double a = (t * 0.5) + (arm * Math.PI / 3);
-                    double r = 2.0 - (t * 0.012);
-                    if (r < 0.4) r = 0.4;
-                    double x = Math.cos(a) * r, z = Math.sin(a) * r;
-                    double y = (arm % 3) * 0.5 + Math.sin(t * 0.1) * 0.3;
-                    w.spawnParticle(Particle.DRAGON_BREATH, loc.clone().add(x, y, z), 5, 0.08, 0.08, 0.08, 0.003);
-                    w.spawnParticle(Particle.SQUID_INK, loc.clone().add(-x, y + 0.8, -z), 3, 0.1, 0.1, 0.1, 0.015);
-                }
-
-                // Central void column
-                w.spawnParticle(Particle.PORTAL, loc, 25, 0.4, 2.0, 0.4, 1.0);
-                w.spawnParticle(Particle.DUST, loc, 8, 0.3, 1.5, 0.3, 0,
-                        new Particle.DustOptions(Color.fromRGB(20, 0, 40), 2.5f));
-
-                // Heartbeat + sonic boom
-                if (t % 16 == 0) {
-                    w.playSound(loc, Sound.ENTITY_WARDEN_HEARTBEAT, 1.0f, 0.4f);
-                    w.spawnParticle(Particle.SONIC_BOOM, loc, 1, 0, 0, 0, 0);
-                }
-
-                // Flying end stone blocks being sucked in
-                if (t % 10 == 0) {
-                    Material[] mats = {Material.END_STONE, Material.OBSIDIAN, Material.CRYING_OBSIDIAN, Material.PURPLE_CONCRETE};
-                    for (int b = 0; b < 3; b++) {
-                        double bx = rng().nextDouble(-3, 3), bz = rng().nextDouble(-3, 3);
-                        spawnBlock(w, loc.clone().add(bx, -2, bz), mats[rng().nextInt(mats.length)],
-                                -bx * 0.1, rng().nextDouble(0.3, 0.7), -bz * 0.1, 40);
-                    }
-                }
-
-                t += 2;
-            }
-        }.runTaskTimer(plugin, 60, 2);
-
-        // Phase 4: IMPLOSION (tick 175)
-        new BukkitRunnable() {
-            @Override public void run() {
-                Location loc = vLoc(victim);
-                if (loc == null) return;
-
-                w.spawnParticle(Particle.SQUID_INK, loc, 250, 5.0, 5.0, 5.0, 0.12);
-                w.spawnParticle(Particle.DRAGON_BREATH, loc, 150, 4.0, 4.0, 4.0, 0.08);
-                w.spawnParticle(Particle.EXPLOSION_EMITTER, loc, 6, 1.5, 1.5, 1.5, 0);
-                w.spawnParticle(Particle.PORTAL, loc, 400, 5.0, 5.0, 5.0, 1.5);
-                w.spawnParticle(Particle.SONIC_BOOM, loc, 3, 1, 1, 1, 0);
-                w.playSound(loc, Sound.ENTITY_WARDEN_SONIC_BOOM, 1.5f, 0.3f);
-                w.playSound(loc, Sound.ENTITY_GENERIC_EXPLODE, 1.5f, 0.3f);
-                w.playSound(loc, Sound.ENTITY_ENDERMAN_TELEPORT, 1.5f, 0.2f);
-
-                // Debris explosion
-                Material[] debris = {Material.END_STONE, Material.OBSIDIAN, Material.CRYING_OBSIDIAN,
-                        Material.PURPLE_CONCRETE, Material.BLACK_CONCRETE};
-                for (int b = 0; b < 20; b++) {
-                    spawnBlock(w, loc.clone().add(0, 1, 0), debris[rng().nextInt(debris.length)],
-                            rng().nextDouble(-1.5, 1.5), rng().nextDouble(0.5, 2.0), rng().nextDouble(-1.5, 1.5),
-                            50 + rng().nextInt(30));
-                }
-            }
-        }.runTaskLater(plugin, 175);
-
-        return DUR;
+        final int D=200; Location o=victim.getLocation().clone(); World w=o.getWorld(); if(w==null)return 20;
+        w.playSound(o,Sound.ENTITY_ENDERMAN_TELEPORT,1.2f,0.2f); w.playSound(o,Sound.ENTITY_WARDEN_EMERGE,1.0f,0.4f);
+        Material[] bm={Material.OBSIDIAN,Material.CRYING_OBSIDIAN,Material.END_STONE,Material.PURPLE_CONCRETE,Material.BLACK_CONCRETE,Material.END_STONE_BRICKS};
+        new BukkitRunnable(){int t=0;public void run(){
+            if(t>=50||!victim.isOnline()){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}
+            double r=0.5+t*0.09;
+            for(int i=0;i<24;i++){double a=(Math.PI*2/24)*i+t*0.15;w.spawnParticle(Particle.DRAGON_BREATH,l.clone().add(Math.cos(a)*r,0.1,Math.sin(a)*r),3,0,0,0,0);w.spawnParticle(Particle.SQUID_INK,l.clone().add(Math.cos(a)*r*0.5,0.15,Math.sin(a)*r*0.5),2);}
+            w.spawnParticle(Particle.PORTAL,l.clone().add(0,0.3,0),20,r*0.4,0.1,r*0.4,0.6);
+            if(t%8==0){w.playSound(l,Sound.BLOCK_PORTAL_AMBIENT,0.7f,0.3f+t*0.02f);for(int b=0;b<3;b++){double a2=rng().nextDouble(Math.PI*2);gf(w,l.clone().add(Math.cos(a2)*r,0.1,Math.sin(a2)*r),rm(bm),0,0,0,60);}}
+            t+=2;
+        }}.runTaskTimer(plugin,0,2);
+        new BukkitRunnable(){int t=0;float speed=12f;float cumYaw=victim.getLocation().getYaw();public void run(){if(t>=155||!victim.isOnline()){cancel();return;}speed=Math.min(speed+0.9f,100f);cumYaw+=speed;Location l=victim.getLocation();l.setYaw(cumYaw%360f);victim.teleport(l);if(t%3==0)w.spawnParticle(Particle.PORTAL,l.clone().add(0,1,0),12,0.3,0.5,0.3,0.7);t++;}}.runTaskTimer(plugin,28,1);
+        new BukkitRunnable(){int t=0;public void run(){
+            if(t>=135||!victim.isOnline()){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}
+            for(int arm=0;arm<8;arm++){double a=t*0.55+arm*Math.PI/4;double maxR=4.0-t*0.025;if(maxR<0.3)maxR=0.3;for(double d=0.3;d<maxR;d+=0.45)w.spawnParticle(Particle.DRAGON_BREATH,l.clone().add(Math.cos(a+d*0.3)*d,0.12,Math.sin(a+d*0.3)*d),2,0.02,0.02,0.02,0.0);}
+            w.spawnParticle(Particle.SQUID_INK,l.clone().add(0,0.5,0),12,0.1,0.1,0.1,0.0);
+            if(t%6==0)for(int b=0;b<6;b++){double a2=rng().nextDouble(Math.PI*2);double dist=3.5+rng().nextDouble(3);gb(w,l.clone().add(Math.cos(a2)*dist,0.5,Math.sin(a2)*dist),rm(bm),-Math.cos(a2)*0.25,rng().nextDouble(0.05,0.18),-Math.sin(a2)*0.25,30+rng().nextInt(15));}
+            if(t%14==0){w.playSound(l,Sound.ENTITY_WARDEN_HEARTBEAT,1.0f,0.4f);w.spawnParticle(Particle.SONIC_BOOM,l,1,0.0,0.0,0.0,0.0);}
+            t+=2;
+        }}.runTaskTimer(plugin,35,2);
+        new BukkitRunnable(){public void run(){
+            Location l=vLoc(victim);if(l==null)return;
+            w.spawnParticle(Particle.SQUID_INK,l,400);w.spawnParticle(Particle.DRAGON_BREATH,l,300,0,0,0,0);w.spawnParticle(Particle.PORTAL,l,600,6,3,6,2.5);
+            w.spawnParticle(Particle.EXPLOSION_EMITTER,l,6);w.spawnParticle(Particle.SONIC_BOOM,l,4);
+            w.playSound(l,Sound.ENTITY_WARDEN_SONIC_BOOM,1.5f,0.3f);w.playSound(l,Sound.ENTITY_GENERIC_EXPLODE,1.5f,0.4f);
+            for(int b=0;b<50;b++){double a=(Math.PI*2/50)*b;double sp=rng().nextDouble(0.5,1.4);ge(w,l.clone().add(0,0.5,0),rm(bm),Math.cos(a)*sp,rng().nextDouble(0.1,0.5),Math.sin(a)*sp,48+rng().nextInt(22));}
+        }}.runTaskLater(plugin,172);
+        return D;
     }
 
-    // ========================================================================
-    //  3. ERUPCIÓN DE SANGRE  (10s = 200 ticks)
-    // ========================================================================
+    // === 3. BLOOD — GEYSERS + RAIN (ground, 200t) ===
     private int playBlood(Player victim) {
-        final int DUR = 200;
-        Location origin = victim.getLocation().clone();
-        World w = origin.getWorld();
-        if (w == null) return 20;
-
-        w.playSound(origin, Sound.ENTITY_WARDEN_EMERGE, 0.8f, 0.7f);
-        w.playSound(origin, Sound.ENTITY_ELDER_GUARDIAN_CURSE, 0.6f, 0.5f);
-
-        // Phase 1: Blood pool expanding + ground cracks (0-50)
-        new BukkitRunnable() {
-            int t = 0;
-            @Override public void run() {
-                if (t >= 50 || !victim.isOnline()) { cancel(); return; }
-                Location loc = vLoc(victim);
-                if (loc == null) { cancel(); return; }
-
-                double radius = 0.5 + t * 0.08;
-                for (int i = 0; i < 16; i++) {
-                    double a = (Math.PI * 2 / 16) * i + (t * 0.12);
-                    double x = Math.cos(a) * radius, z = Math.sin(a) * radius;
-                    w.spawnParticle(Particle.DUST, loc.clone().add(x, 0.05, z), 4,
-                            0.12, 0.01, 0.12, 0,
-                            new Particle.DustOptions(Color.fromRGB(120, 0, 0), 2.5f));
-                }
-                // Inner pool
-                w.spawnParticle(Particle.DUST, loc.clone().add(0, 0.1, 0), 12,
-                        radius * 0.5, 0.02, radius * 0.5, 0,
-                        new Particle.DustOptions(Color.fromRGB(180, 0, 0), 2.0f));
-
-                if (t % 6 == 0) {
-                    w.playSound(loc, Sound.BLOCK_HONEY_BLOCK_SLIDE, 0.8f, 0.3f);
-                    // Red blocks popping from ground
-                    spawnBlock(w, loc.clone().add(rng().nextDouble(-radius, radius), 0, rng().nextDouble(-radius, radius)),
-                            Material.RED_CONCRETE, 0, rng().nextDouble(0.15, 0.35), 0, 35);
-                }
-                t += 2;
-            }
-        }.runTaskTimer(plugin, 0, 2);
-
-        // Phase 2: Victim levitates (tick 35)
-        new BukkitRunnable() {
-            @Override public void run() {
-                if (!victim.isOnline()) return;
-                victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, 130, 2, false, false, false));
-                w.playSound(origin, Sound.ENTITY_GHAST_SCREAM, 0.5f, 0.5f);
-            }
-        }.runTaskLater(plugin, 35);
-
-        // Phase 3: Blood fountain + continuous drip rain (40-160)
-        new BukkitRunnable() {
-            int t = 0;
-            @Override public void run() {
-                if (t >= 120 || !victim.isOnline()) { cancel(); return; }
-                Location loc = vLoc(victim);
-                if (loc == null) { cancel(); return; }
-
-                // Fountain from ground
-                double h = Math.min(t * 0.1, 6.0);
-                for (double y = 0; y < h; y += 0.4) {
-                    double wobble = Math.sin(y * 2 + t * 0.3) * 0.15;
-                    w.spawnParticle(Particle.DUST, origin.clone().add(wobble, y, wobble), 6,
-                            0.15, 0.08, 0.15, 0,
-                            new Particle.DustOptions(Color.fromRGB(160, 0, 0), 2.0f));
-                }
-
-                // Blood raining from victim
-                w.spawnParticle(Particle.DUST, loc.clone().add(0, 0.5, 0), 15,
-                        0.8, 0.4, 0.8, 0, new Particle.DustOptions(Color.RED, 1.5f));
-                w.spawnParticle(Particle.DUST, loc.clone().add(0, -0.5, 0), 10,
-                        0.5, 1.2, 0.5, 0, new Particle.DustOptions(Color.fromRGB(80, 0, 0), 1.8f));
-
-                // Spraying outward
-                if (t % 4 == 0) {
-                    for (int s = 0; s < 4; s++) {
-                        double sx = rng().nextDouble(-1.5, 1.5), sz = rng().nextDouble(-1.5, 1.5);
-                        w.spawnParticle(Particle.DUST, loc.clone().add(sx, rng().nextDouble(-1, 2), sz), 5,
-                                0.2, 0.2, 0.2, 0, new Particle.DustOptions(Color.fromRGB(139, 0, 0), 1.3f));
-                    }
-                }
-
-                if (t % 10 == 0) w.playSound(loc, Sound.ENTITY_SLIME_SQUISH, 1.0f, 0.4f);
-                t += 2;
-            }
-        }.runTaskTimer(plugin, 40, 2);
-
-        // Phase 4: Falling blood blocks rain (50-160)
-        new BukkitRunnable() {
-            int c = 0;
-            @Override public void run() {
-                if (c >= 30 || !victim.isOnline()) { cancel(); return; }
-                Location loc = vLoc(victim);
-                if (loc == null) { cancel(); return; }
-                Material[] mats = {Material.RED_CONCRETE_POWDER, Material.RED_CONCRETE, Material.RED_WOOL, Material.REDSTONE_BLOCK};
-                for (int b = 0; b < 2; b++) {
-                    double ox = rng().nextDouble(-3, 3), oz = rng().nextDouble(-3, 3);
-                    spawnBlock(w, loc.clone().add(ox, 5 + rng().nextDouble(4), oz),
-                            mats[rng().nextInt(mats.length)], 0, 0, 0, 50 + rng().nextInt(20));
-                }
-                c++;
-            }
-        }.runTaskTimer(plugin, 50, 4);
-
-        // Phase 5: BLOOD EXPLOSION (tick 170)
-        new BukkitRunnable() {
-            @Override public void run() {
-                Location loc = vLoc(victim);
-                if (loc == null) return;
-                w.spawnParticle(Particle.DUST, loc, 300, 5.0, 5.0, 5.0, 0,
-                        new Particle.DustOptions(Color.RED, 3.0f));
-                w.spawnParticle(Particle.DUST, loc, 200, 4.0, 4.0, 4.0, 0,
-                        new Particle.DustOptions(Color.fromRGB(139, 0, 0), 2.5f));
-                w.spawnParticle(Particle.DUST, loc, 150, 3.0, 3.0, 3.0, 0,
-                        new Particle.DustOptions(Color.fromRGB(60, 0, 0), 2.0f));
-                w.spawnParticle(Particle.EXPLOSION_EMITTER, loc, 4, 1, 1, 1, 0);
-                w.playSound(loc, Sound.ENTITY_GENERIC_EXPLODE, 1.5f, 0.5f);
-                w.playSound(loc, Sound.ENTITY_SLIME_SQUISH, 1.5f, 0.2f);
-
-                // Massive debris
-                Material[] debris = {Material.RED_CONCRETE, Material.RED_CONCRETE_POWDER,
-                        Material.REDSTONE_BLOCK, Material.RED_WOOL, Material.NETHER_WART_BLOCK};
-                for (int b = 0; b < 20; b++) {
-                    spawnBlock(w, loc.clone().add(0, 1, 0), debris[rng().nextInt(debris.length)],
-                            rng().nextDouble(-1.5, 1.5), rng().nextDouble(0.5, 2.0), rng().nextDouble(-1.5, 1.5),
-                            55 + rng().nextInt(25));
-                }
-            }
-        }.runTaskLater(plugin, 170);
-
-        return DUR;
+        final int D=200; Location o=victim.getLocation().clone(); World w=o.getWorld(); if(w==null)return 20;
+        w.playSound(o,Sound.ENTITY_WARDEN_EMERGE,0.8f,0.7f);w.playSound(o,Sound.ENTITY_ELDER_GUARDIAN_CURSE,0.5f,0.5f);
+        Material[] bm={Material.RED_CONCRETE,Material.RED_CONCRETE_POWDER,Material.REDSTONE_BLOCK,Material.NETHER_WART_BLOCK,Material.RED_WOOL,Material.RED_MUSHROOM_BLOCK,Material.CRIMSON_PLANKS};
+        new BukkitRunnable(){int t=0;public void run(){
+            if(t>=60||!victim.isOnline()){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}
+            double r=0.5+t*0.1;
+            for(int i=0;i<28;i++){double a=(Math.PI*2/28)*i;for(double d=0.3;d<r;d+=0.5)w.spawnParticle(Particle.DUST,l.clone().add(Math.cos(a)*d,0.05,Math.sin(a)*d),1,0.05,0.01,0.05,new Particle.DustOptions(Color.fromRGB(120+rng().nextInt(60),0,0),2.2f));}
+            if(t%4==0)for(int b=0;b<4;b++){double a=rng().nextDouble(Math.PI*2);double d=rng().nextDouble(0.3,r);gf(w,l.clone().add(Math.cos(a)*d,-0.3,Math.sin(a)*d),rm(bm),0,0,0,100);}
+            if(t%6==0)w.playSound(l,Sound.BLOCK_HONEY_BLOCK_SLIDE,0.8f,0.3f);t+=2;
+        }}.runTaskTimer(plugin,0,2);
+        new BukkitRunnable(){int t=0;public void run(){
+            if(t>=120||!victim.isOnline()){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}
+            if(t%4==0)for(int g2=0;g2<8;g2++){double a=(Math.PI*2/8)*g2+t*0.03;double gr=2.5+Math.sin(t*0.06+g2)*0.6;Location gey=l.clone().add(Math.cos(a)*gr,0,Math.sin(a)*gr);double h=2+Math.sin(t*0.12+g2)*2.5;for(double y=0;y<h;y+=0.25)w.spawnParticle(Particle.DUST,gey.clone().add(0,y,0),4,0.05,0.03,0.05,new Particle.DustOptions(Color.fromRGB(180,0,0),2.2f));if(t%8==0)gb(w,gey.clone().add(0,0.3,0),rm(bm),0,rng().nextDouble(0.4,0.9),0,50);}
+            w.spawnParticle(Particle.DUST,l.clone().add(0,0.6,0),15,1.8,0.3,1.8,new Particle.DustOptions(Color.RED,1.6f));
+            if(t%8==0)for(int b=0;b<4;b++){double a=rng().nextDouble(Math.PI*2);double br=1+rng().nextDouble(2.5);gb(w,l.clone().add(Math.cos(a)*br,-0.3,Math.sin(a)*br),rm(bm),rng().nextDouble(-0.1,0.1),rng().nextDouble(0.35,0.9),rng().nextDouble(-0.1,0.1),50);}
+            if(t%10==0)w.playSound(l,Sound.ENTITY_SLIME_SQUISH,1.0f,0.4f);t+=2;
+        }}.runTaskTimer(plugin,35,2);
+        new BukkitRunnable(){int c=0;public void run(){if(c>=35||!victim.isOnline()){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}for(int b=0;b<3;b++){double ox=rng().nextDouble(-4,4),oz=rng().nextDouble(-4,4);gb(w,l.clone().add(ox,6+rng().nextDouble(4),oz),rm(bm),0,0,0,55+rng().nextInt(15));}c++;}}.runTaskTimer(plugin,60,3);
+        new BukkitRunnable(){public void run(){
+            Location l=vLoc(victim);if(l==null)return;
+            w.spawnParticle(Particle.DUST,l,500,6,3,6,new Particle.DustOptions(Color.RED,3.5f));w.spawnParticle(Particle.DUST,l,300,5,4,5,new Particle.DustOptions(Color.fromRGB(139,0,0),2.8f));
+            w.spawnParticle(Particle.EXPLOSION_EMITTER,l,6);w.playSound(l,Sound.ENTITY_GENERIC_EXPLODE,1.5f,0.5f);w.playSound(l,Sound.ENTITY_SLIME_SQUISH,1.5f,0.2f);
+            for(int b=0;b<55;b++){double a=(Math.PI*2/55)*b;double sp=0.5+rng().nextDouble(0.9);ge(w,l.clone().add(0,0.3,0),rm(bm),Math.cos(a)*sp,rng().nextDouble(0.15,0.7),Math.sin(a)*sp,48+rng().nextInt(22));}
+        }}.runTaskLater(plugin,168);
+        return D;
     }
 
-    // ========================================================================
-    //  4. SHATTERED AMETHYST  (10s = 200 ticks)
-    // ========================================================================
+    // === 4. AMETHYST — CRYSTAL PRISON (ground, 200t) ===
     private int playAmethyst(Player victim) {
-        final int DUR = 200;
-        Location origin = victim.getLocation().clone();
-        World w = origin.getWorld();
-        if (w == null) return 20;
-
-        w.playSound(origin, Sound.BLOCK_AMETHYST_BLOCK_RESONATE, 1.2f, 0.4f);
-        w.playSound(origin, Sound.BLOCK_BEACON_ACTIVATE, 0.6f, 1.8f);
-
-        // Phase 1: Crystal pillars rise from ground (0-60)
-        new BukkitRunnable() {
-            int t = 0;
-            @Override public void run() {
-                if (t >= 60 || !victim.isOnline()) { cancel(); return; }
-                Location loc = vLoc(victim);
-                if (loc == null) { cancel(); return; }
-
-                // Rising crystal blocks around the victim
-                if (t % 8 == 0) {
-                    Material[] mats = {Material.AMETHYST_BLOCK, Material.AMETHYST_CLUSTER, Material.PURPUR_BLOCK};
-                    for (int p = 0; p < 3; p++) {
-                        double a = rng().nextDouble(Math.PI * 2);
-                        double r = 1.5 + rng().nextDouble(1.5);
-                        spawnBlock(w, loc.clone().add(Math.cos(a) * r, -1, Math.sin(a) * r),
-                                mats[rng().nextInt(mats.length)],
-                                0, rng().nextDouble(0.2, 0.5), 0, 80);
-                    }
-                }
-
-                // Orbiting crystal dust (3 rings tightening)
-                for (int ring = 0; ring < 3; ring++) {
-                    int points = 6 + ring * 2;
-                    for (int i = 0; i < points; i++) {
-                        double a = (Math.PI * 2 / points) * i + (t * (0.2 + ring * 0.1));
-                        double r = 2.5 - t * 0.025 - ring * 0.3;
-                        if (r < 0.5) r = 0.5;
-                        double x = Math.cos(a) * r, z = Math.sin(a) * r;
-                        double y = ring * 0.8 + 0.3;
-                        w.spawnParticle(Particle.DUST, loc.clone().add(x, y, z), 3,
-                                0.08, 0.1, 0.08, 0,
-                                new Particle.DustOptions(Color.fromRGB(163, 73, 223), 1.8f));
-                    }
-                }
-
-                if (t % 8 == 0) {
-                    w.playSound(loc, Sound.BLOCK_AMETHYST_BLOCK_CHIME, 0.8f, 0.6f + t * 0.012f);
-                    w.spawnParticle(Particle.END_ROD, loc.clone().add(0, 1, 0), 8, 1.0, 0.8, 1.0, 0.03);
-                }
-                t += 2;
-            }
-        }.runTaskTimer(plugin, 0, 2);
-
-        // Phase 2: Victim levitates (tick 30)
-        new BukkitRunnable() {
-            @Override public void run() {
-                if (!victim.isOnline()) return;
-                victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, 140, 2, false, false, false));
-            }
-        }.runTaskLater(plugin, 30);
-
-        // Phase 3: Crystal encasement (60-150)
-        new BukkitRunnable() {
-            int t = 0;
-            @Override public void run() {
-                if (t >= 90 || !victim.isOnline()) { cancel(); return; }
-                Location loc = vLoc(victim);
-                if (loc == null) { cancel(); return; }
-
-                // Dense crystal shell tightening
-                for (int i = 0; i < 20; i++) {
-                    double a = (Math.PI * 2 / 20) * i + (t * 0.12);
-                    double r = 1.0 - t * 0.006;
-                    if (r < 0.25) r = 0.25;
-                    double x = Math.cos(a) * r, z = Math.sin(a) * r;
-                    double y = (i % 5) * 0.45;
-                    w.spawnParticle(Particle.DUST, loc.clone().add(x, y, z), 4,
-                            0.04, 0.04, 0.04, 0,
-                            new Particle.DustOptions(Color.fromRGB(200, 150, 255), 1.6f));
-                }
-                w.spawnParticle(Particle.END_ROD, loc.clone().add(0, 1, 0), 6, 0.5, 0.8, 0.5, 0.02);
-
-                // Floating crystal blocks orbiting
-                if (t % 14 == 0) {
-                    double a = rng().nextDouble(Math.PI * 2);
-                    double r2 = 1.0 + rng().nextDouble(0.5);
-                    FallingBlock fb = w.spawnFallingBlock(
-                            loc.clone().add(Math.cos(a) * r2, rng().nextDouble(0, 2), Math.sin(a) * r2),
-                            Material.AMETHYST_CLUSTER.createBlockData());
-                    fb.setDropItem(false);
-                    fb.setHurtEntities(false);
-                    fb.setGravity(false);
-                    fb.setVelocity(new Vector(0, 0.05, 0));
-                    new BukkitRunnable() {
-                        @Override public void run() {
-                            if (!fb.isDead()) {
-                                w.spawnParticle(Particle.DUST, fb.getLocation(), 10, 0.2, 0.2, 0.2, 0,
-                                        new Particle.DustOptions(Color.fromRGB(163, 73, 223), 1.2f));
-                                fb.remove();
-                            }
-                        }
-                    }.runTaskLater(plugin, 55);
-                }
-
-                // Building humming
-                if (t % 6 == 0) {
-                    w.playSound(loc, Sound.BLOCK_AMETHYST_CLUSTER_STEP, 0.7f, 0.8f + t * 0.012f);
-                }
-                t += 2;
-            }
-        }.runTaskTimer(plugin, 60, 2);
-
-        // Phase 4: SHATTER (tick 155)
-        new BukkitRunnable() {
-            @Override public void run() {
-                Location loc = vLoc(victim);
-                if (loc == null) return;
-                Location c = loc.clone().add(0, 1, 0);
-
-                w.spawnParticle(Particle.DUST, c, 400, 5.0, 5.0, 5.0, 0,
-                        new Particle.DustOptions(Color.fromRGB(163, 73, 223), 3.0f));
-                w.spawnParticle(Particle.DUST, c, 250, 4.0, 4.0, 4.0, 0,
-                        new Particle.DustOptions(Color.fromRGB(200, 150, 255), 2.5f));
-                w.spawnParticle(Particle.END_ROD, c, 120, 3.5, 3.5, 3.5, 0.2);
-                w.spawnParticle(Particle.EXPLOSION_EMITTER, c, 4, 1.0, 1.0, 1.0, 0);
-                w.spawnParticle(Particle.FLASH, c, 3, 0, 0, 0, 0);
-                w.playSound(loc, Sound.BLOCK_GLASS_BREAK, 2.0f, 0.4f);
-                w.playSound(loc, Sound.BLOCK_AMETHYST_BLOCK_BREAK, 2.0f, 0.5f);
-                w.playSound(loc, Sound.ENTITY_GENERIC_EXPLODE, 1.2f, 1.5f);
-
-                // 25 flying crystal shards
-                Material[] shards = {Material.AMETHYST_CLUSTER, Material.AMETHYST_BLOCK,
-                        Material.PURPUR_BLOCK, Material.PURPLE_STAINED_GLASS};
-                for (int b = 0; b < 25; b++) {
-                    spawnBlock(w, c, shards[rng().nextInt(shards.length)],
-                            rng().nextDouble(-1.5, 1.5), rng().nextDouble(0.4, 2.0), rng().nextDouble(-1.5, 1.5),
-                            50 + rng().nextInt(30));
-                }
-            }
-        }.runTaskLater(plugin, 155);
-
-        // Phase 5: Lingering shimmer (160-195)
-        new BukkitRunnable() {
-            int t = 0;
-            @Override public void run() {
-                if (t >= 40) { cancel(); return; }
-                Location loc = vLoc(victim);
-                if (loc == null) { cancel(); return; }
-                w.spawnParticle(Particle.DUST, loc.clone().add(0, 1, 0), 25 - t / 2, 3.0, 3.0, 3.0, 0,
-                        new Particle.DustOptions(Color.fromRGB(200, 150, 255), 1.0f));
-                w.spawnParticle(Particle.END_ROD, loc.clone().add(0, 1, 0), 8, 2.0, 2.0, 2.0, 0.03);
-                if (t % 8 == 0) w.playSound(loc, Sound.BLOCK_AMETHYST_BLOCK_CHIME, 0.4f, 1.5f);
-                t += 3;
-            }
-        }.runTaskTimer(plugin, 160, 3);
-
-        return DUR;
+        final int D=200; Location o=victim.getLocation().clone(); World w=o.getWorld(); if(w==null)return 20;
+        w.playSound(o,Sound.BLOCK_AMETHYST_BLOCK_RESONATE,1.2f,0.4f);w.playSound(o,Sound.BLOCK_BEACON_ACTIVATE,0.6f,1.8f);
+        Material[] bm={Material.AMETHYST_BLOCK,Material.AMETHYST_CLUSTER,Material.PURPUR_BLOCK,Material.PURPLE_STAINED_GLASS,Material.PURPUR_PILLAR};
+        new BukkitRunnable(){int t=0;public void run(){
+            if(t>=80||!victim.isOnline()){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}
+            if(t%4==0){double yy=(t/4)*1.0;if(yy>5)yy=5;for(int p=0;p<6;p++){double a=(Math.PI*2/6)*p;gf(w,l.clone().add(Math.cos(a)*2.2,yy,Math.sin(a)*2.2),rm(bm),0,0,0,140);if(yy>1.5){double a2=a+Math.PI/6;gf(w,l.clone().add(Math.cos(a2)*1.9,yy-1.0,Math.sin(a2)*1.9),rm(bm),0,0,0,140);}}}
+            for(int ring=0;ring<4;ring++){int pts=10+ring*3;for(int i=0;i<pts;i++){double a=(Math.PI*2/pts)*i+t*(0.12+ring*0.06);double r=2.4-ring*0.25;w.spawnParticle(Particle.DUST,l.clone().add(Math.cos(a)*r,ring*0.6+0.2,Math.sin(a)*r),2,0.05,0.06,0.05,new Particle.DustOptions(Color.fromRGB(163,73,223),1.8f));}}
+            if(t%8==0){w.playSound(l,Sound.BLOCK_AMETHYST_BLOCK_CHIME,0.8f,0.5f+t*0.012f);w.spawnParticle(Particle.END_ROD,l.clone().add(0,1,0),8,1.2,1.0,1.2,0.03);}t+=2;
+        }}.runTaskTimer(plugin,0,2);
+        new BukkitRunnable(){int t=0;public void run(){
+            if(t>=75||!victim.isOnline()){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}
+            double r=2.2-t*0.018;if(r<0.6)r=0.6;
+            for(int i=0;i<30;i++){double a=(Math.PI*2/30)*i+t*0.08;double y=(i%8)*0.5;w.spawnParticle(Particle.DUST,l.clone().add(Math.cos(a)*r,y,Math.sin(a)*r),3,0.03,0.03,0.03,new Particle.DustOptions(Color.fromRGB(200,150,255),1.6f));}
+            w.spawnParticle(Particle.END_ROD,l.clone().add(0,1,0),8,0.5,0.8,0.5,0.03);
+            if(t%10==0)for(int b=0;b<3;b++)gf(w,l.clone().add(rng().nextDouble(-1,1),rng().nextDouble(0.5,3),rng().nextDouble(-1,1)),Material.AMETHYST_CLUSTER,0,0.02,0,55);
+            if(t%6==0)w.playSound(l,Sound.BLOCK_AMETHYST_CLUSTER_STEP,0.7f,0.8f+t*0.012f);t+=2;
+        }}.runTaskTimer(plugin,80,2);
+        new BukkitRunnable(){public void run(){
+            Location l=vLoc(victim);if(l==null)return;Location c=l.clone().add(0,1,0);
+            w.spawnParticle(Particle.DUST,c,500,6,6,6,new Particle.DustOptions(Color.fromRGB(163,73,223),3.5f));w.spawnParticle(Particle.DUST,c,300,5,5,5,new Particle.DustOptions(Color.fromRGB(200,150,255),2.8f));
+            w.spawnParticle(Particle.END_ROD,c,150,4,4,4,0.25);w.spawnParticle(Particle.EXPLOSION_EMITTER,c,5);w.spawnParticle(Particle.END_ROD,c,4);
+            w.playSound(l,Sound.BLOCK_GLASS_BREAK,2.0f,0.3f);w.playSound(l,Sound.BLOCK_AMETHYST_BLOCK_BREAK,2.0f,0.4f);w.playSound(l,Sound.ENTITY_GENERIC_EXPLODE,1.2f,1.5f);
+            for(int b=0;b<55;b++){double a=(Math.PI*2/55)*b;double sp=0.6+rng().nextDouble(1.2);ge(w,c,rm(bm),Math.cos(a)*sp,rng().nextDouble(0.2,1.5),Math.sin(a)*sp,46+rng().nextInt(25));}
+        }}.runTaskLater(plugin,158);
+        new BukkitRunnable(){int t=0;public void run(){if(t>=35){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}w.spawnParticle(Particle.DUST,l.clone().add(0,1,0),30-t,4,4,4,new Particle.DustOptions(Color.fromRGB(200,150,255),1.0f));w.spawnParticle(Particle.END_ROD,l.clone().add(0,1,0),8,3,3,3,0.03);if(t%8==0)w.playSound(l,Sound.BLOCK_AMETHYST_BLOCK_CHIME,0.4f,1.5f);t+=3;}}.runTaskTimer(plugin,163,3);
+        return D;
     }
 
-    // ========================================================================
-    //  5. ATAQUE ORBITAL  (12s = 240 ticks)
-    // ========================================================================
+    // === 5. ORBITAL — SKY BEAM (sky, 240t) ===
     private int playOrbital(Player victim) {
-        final int DUR = 240;
-        Location origin = victim.getLocation().clone();
-        World w = origin.getWorld();
-        if (w == null) return 20;
-
-        // Phase 1: Target lock-on crosshair (0-70)
-        new BukkitRunnable() {
-            int t = 0;
-            @Override public void run() {
-                if (t >= 70 || !victim.isOnline()) { cancel(); return; }
-                Location loc = vLoc(victim);
-                if (loc == null) { cancel(); return; }
-
-                // Rotating crosshair with 8 arms
-                double radius = 3.0 - t * 0.025;
-                for (int arm = 0; arm < 8; arm++) {
-                    double a = (Math.PI / 4) * arm + t * 0.12;
-                    for (double d = 0.3; d < radius; d += 0.4) {
-                        w.spawnParticle(Particle.DUST, loc.clone().add(Math.cos(a) * d, 0.1, Math.sin(a) * d),
-                                2, 0.03, 0.01, 0.03, 0,
-                                new Particle.DustOptions(Color.RED, 1.2f));
-                    }
-                }
-                // Center pulse
-                w.spawnParticle(Particle.END_ROD, loc.clone().add(0, 0.3, 0), 5, 0.15, 0.05, 0.15, 0.01);
-                w.spawnParticle(Particle.DUST, loc.clone().add(0, 0.2, 0), 8, 0.3, 0.05, 0.3, 0,
-                        new Particle.DustOptions(Color.ORANGE, 1.5f));
-
-                if (t % 12 == 0) {
-                    w.playSound(loc, Sound.BLOCK_BEACON_AMBIENT, 0.7f, 1.0f + t * 0.02f);
-                    w.playSound(loc, Sound.BLOCK_NOTE_BLOCK_PLING, 0.4f, 1.5f + t * 0.01f);
-                }
-                t += 2;
-            }
-        }.runTaskTimer(plugin, 0, 2);
-
-        // Phase 2: Warning beam forming from sky (40-100)
-        new BukkitRunnable() {
-            int t = 0;
-            @Override public void run() {
-                if (t >= 60 || !victim.isOnline()) { cancel(); return; }
-                Location loc = vLoc(victim);
-                if (loc == null) { cancel(); return; }
-
-                double maxY = 15 + t * 0.5;
-                for (double y = 0; y < maxY; y += 1.0) {
-                    double wobble = Math.sin((y + t) * 0.4) * 0.1;
-                    w.spawnParticle(Particle.END_ROD, loc.clone().add(wobble, y, wobble),
-                            2, 0.04, 0.15, 0.04, 0.003);
-                }
-                if (t % 8 == 0) w.playSound(loc, Sound.BLOCK_BEACON_ACTIVATE, 0.5f, 1.5f + t * 0.01f);
-
-                // Glowstone blocks rising to form beam
-                if (t % 12 == 0) {
-                    spawnBlock(w, loc.clone().add(rng().nextDouble(-0.5, 0.5), 0, rng().nextDouble(-0.5, 0.5)),
-                            Material.GLOWSTONE, 0, rng().nextDouble(0.3, 0.8), 0, 60);
-                }
-                t += 2;
-            }
-        }.runTaskTimer(plugin, 40, 2);
-
-        // Phase 3: Victim levitates (tick 70)
-        new BukkitRunnable() {
-            @Override public void run() {
-                if (!victim.isOnline()) return;
-                victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, 160, 2, false, false, false));
-                Location loc = vLoc(victim);
-                if (loc != null) {
-                    w.playSound(loc, Sound.ITEM_TRIDENT_THUNDER, 1.0f, 1.5f);
-                    w.spawnParticle(Particle.FLASH, loc, 2, 0, 0, 0, 0);
-                }
-            }
-        }.runTaskLater(plugin, 70);
-
-        // Phase 4: Full beam locked on + energy rings (100-200)
-        new BukkitRunnable() {
-            int t = 0;
-            @Override public void run() {
-                if (t >= 100 || !victim.isOnline()) { cancel(); return; }
-                Location loc = vLoc(victim);
-                if (loc == null) { cancel(); return; }
-
-                // Thick beam
-                for (double y = -2; y < 35; y += 0.6) {
-                    double wobble = Math.sin((y + t) * 0.25) * 0.12;
-                    w.spawnParticle(Particle.END_ROD, loc.clone().add(wobble, y, wobble),
-                            3, 0.1, 0.08, 0.1, 0.005);
-                    if (y < 4 && t % 2 == 0) {
-                        w.spawnParticle(Particle.DUST, loc.clone().add(0, y, 0),
-                                3, 0.2, 0.08, 0.2, 0,
-                                new Particle.DustOptions(Color.WHITE, 2.5f));
-                    }
-                }
-
-                // Ascending energy rings
-                if (t % 3 == 0) {
-                    double ringY = (t * 0.8) % 30;
-                    for (int i = 0; i < 12; i++) {
-                        double a = (Math.PI * 2 / 12) * i + t * 0.15;
-                        double r = 1.2;
-                        w.spawnParticle(Particle.DUST,
-                                loc.clone().add(Math.cos(a) * r, ringY, Math.sin(a) * r),
-                                2, 0.04, 0.04, 0.04, 0,
-                                new Particle.DustOptions(Color.YELLOW, 1.5f));
-                    }
-                }
-
-                // Orbiting energy blocks
-                if (t % 16 == 0) {
-                    Material[] mats = {Material.GLOWSTONE, Material.SEA_LANTERN, Material.GOLD_BLOCK};
-                    double a = rng().nextDouble(Math.PI * 2);
-                    FallingBlock fb = w.spawnFallingBlock(
-                            loc.clone().add(Math.cos(a) * 2, rng().nextDouble(0, 3), Math.sin(a) * 2),
-                            mats[rng().nextInt(mats.length)].createBlockData());
-                    fb.setDropItem(false);
-                    fb.setHurtEntities(false);
-                    fb.setGravity(false);
-                    fb.setVelocity(new Vector(0, 0.1, 0));
-                    new BukkitRunnable() {
-                        @Override public void run() {
-                            if (!fb.isDead()) {
-                                w.spawnParticle(Particle.END_ROD, fb.getLocation(), 10, 0.2, 0.2, 0.2, 0.03);
-                                fb.remove();
-                            }
-                        }
-                    }.runTaskLater(plugin, 50);
-                }
-
-                if (t % 6 == 0) w.playSound(loc, Sound.BLOCK_BEACON_AMBIENT, 0.8f, 2.0f);
-                t += 2;
-            }
-        }.runTaskTimer(plugin, 100, 2);
-
-        // Phase 5: IMPACT (tick 205)
-        new BukkitRunnable() {
-            @Override public void run() {
-                Location loc = vLoc(victim);
-                if (loc == null) return;
-
-                w.spawnParticle(Particle.EXPLOSION_EMITTER, loc, 8, 2.0, 2.0, 2.0, 0);
-                w.spawnParticle(Particle.END_ROD, loc, 400, 6.0, 6.0, 6.0, 0.25);
-                w.spawnParticle(Particle.FLASH, loc, 6, 1, 1, 1, 0);
-                w.spawnParticle(Particle.DUST, loc, 200, 5.0, 5.0, 5.0, 0,
-                        new Particle.DustOptions(Color.WHITE, 3.5f));
-                w.spawnParticle(Particle.DUST, loc, 150, 4.0, 4.0, 4.0, 0,
-                        new Particle.DustOptions(Color.YELLOW, 2.5f));
-                w.spawnParticle(Particle.DUST, loc, 100, 3.0, 3.0, 3.0, 0,
-                        new Particle.DustOptions(Color.ORANGE, 2.0f));
-                w.playSound(loc, Sound.ENTITY_GENERIC_EXPLODE, 2.0f, 0.6f);
-                w.playSound(loc, Sound.ITEM_TRIDENT_THUNDER, 2.0f, 0.5f);
-                w.playSound(loc, Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 1.5f, 0.8f);
-
-                // Massive block debris
-                Material[] debris = {Material.GLOWSTONE, Material.SEA_LANTERN, Material.GOLD_BLOCK,
-                        Material.QUARTZ_BLOCK, Material.WHITE_CONCRETE, Material.YELLOW_CONCRETE};
-                for (int b = 0; b < 30; b++) {
-                    spawnBlock(w, loc.clone().add(0, 1.5, 0), debris[rng().nextInt(debris.length)],
-                            rng().nextDouble(-2.0, 2.0), rng().nextDouble(0.5, 2.5), rng().nextDouble(-2.0, 2.0),
-                            55 + rng().nextInt(30));
-                }
-            }
-        }.runTaskLater(plugin, 205);
-
-        // Phase 6: Firework aftermath (210-235)
-        new BukkitRunnable() {
-            int t = 0;
-            @Override public void run() {
-                if (t >= 30) { cancel(); return; }
-                Location loc = vLoc(victim);
-                if (loc == null) loc = origin.clone().add(0, 4, 0);
-
-                for (int fw = 0; fw < 3; fw++) {
-                    double ox = rng().nextDouble(-4, 4), oy = rng().nextDouble(-1, 5), oz = rng().nextDouble(-4, 4);
-                    Location fwLoc = loc.clone().add(ox, oy, oz);
-                    w.spawnParticle(Particle.END_ROD, fwLoc, 20, 0.8, 0.8, 0.8, 0.1);
-                    w.spawnParticle(Particle.DUST, fwLoc, 12, 0.5, 0.5, 0.5, 0,
-                            new Particle.DustOptions(Color.WHITE, 1.8f));
-                }
-
-                if (t % 4 == 0) {
-                    w.playSound(loc, Sound.ENTITY_FIREWORK_ROCKET_BLAST, 0.8f, 0.8f + t * 0.03f);
-                    w.playSound(loc, Sound.ENTITY_FIREWORK_ROCKET_TWINKLE, 0.6f, 1.0f + t * 0.02f);
-                }
-                t += 3;
-            }
-        }.runTaskTimer(plugin, 210, 3);
-
-        return DUR;
+        final int D=240; Location o=victim.getLocation().clone(); World w=o.getWorld(); if(w==null)return 20;
+        Material[] bm={Material.GLOWSTONE,Material.SEA_LANTERN,Material.GOLD_BLOCK,Material.QUARTZ_BLOCK,Material.WHITE_CONCRETE,Material.YELLOW_CONCRETE};
+        new BukkitRunnable(){int t=0;public void run(){if(t>=70||!victim.isOnline()){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}double r=3.5-t*0.03;for(int arm=0;arm<8;arm++){double a=(Math.PI/4)*arm+t*0.12;for(double d=0.3;d<r;d+=0.35)w.spawnParticle(Particle.DUST,l.clone().add(Math.cos(a)*d,0.1,Math.sin(a)*d),2,0.03,0.01,0.03,new Particle.DustOptions(Color.RED,1.3f));}w.spawnParticle(Particle.END_ROD,l.clone().add(0,0.3,0),6,0.2,0.05,0.2,0.01);w.spawnParticle(Particle.DUST,l.clone().add(0,0.2,0),10,0.4,0.05,0.4,new Particle.DustOptions(Color.ORANGE,1.8f));if(t%12==0){w.playSound(l,Sound.BLOCK_BEACON_AMBIENT,0.7f,1.0f+t*0.02f);w.playSound(l,Sound.BLOCK_NOTE_BLOCK_PLING,0.4f,1.5f+t*0.01f);}t+=2;}}.runTaskTimer(plugin,0,2);
+        new BukkitRunnable(){int t=0;public void run(){if(t>=60||!victim.isOnline()){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}double maxY=15+t*0.5;for(double y=0;y<maxY;y+=0.8){double wb=Math.sin((y+t)*0.4)*0.12;w.spawnParticle(Particle.END_ROD,l.clone().add(wb,y,wb),2,0.04,0.1,0.04,0.003);}if(t%6==0)for(int b=0;b<3;b++)gb(w,l.clone().add(rng().nextDouble(-1,1),0,rng().nextDouble(-1,1)),rm(bm),0,rng().nextDouble(0.4,1.0),0,55);if(t%8==0)w.playSound(l,Sound.BLOCK_BEACON_ACTIVATE,0.5f,1.5f+t*0.01f);t+=2;}}.runTaskTimer(plugin,40,2);
+        new BukkitRunnable(){public void run(){if(!victim.isOnline())return;victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION,160,2,false,false,false));Location l=vLoc(victim);if(l!=null){w.playSound(l,Sound.ITEM_TRIDENT_THUNDER,1.0f,1.5f);w.spawnParticle(Particle.END_ROD,l,3);}}}.runTaskLater(plugin,70);
+        new BukkitRunnable(){int t=0;public void run(){if(t>=100||!victim.isOnline()){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}for(double y=-2;y<35;y+=0.5){double wb=Math.sin((y+t)*0.25)*0.15;w.spawnParticle(Particle.END_ROD,l.clone().add(wb,y,wb),3,0.12,0.08,0.12,0.005);if(y<5&&t%2==0)w.spawnParticle(Particle.DUST,l.clone().add(0,y,0),3,0.25,0.08,0.25,new Particle.DustOptions(Color.WHITE,2.5f));}if(t%4==0){double a=t*0.3;for(int b=0;b<4;b++){double ba=a+b*Math.PI/2;gf(w,l.clone().add(Math.cos(ba)*2.5,1+Math.sin(t*0.1)*0.5,Math.sin(ba)*2.5),rm(bm),0,0.02,0,20);}}if(t%8==0)for(int b=0;b<2;b++)gb(w,l.clone().add(rng().nextDouble(-2,2),-1,rng().nextDouble(-2,2)),rm(bm),0,rng().nextDouble(0.5,1.2),0,50);if(t%6==0)w.playSound(l,Sound.BLOCK_BEACON_AMBIENT,0.8f,2.0f);t+=2;}}.runTaskTimer(plugin,100,2);
+        new BukkitRunnable(){public void run(){Location l=vLoc(victim);if(l==null)return;w.spawnParticle(Particle.EXPLOSION_EMITTER,l,10);w.spawnParticle(Particle.END_ROD,l,500,7,7,7,0.3);w.spawnParticle(Particle.END_ROD,l,8);w.spawnParticle(Particle.DUST,l,300,6,6,6,new Particle.DustOptions(Color.WHITE,3.5f));w.spawnParticle(Particle.DUST,l,200,5,5,5,new Particle.DustOptions(Color.YELLOW,2.8f));w.playSound(l,Sound.ENTITY_GENERIC_EXPLODE,2.0f,0.5f);w.playSound(l,Sound.ITEM_TRIDENT_THUNDER,2.0f,0.4f);for(int b=0;b<50;b++)ge(w,l.clone().add(0,1.5,0),rm(bm),rng().nextDouble(-2.2,2.2),rng().nextDouble(0.5,2.8),rng().nextDouble(-2.2,2.2),52+rng().nextInt(25));}}.runTaskLater(plugin,205);
+        new BukkitRunnable(){int t=0;public void run(){if(t>=28){cancel();return;}Location l=vLoc(victim);if(l==null)l=o.clone().add(0,4,0);for(int f=0;f<4;f++){Location fl=l.clone().add(rng().nextDouble(-5,5),rng().nextDouble(-1,6),rng().nextDouble(-5,5));w.spawnParticle(Particle.END_ROD,fl,25,1,1,1,0.12);}if(t%3==0){w.playSound(l,Sound.ENTITY_FIREWORK_ROCKET_BLAST,0.8f,0.8f+t*0.03f);w.playSound(l,Sound.ENTITY_FIREWORK_ROCKET_TWINKLE,0.6f,1.0f+t*0.02f);}t+=3;}}.runTaskTimer(plugin,210,3);
+        return D;
     }
 
-    // ========================================================================
-    //  6. INFIERNO DEMONÍACO  (10s = 200 ticks)
-    // ========================================================================
+    // === 6. HELLFIRE — LAVA LAKE + FIRE COLUMNS (ground, 200t) ===
     private int playHellfire(Player victim) {
-        final int DUR = 200;
-        Location origin = victim.getLocation().clone();
-        World w = origin.getWorld();
-        if (w == null) return 20;
-
-        victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, 180, 2, false, false, false));
-        w.playSound(origin, Sound.ENTITY_BLAZE_AMBIENT, 1.2f, 0.3f);
-        w.playSound(origin, Sound.ENTITY_WARDEN_EMERGE, 0.8f, 0.6f);
-
-        // Phase 1: Fire circle on ground + lava pillars (0-60)
-        new BukkitRunnable() {
-            int t = 0;
-            @Override public void run() {
-                if (t >= 60 || !victim.isOnline()) { cancel(); return; }
-                Location loc = vLoc(victim);
-                if (loc == null) { cancel(); return; }
-
-                double radius = 3.0 - t * 0.03;
-                for (int i = 0; i < 12; i++) {
-                    double a = (Math.PI * 2 / 12) * i + t * 0.1;
-                    double x = Math.cos(a) * radius, z = Math.sin(a) * radius;
-                    w.spawnParticle(Particle.FLAME, loc.clone().add(x, 0.2, z), 4, 0.08, 0.15, 0.08, 0.01);
-                    w.spawnParticle(Particle.LAVA, loc.clone().add(x, 0.1, z), 1, 0.05, 0.05, 0.05, 0);
-                }
-                w.spawnParticle(Particle.DUST, loc.clone().add(0, 0.1, 0), 10, radius * 0.6, 0.02, radius * 0.6, 0,
-                        new Particle.DustOptions(Color.fromRGB(200, 50, 0), 2.0f));
-
-                if (t % 8 == 0) {
-                    Material[] mats = {Material.MAGMA_BLOCK, Material.NETHERRACK, Material.NETHER_BRICKS};
-                    for (int p = 0; p < 2; p++) {
-                        double a2 = rng().nextDouble(Math.PI * 2);
-                        double r2 = 1 + rng().nextDouble(2);
-                        spawnBlock(w, loc.clone().add(Math.cos(a2) * r2, -1, Math.sin(a2) * r2),
-                                mats[rng().nextInt(mats.length)], 0, rng().nextDouble(0.3, 0.7), 0, 70);
-                    }
-                    w.playSound(loc, Sound.ENTITY_BLAZE_SHOOT, 0.6f, 0.5f);
-                }
-                t += 2;
-            }
-        }.runTaskTimer(plugin, 0, 2);
-
-        // Phase 2: Fire tornado around victim (40-160)
-        new BukkitRunnable() {
-            int t = 0;
-            @Override public void run() {
-                if (t >= 120 || !victim.isOnline()) { cancel(); return; }
-                Location loc = vLoc(victim);
-                if (loc == null) { cancel(); return; }
-
-                for (int arm = 0; arm < 4; arm++) {
-                    double a = t * 0.4 + arm * Math.PI / 2;
-                    double r = 1.2 + Math.sin(t * 0.08) * 0.4;
-                    for (double y = 0; y < 3; y += 0.5) {
-                        double x = Math.cos(a + y * 0.5) * r;
-                        double z = Math.sin(a + y * 0.5) * r;
-                        w.spawnParticle(Particle.FLAME, loc.clone().add(x, y - 0.5, z), 3, 0.05, 0.1, 0.05, 0.015);
-                    }
-                }
-                w.spawnParticle(Particle.LAVA, loc, 3, 0.5, 0.5, 0.5, 0);
-                w.spawnParticle(Particle.DUST, loc.clone().add(0, 1, 0), 8, 0.6, 1.0, 0.6, 0,
-                        new Particle.DustOptions(Color.fromRGB(255, 100, 0), 1.5f));
-
-                if (t % 6 == 0) w.playSound(loc, Sound.BLOCK_FIRE_AMBIENT, 0.8f, 0.5f);
-                if (t % 20 == 0) w.playSound(loc, Sound.ENTITY_BLAZE_AMBIENT, 0.6f, 0.4f);
-                t += 2;
-            }
-        }.runTaskTimer(plugin, 40, 2);
-
-        // Phase 3: Stronger levitation
-        new BukkitRunnable() {
-            @Override public void run() {
-                if (!victim.isOnline()) return;
-                victim.removePotionEffect(PotionEffectType.LEVITATION);
-                victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, 80, 4, false, false, false));
-            }
-        }.runTaskLater(plugin, 90);
-
-        // Phase 4: ERUPTION (tick 165)
-        new BukkitRunnable() {
-            @Override public void run() {
-                Location loc = vLoc(victim);
-                if (loc == null) return;
-
-                w.spawnParticle(Particle.FLAME, loc, 300, 5.0, 5.0, 5.0, 0.15);
-                w.spawnParticle(Particle.LAVA, loc, 80, 4.0, 4.0, 4.0, 0);
-                w.spawnParticle(Particle.DUST, loc, 150, 4.0, 4.0, 4.0, 0,
-                        new Particle.DustOptions(Color.fromRGB(255, 60, 0), 3.0f));
-                w.spawnParticle(Particle.EXPLOSION_EMITTER, loc, 5, 1.5, 1.5, 1.5, 0);
-                w.playSound(loc, Sound.ENTITY_GENERIC_EXPLODE, 2.0f, 0.5f);
-                w.playSound(loc, Sound.ENTITY_BLAZE_DEATH, 1.5f, 0.3f);
-
-                Material[] debris = {Material.MAGMA_BLOCK, Material.NETHERRACK, Material.NETHER_BRICKS,
-                        Material.ORANGE_CONCRETE, Material.RED_CONCRETE};
-                for (int b = 0; b < 25; b++) {
-                    spawnBlock(w, loc.clone().add(0, 1, 0), debris[rng().nextInt(debris.length)],
-                            rng().nextDouble(-1.8, 1.8), rng().nextDouble(0.5, 2.2), rng().nextDouble(-1.8, 1.8),
-                            55 + rng().nextInt(25));
-                }
-            }
-        }.runTaskLater(plugin, 165);
-
-        return DUR;
+        final int D=200; Location o=victim.getLocation().clone(); World w=o.getWorld(); if(w==null)return 20;
+        w.playSound(o,Sound.ENTITY_BLAZE_AMBIENT,1.2f,0.3f);w.playSound(o,Sound.ENTITY_WARDEN_EMERGE,0.8f,0.6f);
+        Material[] bm={Material.MAGMA_BLOCK,Material.NETHERRACK,Material.NETHER_BRICKS,Material.ORANGE_CONCRETE,Material.RED_CONCRETE,Material.CRIMSON_NYLIUM};
+        new BukkitRunnable(){int t=0;public void run(){if(t>=70||!victim.isOnline()){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}double r=1+t*0.06;for(int i=0;i<20;i++){double a=(Math.PI*2/20)*i+t*0.08;w.spawnParticle(Particle.FLAME,l.clone().add(Math.cos(a)*r,0.12,Math.sin(a)*r),4,0.06,0.1,0.06,0.01);w.spawnParticle(Particle.LAVA,l.clone().add(Math.cos(a)*r*0.5,0.06,Math.sin(a)*r*0.5),1,0.04,0.02,0.04,0);}w.spawnParticle(Particle.DUST,l.clone().add(0,0.06,0),12,r*0.5,0.02,r*0.5,0,new Particle.DustOptions(Color.fromRGB(200,50,0),2.2f));if(t%4==0)for(int b=0;b<4;b++){double a=rng().nextDouble(Math.PI*2);double d=rng().nextDouble(0.3,r);gf(w,l.clone().add(Math.cos(a)*d,-0.3,Math.sin(a)*d),rm(bm),0,0,0,100);}if(t%8==0){w.playSound(l,Sound.ENTITY_BLAZE_SHOOT,0.6f,0.5f);for(int b=0;b<3;b++){double a=rng().nextDouble(Math.PI*2);double dr=rng().nextDouble(0.5,r);gb(w,l.clone().add(Math.cos(a)*dr,-0.3,Math.sin(a)*dr),rm(bm),0,rng().nextDouble(0.3,0.8),0,60);}}t+=2;}}.runTaskTimer(plugin,0,2);
+        new BukkitRunnable(){int t=0;public void run(){if(t>=115||!victim.isOnline()){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}for(int p=0;p<8;p++){double a=(Math.PI*2/8)*p+t*0.015;Location pil=l.clone().add(Math.cos(a)*2.8,0,Math.sin(a)*2.8);double h=2+Math.sin(t*0.1+p*0.8)*2.5;for(double y=0;y<h;y+=0.3)w.spawnParticle(Particle.FLAME,pil.clone().add(0,y,0),3,0.05,0.04,0.05,0.008);}if(t%8==0)for(int p=0;p<8;p++){double a=(Math.PI*2/8)*p;double yy=(t/8)*1.0;if(yy>5)yy=5;gf(w,l.clone().add(Math.cos(a)*2.8,yy,Math.sin(a)*2.8),rm(bm),0,0,0,90);}w.spawnParticle(Particle.LAVA,l,4,2,0.3,2,0);if(t%6==0)w.playSound(l,Sound.BLOCK_FIRE_AMBIENT,0.8f,0.5f);if(t%20==0)w.playSound(l,Sound.ENTITY_BLAZE_AMBIENT,0.6f,0.4f);t+=2;}}.runTaskTimer(plugin,45,2);
+        new BukkitRunnable(){public void run(){Location l=vLoc(victim);if(l==null)return;w.spawnParticle(Particle.FLAME,l,500,6,3,6,0.2);w.spawnParticle(Particle.LAVA,l,120,5,1.5,5,0);w.spawnParticle(Particle.DUST,l,250,5,3,5,0,new Particle.DustOptions(Color.fromRGB(255,60,0),3.5f));w.spawnParticle(Particle.EXPLOSION_EMITTER,l,8,2,0.5,2,0);w.playSound(l,Sound.ENTITY_GENERIC_EXPLODE,2.0f,0.4f);w.playSound(l,Sound.ENTITY_BLAZE_DEATH,1.5f,0.3f);for(int b=0;b<55;b++){double a=(Math.PI*2/55)*b;double sp=0.6+rng().nextDouble(1.0);ge(w,l.clone().add(0,0.5,0),rm(bm),Math.cos(a)*sp,rng().nextDouble(0.2,0.9),Math.sin(a)*sp,48+rng().nextInt(25));}}}.runTaskLater(plugin,168);
+        return D;
     }
 
-    // ========================================================================
-    //  7. TORMENTA DE HIELO  (10s = 200 ticks)
-    // ========================================================================
+    // === 7. ICE — DIRECTIONAL SPIKES (ground, 180t) ===
     private int playIce(Player victim) {
-        final int DUR = 200;
-        Location origin = victim.getLocation().clone();
-        World w = origin.getWorld();
-        if (w == null) return 20;
-
-        victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, 180, 2, false, false, false));
-        w.playSound(origin, Sound.BLOCK_GLASS_BREAK, 1.0f, 1.8f);
-        w.playSound(origin, Sound.ENTITY_PLAYER_HURT_FREEZE, 1.0f, 0.5f);
-
-        // Phase 1: Frost ring + ice pillars (0-60)
-        new BukkitRunnable() {
-            int t = 0;
-            @Override public void run() {
-                if (t >= 60 || !victim.isOnline()) { cancel(); return; }
-                Location loc = vLoc(victim);
-                if (loc == null) { cancel(); return; }
-
-                double radius = 3.0 - t * 0.03;
-                for (int i = 0; i < 16; i++) {
-                    double a = (Math.PI * 2 / 16) * i + t * 0.06;
-                    double x = Math.cos(a) * radius, z = Math.sin(a) * radius;
-                    w.spawnParticle(Particle.DUST, loc.clone().add(x, 0.1, z), 3, 0.08, 0.02, 0.08, 0,
-                            new Particle.DustOptions(Color.fromRGB(150, 220, 255), 2.0f));
-                    w.spawnParticle(Particle.SNOWFLAKE, loc.clone().add(x * 0.7, 0.5, z * 0.7), 2, 0.1, 0.2, 0.1, 0.01);
-                }
-
-                if (t % 10 == 0) {
-                    Material[] mats = {Material.BLUE_ICE, Material.PACKED_ICE, Material.ICE};
-                    for (int p = 0; p < 3; p++) {
-                        double a2 = rng().nextDouble(Math.PI * 2);
-                        double r2 = 1 + rng().nextDouble(2);
-                        spawnBlock(w, loc.clone().add(Math.cos(a2) * r2, -1, Math.sin(a2) * r2),
-                                mats[rng().nextInt(mats.length)], 0, rng().nextDouble(0.25, 0.55), 0, 80);
-                    }
-                    w.playSound(loc, Sound.BLOCK_GLASS_BREAK, 0.5f, 2.0f);
-                }
-                t += 2;
-            }
-        }.runTaskTimer(plugin, 0, 2);
-
-        // Phase 2: Blizzard swirl (40-160)
-        new BukkitRunnable() {
-            int t = 0;
-            @Override public void run() {
-                if (t >= 120 || !victim.isOnline()) { cancel(); return; }
-                Location loc = vLoc(victim);
-                if (loc == null) { cancel(); return; }
-
-                // Snowflake tornado
-                for (int arm = 0; arm < 5; arm++) {
-                    double a = t * 0.35 + arm * Math.PI * 2 / 5;
-                    double r = 1.5 - t * 0.005;
-                    if (r < 0.4) r = 0.4;
-                    for (double y = 0; y < 2.5; y += 0.6) {
-                        double x = Math.cos(a + y * 0.4) * r;
-                        double z = Math.sin(a + y * 0.4) * r;
-                        w.spawnParticle(Particle.SNOWFLAKE, loc.clone().add(x, y, z), 3, 0.06, 0.08, 0.06, 0.01);
-                    }
-                }
-                w.spawnParticle(Particle.DUST, loc.clone().add(0, 1, 0), 10, 0.5, 1.0, 0.5, 0,
-                        new Particle.DustOptions(Color.fromRGB(200, 240, 255), 1.5f));
-
-                // Floating ice
-                if (t % 16 == 0) {
-                    Material[] ices = {Material.BLUE_ICE, Material.PACKED_ICE};
-                    FallingBlock fb = w.spawnFallingBlock(
-                            loc.clone().add(rng().nextDouble(-1, 1), rng().nextDouble(0, 2), rng().nextDouble(-1, 1)),
-                            ices[rng().nextInt(ices.length)].createBlockData());
-                    fb.setDropItem(false);
-                    fb.setHurtEntities(false);
-                    fb.setGravity(false);
-                    fb.setVelocity(new Vector(0, 0.06, 0));
-                    new BukkitRunnable() {
-                        @Override public void run() { if (!fb.isDead()) fb.remove(); }
-                    }.runTaskLater(plugin, 55);
-                }
-
-                if (t % 8 == 0) w.playSound(loc, Sound.ENTITY_PLAYER_HURT_FREEZE, 0.5f, 1.0f + t * 0.005f);
-                t += 2;
-            }
-        }.runTaskTimer(plugin, 40, 2);
-
-        // Phase 3: Stronger levitation
-        new BukkitRunnable() {
-            @Override public void run() {
-                if (!victim.isOnline()) return;
-                victim.removePotionEffect(PotionEffectType.LEVITATION);
-                victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, 80, 4, false, false, false));
-            }
-        }.runTaskLater(plugin, 90);
-
-        // Phase 4: ICE SHATTER (tick 165)
-        new BukkitRunnable() {
-            @Override public void run() {
-                Location loc = vLoc(victim);
-                if (loc == null) return;
-
-                w.spawnParticle(Particle.SNOWFLAKE, loc, 200, 5.0, 5.0, 5.0, 0.15);
-                w.spawnParticle(Particle.DUST, loc, 250, 5.0, 5.0, 5.0, 0,
-                        new Particle.DustOptions(Color.fromRGB(150, 220, 255), 3.0f));
-                w.spawnParticle(Particle.DUST, loc, 150, 4.0, 4.0, 4.0, 0,
-                        new Particle.DustOptions(Color.fromRGB(80, 180, 255), 2.5f));
-                w.spawnParticle(Particle.EXPLOSION_EMITTER, loc, 4, 1.5, 1.5, 1.5, 0);
-                w.spawnParticle(Particle.END_ROD, loc, 60, 3.0, 3.0, 3.0, 0.1);
-                w.playSound(loc, Sound.BLOCK_GLASS_BREAK, 2.0f, 0.5f);
-                w.playSound(loc, Sound.ENTITY_GENERIC_EXPLODE, 1.2f, 1.5f);
-                w.playSound(loc, Sound.ENTITY_PLAYER_HURT_FREEZE, 1.5f, 0.3f);
-
-                Material[] debris = {Material.BLUE_ICE, Material.PACKED_ICE, Material.ICE,
-                        Material.LIGHT_BLUE_CONCRETE, Material.WHITE_CONCRETE};
-                for (int b = 0; b < 25; b++) {
-                    spawnBlock(w, loc.clone().add(0, 1, 0), debris[rng().nextInt(debris.length)],
-                            rng().nextDouble(-1.8, 1.8), rng().nextDouble(0.5, 2.2), rng().nextDouble(-1.8, 1.8),
-                            55 + rng().nextInt(25));
-                }
-            }
-        }.runTaskLater(plugin, 165);
-
-        return DUR;
+        final int D=180; Location o=victim.getLocation().clone(); World w=o.getWorld(); if(w==null)return 20;
+        w.playSound(o,Sound.ENTITY_PLAYER_HURT_FREEZE,1.2f,0.4f);w.playSound(o,Sound.BLOCK_GLASS_BREAK,1.0f,1.8f);
+        Material[] bm={Material.BLUE_ICE,Material.PACKED_ICE,Material.ICE,Material.WHITE_CONCRETE};
+        // Phase 1: Frost ring buildup (0-30t)
+        new BukkitRunnable(){int t=0;public void run(){if(t>=30||!victim.isOnline()){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}double r=0.4+t*0.15;for(int i=0;i<20;i++){double a=(Math.PI*2/20)*i;w.spawnParticle(Particle.SNOWFLAKE,l.clone().add(Math.cos(a)*r,0.15,Math.sin(a)*r),1,0.04,0.04,0.04,0.005);w.spawnParticle(Particle.DUST,l.clone().add(Math.cos(a)*r,0.08,Math.sin(a)*r),1,0.03,0.01,0.03,new Particle.DustOptions(Color.fromRGB(150,220,255),1.8f));}if(t%8==0)w.playSound(l,Sound.ENTITY_PLAYER_HURT_FREEZE,0.4f,1.5f);t+=2;}}.runTaskTimer(plugin,0,2);
+        // Phase 2: 8 spikes erupt one by one (tick 30-110)
+        // Each spike: 5 blocks along the ground + rising column (tallest at tip)
+        for(int s=0;s<8;s++){final int si=s;new BukkitRunnable(){public void run(){Location l=vLoc(victim);if(l==null)return;double a=(Math.PI*2/8)*si;w.playSound(l,Sound.BLOCK_GLASS_BREAK,0.9f,0.5f+si*0.08f);w.playSound(l,Sound.ENTITY_PLAYER_HURT_FREEZE,0.7f,0.7f);// Ground blocks along spike direction
+            for(int d=0;d<5;d++){double dist=0.8+d*1.0;Location base=l.clone().add(Math.cos(a)*dist,0,Math.sin(a)*dist);// Height increases toward tip: 1 block at base, up to 4 at tip
+            int height=1+d;for(int h=0;h<height;h++){gf(w,base.clone().add(0,h,0),rm(bm),0,0,0,120+d*8);}// Particles along spike
+            for(double h=0;h<height;h+=0.4)w.spawnParticle(Particle.SNOWFLAKE,base.clone().add(0,h,0),2,0.06,0.04,0.06,0.005);}// Tip burst
+            Location tip=l.clone().add(Math.cos(a)*5.5,0,Math.sin(a)*5.5);w.spawnParticle(Particle.DUST,tip,12,0.3,1.5,0.3,new Particle.DustOptions(Color.fromRGB(180,235,255),2.0f));w.spawnParticle(Particle.SNOWFLAKE,tip,8,0.2,1.0,0.2,0.01);}}.runTaskLater(plugin,30+si*10);}
+        // Phase 3: Particle shimmer on spikes (80-150t)
+        new BukkitRunnable(){int t=0;public void run(){if(t>=70||!victim.isOnline()){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}for(int s=0;s<8;s++){double a=(Math.PI*2/8)*s;for(int d=1;d<5;d++){double dist=0.8+d*1.0;double h=d;w.spawnParticle(Particle.DUST,l.clone().add(Math.cos(a)*dist,h*0.5+Math.sin(t*0.15)*0.2,Math.sin(a)*dist),1,0.08,0.1,0.08,new Particle.DustOptions(Color.fromRGB(180,235,255),1.5f));}}t+=3;}}.runTaskTimer(plugin,80,3);
+        // Phase 4: Shatter — spikes explode outward (tick 155)
+        new BukkitRunnable(){public void run(){Location l=vLoc(victim);if(l==null)return;w.playSound(l,Sound.BLOCK_GLASS_BREAK,2.0f,0.3f);w.playSound(l,Sound.ENTITY_GENERIC_EXPLODE,1.2f,1.8f);w.spawnParticle(Particle.SNOWFLAKE,l,200,5,2,5,0.15);w.spawnParticle(Particle.DUST,l,200,5,2,5,new Particle.DustOptions(Color.fromRGB(150,220,255),2.5f));w.spawnParticle(Particle.EXPLOSION_EMITTER,l,3,1,0.3,1,0);for(int s=0;s<8;s++){double a=(Math.PI*2/8)*s;for(int b=0;b<4;b++){double sp=0.6+rng().nextDouble(0.8);ge(w,l.clone().add(Math.cos(a)*2,0.5+b*0.5,Math.sin(a)*2),rm(bm),Math.cos(a)*sp,rng().nextDouble(0.1,0.4),Math.sin(a)*sp,40+rng().nextInt(15));}}w.spawnParticle(Particle.END_ROD,l,40,4,1,4,0.1);}}.runTaskLater(plugin,155);
+        return D;
     }
 
-    // ========================================================================
-    //  8. IRA DEL DRAGÓN  (12s = 240 ticks)
-    // ========================================================================
+    // === 8. DRAGON — SKY BLOCK TORNADO (sky, 240t) ===
     private int playDragon(Player victim) {
-        final int DUR = 240;
-        Location origin = victim.getLocation().clone();
-        World w = origin.getWorld();
-        if (w == null) return 20;
+        final int D=240; Location o=victim.getLocation().clone(); World w=o.getWorld(); if(w==null)return 20;
+        victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION,200,2,false,false,false));w.playSound(o,Sound.ENTITY_ENDER_DRAGON_GROWL,1.5f,0.5f);
+        Material[] bm={Material.END_STONE,Material.END_STONE_BRICKS,Material.PURPUR_BLOCK,Material.PURPUR_PILLAR,Material.PURPLE_CONCRETE,Material.OBSIDIAN,Material.CRYING_OBSIDIAN};
+        new BukkitRunnable(){int t=0;public void run(){if(t>=70||!victim.isOnline()){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}double r=3.5-t*0.03;for(int i=0;i<20;i++){double a=(Math.PI*2/20)*i+t*0.08;w.spawnParticle(Particle.DRAGON_BREATH,l.clone().add(Math.cos(a)*r,0.2,Math.sin(a)*r),4,0.05,0.06,0.05,0.004);w.spawnParticle(Particle.DUST,l.clone().add(Math.cos(a)*r*0.6,0.3,Math.sin(a)*r*0.6),3,0.06,0.03,0.06,0,new Particle.DustOptions(Color.fromRGB(120,0,180),2.0f));}if(t%6==0)for(int b=0;b<4;b++){double a=rng().nextDouble(Math.PI*2);double r2=1+rng().nextDouble(2.5);gb(w,l.clone().add(Math.cos(a)*r2,-0.5,Math.sin(a)*r2),rm(bm),0,rng().nextDouble(0.3,0.7),0,65);}if(t%10==0)w.playSound(l,Sound.ENTITY_ENDER_DRAGON_FLAP,0.6f,0.5f);t+=2;}}.runTaskTimer(plugin,0,2);
+        new BukkitRunnable(){int t=0;public void run(){if(t>=140||!victim.isOnline()){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}for(int arm=0;arm<4;arm++){double a=t*0.35+arm*Math.PI/2;double r=2.2-t*0.008;if(r<0.5)r=0.5;for(double y=0;y<4;y+=0.35)w.spawnParticle(Particle.DRAGON_BREATH,l.clone().add(Math.cos(a+y*0.6)*r,y-0.5,Math.sin(a+y*0.6)*r),4,0.04,0.05,0.04,0.003);}w.spawnParticle(Particle.DUST,l,14,0.5,1.5,0.5,0,new Particle.DustOptions(Color.fromRGB(150,0,220),2.2f));w.spawnParticle(Particle.END_ROD,l.clone().add(0,1,0),5,0.3,0.6,0.3,0.02);if(t%6==0)for(int b=0;b<3;b++){double a=t*0.4+b*Math.PI*2/3;double r=1.5+Math.sin(t*0.1)*0.5;gb(w,l.clone().add(Math.cos(a)*r,-1,Math.sin(a)*r),rm(bm),-Math.cos(a)*0.05,rng().nextDouble(0.3,0.8),-Math.sin(a)*0.05,45);}if(t%14==0){w.playSound(l,Sound.ENTITY_ENDER_DRAGON_GROWL,0.4f,0.8f+t*0.005f);w.spawnParticle(Particle.SONIC_BOOM,l,1,0,0,0,0);}t+=2;}}.runTaskTimer(plugin,50,2);
+        new BukkitRunnable(){public void run(){if(!victim.isOnline())return;victim.removePotionEffect(PotionEffectType.LEVITATION);victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION,100,4,false,false,false));}}.runTaskLater(plugin,100);
+        new BukkitRunnable(){public void run(){Location l=vLoc(victim);if(l==null)return;w.spawnParticle(Particle.DRAGON_BREATH,l,500,7,7,7,0.15);w.spawnParticle(Particle.DUST,l,350,6,6,6,0,new Particle.DustOptions(Color.fromRGB(150,0,220),3.5f));w.spawnParticle(Particle.DUST,l,250,5,5,5,0,new Particle.DustOptions(Color.fromRGB(200,100,255),2.8f));w.spawnParticle(Particle.END_ROD,l,150,5,5,5,0.25);w.spawnParticle(Particle.EXPLOSION_EMITTER,l,8,2.5,2.5,2.5,0);w.spawnParticle(Particle.SONIC_BOOM,l,4,1.5,1.5,1.5,0);w.playSound(l,Sound.ENTITY_ENDER_DRAGON_DEATH,1.5f,0.8f);w.playSound(l,Sound.ENTITY_GENERIC_EXPLODE,2.0f,0.4f);for(int b=0;b<55;b++)ge(w,l.clone().add(0,1,0),rm(bm),rng().nextDouble(-2.2,2.2),rng().nextDouble(0.5,2.8),rng().nextDouble(-2.2,2.2),52+rng().nextInt(25));}}.runTaskLater(plugin,200);
+        new BukkitRunnable(){int t=0;public void run(){if(t>=30){cancel();return;}Location l=vLoc(victim);if(l==null)l=o.clone().add(0,5,0);w.spawnParticle(Particle.DRAGON_BREATH,l,25-t,4,4,4,0.03);w.spawnParticle(Particle.END_ROD,l,6,2.5,2.5,2.5,0.02);if(t%8==0)w.playSound(l,Sound.ENTITY_ENDER_DRAGON_FLAP,0.4f,1.2f);t+=3;}}.runTaskTimer(plugin,205,3);
+        return D;
+    }
 
-        victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, 200, 2, false, false, false));
-        w.playSound(origin, Sound.ENTITY_ENDER_DRAGON_GROWL, 1.5f, 0.5f);
+    // === 9. SOUL VORTEX — EXTREME SPIN (spin, 200t) ===
+    private int playSoulVortex(Player victim) {
+        final int D=200; Location o=victim.getLocation().clone(); World w=o.getWorld(); if(w==null)return 20;
+        w.playSound(o,Sound.ENTITY_WARDEN_EMERGE,1.0f,0.5f);w.playSound(o,Sound.BLOCK_SCULK_CATALYST_BLOOM,1.0f,0.6f);
+        Material[] bm={Material.SOUL_SAND,Material.SOUL_SOIL,Material.SOUL_LANTERN,Material.CYAN_CONCRETE,Material.LIGHT_BLUE_CONCRETE,Material.WARPED_PLANKS};
+        new BukkitRunnable(){int t=0;public void run(){if(t>=35||!victim.isOnline()){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}double r=0.5+t*0.12;for(int i=0;i<24;i++){double a=(Math.PI*2/24)*i+t*0.12;w.spawnParticle(Particle.SOUL_FIRE_FLAME,l.clone().add(Math.cos(a)*r,0.08,Math.sin(a)*r),2,0.04,0.02,0.04,0.005);}w.spawnParticle(Particle.SOUL,l.clone().add(0,0.5,0),4,0.4,0.2,0.4,0.01);if(t%6==0)for(int b=0;b<3;b++){double a=rng().nextDouble(Math.PI*2);double d=rng().nextDouble(0.5,Math.max(r,0.51));gf(w,l.clone().add(Math.cos(a)*d,-0.2,Math.sin(a)*d),rm(bm),0,0,0,80);}if(t%8==0)w.playSound(l,Sound.BLOCK_SOUL_SAND_STEP,0.8f,0.5f);t+=2;}}.runTaskTimer(plugin,0,2);
+        new BukkitRunnable(){int t=0;float speed=8f;float cumYaw=victim.getLocation().getYaw();public void run(){if(t>=160||!victim.isOnline()){cancel();return;}speed=Math.min(speed+1.5f,120f);cumYaw+=speed;Location l=victim.getLocation();l.setYaw(cumYaw%360f);l.setPitch((float)(Math.sin(t*0.08)*45));victim.teleport(l);if(t%2==0){w.spawnParticle(Particle.SOUL_FIRE_FLAME,l.clone().add(0,1,0),6,0.5,0.6,0.5,0.025);w.spawnParticle(Particle.SOUL,l.clone().add(0,1.5,0),3,0.25,0.4,0.25,0.06);}t++;}}.runTaskTimer(plugin,20,1);
+        new BukkitRunnable(){int t=0;public void run(){if(t>=145||!victim.isOnline()){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}for(int arm=0;arm<6;arm++){double a=t*0.6+arm*Math.PI/3;double maxR=3.0-t*0.015;if(maxR<0.3)maxR=0.3;for(double d=0.3;d<maxR;d+=0.35)w.spawnParticle(Particle.SOUL_FIRE_FLAME,l.clone().add(Math.cos(a+d*0.5)*d,0.1+d*0.15,Math.sin(a+d*0.5)*d),2,0.03,0.02,0.03,0.003);}if(t%4==0)w.spawnParticle(Particle.SOUL,l.clone().add(0,2.5,0),5,0.6,0.6,0.6,0.1);if(t%6==0)for(int b=0;b<5;b++){double a2=rng().nextDouble(Math.PI*2);double dist=3+rng().nextDouble(2.5);gb(w,l.clone().add(Math.cos(a2)*dist,0.3,Math.sin(a2)*dist),rm(bm),-Math.cos(a2)*0.22,rng().nextDouble(0.05,0.2),-Math.sin(a2)*0.22,35+rng().nextInt(12));}if(t%14==0)for(int b=0;b<2;b++)gf(w,l.clone().add(rng().nextDouble(-1.5,1.5),0.5,rng().nextDouble(-1.5,1.5)),Material.SOUL_LANTERN,0,0.06,0,50);if(t%16==0){w.playSound(l,Sound.ENTITY_WARDEN_HEARTBEAT,0.8f,0.6f);w.playSound(l,Sound.BLOCK_SCULK_SENSOR_CLICKING,0.5f,0.8f);}t+=2;}}.runTaskTimer(plugin,25,2);
+        new BukkitRunnable(){public void run(){Location l=vLoc(victim);if(l==null)return;w.spawnParticle(Particle.SOUL_FIRE_FLAME,l,500,6,3,6,0.25);w.spawnParticle(Particle.SOUL,l,300,5,4,5,0.2);w.spawnParticle(Particle.EXPLOSION_EMITTER,l,6,2,0.5,2,0);w.spawnParticle(Particle.SONIC_BOOM,l,3,1,0.5,1,0);w.playSound(l,Sound.ENTITY_WARDEN_SONIC_BOOM,1.5f,0.5f);w.playSound(l,Sound.ENTITY_GENERIC_EXPLODE,1.5f,0.5f);for(int b=0;b<50;b++){double a=(Math.PI*2/50)*b;double sp=0.6+rng().nextDouble(1.0);ge(w,l.clone().add(0,0.5,0),rm(bm),Math.cos(a)*sp,rng().nextDouble(0.1,0.5),Math.sin(a)*sp,48+rng().nextInt(22));}}}.runTaskLater(plugin,172);
+        return D;
+    }
 
-        // Phase 1: Purple flames on ground + end stone erupting (0-70)
-        new BukkitRunnable() {
-            int t = 0;
-            @Override public void run() {
-                if (t >= 70 || !victim.isOnline()) { cancel(); return; }
-                Location loc = vLoc(victim);
-                if (loc == null) { cancel(); return; }
+    // === 10. WITHER STORM — DARK FORTRESS (ground, 200t) ===
+    private int playWitherStorm(Player victim) {
+        final int D=200; Location o=victim.getLocation().clone(); World w=o.getWorld(); if(w==null)return 20;
+        w.playSound(o,Sound.ENTITY_WITHER_SPAWN,1.0f,0.5f);
+        Material[] bm={Material.COAL_BLOCK,Material.BLACK_CONCRETE,Material.BLACKSTONE,Material.POLISHED_BLACKSTONE_BRICKS,Material.OBSIDIAN,Material.GILDED_BLACKSTONE};
+        new BukkitRunnable(){int t=0;public void run(){if(t>=65||!victim.isOnline()){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}double r=0.5+t*0.07;for(int i=0;i<24;i++){double a=(Math.PI*2/24)*i+t*0.1;w.spawnParticle(Particle.DUST,l.clone().add(Math.cos(a)*r,0.06,Math.sin(a)*r),3,0.05,0.01,0.05,0,new Particle.DustOptions(Color.fromRGB(15,15,15),2.5f));w.spawnParticle(Particle.SQUID_INK,l.clone().add(Math.cos(a)*r*0.5,0.12,Math.sin(a)*r*0.5),1,0.04,0.02,0.04,0.004);}if(t%4==0){double yy=(t/4)*1.0;if(yy>5)yy=5;for(int p=0;p<4;p++){double a=(Math.PI*2/4)*p+Math.PI/4;gf(w,l.clone().add(Math.cos(a)*2.5,yy,Math.sin(a)*2.5),rm(bm),0,0,0,120);double a2=a+0.3;gf(w,l.clone().add(Math.cos(a2)*2.5,yy,Math.sin(a2)*2.5),rm(bm),0,0,0,120);}}if(t%10==0)w.playSound(l,Sound.ENTITY_WITHER_AMBIENT,0.6f,0.5f);t+=2;}}.runTaskTimer(plugin,0,2);
+        new BukkitRunnable(){int t=0;public void run(){if(t>=125||!victim.isOnline()){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}for(int s=0;s<3;s++){double a=t*0.4+s*Math.PI*2/3;double r=2.8-t*0.012;if(r<1)r=1;Location sk=l.clone().add(Math.cos(a)*r,1.2,Math.sin(a)*r);w.spawnParticle(Particle.DUST,sk,10,0.15,0.15,0.15,0,new Particle.DustOptions(Color.BLACK,2.2f));w.spawnParticle(Particle.SQUID_INK,sk,4,0.1,0.1,0.1,0.012);}w.spawnParticle(Particle.SQUID_INK,l.clone().add(0,0.5,0),10,0.2,0.5,0.2,0.015);w.spawnParticle(Particle.DUST,l.clone().add(0,0.3,0),12,0.4,0.8,0.4,0,new Particle.DustOptions(Color.fromRGB(30,0,30),2.2f));if(t%10==0)for(int b=0;b<3;b++){double a=rng().nextDouble(Math.PI*2);double dist=1+rng().nextDouble(2);gb(w,l.clone().add(Math.cos(a)*dist,-0.3,Math.sin(a)*dist),rm(bm),rng().nextDouble(-0.08,0.08),rng().nextDouble(0.25,0.7),rng().nextDouble(-0.08,0.08),50);}if(t%16==0)w.playSound(l,Sound.ENTITY_WITHER_SHOOT,0.5f,0.5f);t+=2;}}.runTaskTimer(plugin,40,2);
+        new BukkitRunnable(){public void run(){Location l=vLoc(victim);if(l==null)return;w.spawnParticle(Particle.SQUID_INK,l,500,6,3,6,0.25);w.spawnParticle(Particle.DUST,l,350,6,3,6,0,new Particle.DustOptions(Color.BLACK,3.5f));w.spawnParticle(Particle.DUST,l,250,5,2,5,0,new Particle.DustOptions(Color.fromRGB(50,0,50),2.8f));w.spawnParticle(Particle.EXPLOSION_EMITTER,l,8,2,0.5,2,0);w.spawnParticle(Particle.SONIC_BOOM,l,3,1.5,0.5,1.5,0);w.playSound(l,Sound.ENTITY_WITHER_DEATH,1.5f,0.5f);w.playSound(l,Sound.ENTITY_GENERIC_EXPLODE,2.0f,0.3f);for(int b=0;b<55;b++){double a=(Math.PI*2/55)*b;double sp=0.6+rng().nextDouble(1.0);ge(w,l.clone().add(0,0.5,0),rm(bm),Math.cos(a)*sp,rng().nextDouble(0.15,0.7),Math.sin(a)*sp,48+rng().nextInt(25));}}}.runTaskLater(plugin,168);
+        new BukkitRunnable(){int t=0;public void run(){if(t>=25){cancel();return;}Location l=vLoc(victim);if(l==null)l=o;w.spawnParticle(Particle.SQUID_INK,l,25-t,4,1,4,0.03);if(t%8==0)w.playSound(l,Sound.ENTITY_WITHER_AMBIENT,0.3f,0.8f);t+=3;}}.runTaskTimer(plugin,173,3);
+        return D;
+    }
 
-                double radius = 3.5 - t * 0.03;
-                for (int i = 0; i < 12; i++) {
-                    double a = (Math.PI * 2 / 12) * i + t * 0.08;
-                    double x = Math.cos(a) * radius, z = Math.sin(a) * radius;
-                    w.spawnParticle(Particle.DRAGON_BREATH, loc.clone().add(x, 0.2, z), 4, 0.08, 0.1, 0.08, 0.005);
-                    w.spawnParticle(Particle.DUST, loc.clone().add(x * 0.6, 0.3, z * 0.6), 3, 0.1, 0.05, 0.1, 0,
-                            new Particle.DustOptions(Color.fromRGB(120, 0, 180), 2.0f));
-                }
+    // === 11. SCULK — SONIC TENDRILS (ground, 200t) ===
+    private int playSculkResonance(Player victim) {
+        final int D=200; Location o=victim.getLocation().clone(); World w=o.getWorld(); if(w==null)return 20;
+        w.playSound(o,Sound.BLOCK_SCULK_CATALYST_BLOOM,1.2f,0.3f);w.playSound(o,Sound.ENTITY_WARDEN_EMERGE,0.8f,0.8f);
+        Material[] bm={Material.SCULK,Material.SCULK_CATALYST,Material.SCULK_VEIN,Material.CYAN_CONCRETE,Material.DARK_PRISMARINE,Material.PRISMARINE_BRICKS};
+        new BukkitRunnable(){int t=0;public void run(){if(t>=75||!victim.isOnline()){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}double len=0.5+t*0.08;for(int td=0;td<8;td++){double a=(Math.PI*2/8)*td+Math.sin(t*0.04)*0.15;for(double d=0;d<len;d+=0.35)w.spawnParticle(Particle.DUST,l.clone().add(Math.cos(a)*d,0.05,Math.sin(a)*d),2,0.04,0.01,0.04,new Particle.DustOptions(Color.fromRGB(0,50,60),2.3f));if(t%6==0){double tip=len-rng().nextDouble(0.5);if(tip<0.3)tip=0.3;gf(w,l.clone().add(Math.cos(a)*tip,-0.1,Math.sin(a)*tip),rm(bm),0,0,0,100+rng().nextInt(20));if(tip>1.5)gf(w,l.clone().add(Math.cos(a)*(tip-0.8),-0.1,Math.sin(a)*(tip-0.8)),rm(bm),0,0,0,100+rng().nextInt(20));}}if(t%10==0)w.playSound(l,Sound.BLOCK_SCULK_SENSOR_CLICKING,0.8f,0.5f+t*0.01f);t+=2;}}.runTaskTimer(plugin,0,2);
+        int[] pulses={35,55,75,95,115,135,150};
+        for(int i=0;i<pulses.length;i++){final int idx=i;new BukkitRunnable(){public void run(){Location l=vLoc(victim);if(l==null)return;w.spawnParticle(Particle.SONIC_BOOM,l.clone().add(0,0.5,0),1,0,0,0,0);w.playSound(l,Sound.ENTITY_WARDEN_SONIC_BOOM,0.5f+idx*0.12f,0.4f+idx*0.1f);double ringR=1.5+idx*0.9;for(int p=0;p<28;p++){double a=(Math.PI*2/28)*p;w.spawnParticle(Particle.DUST,l.clone().add(Math.cos(a)*ringR,0.3,Math.sin(a)*ringR),3,0.06,0.04,0.06,new Particle.DustOptions(Color.fromRGB(0,80,100),2.2f));}for(int b=0;b<5+idx;b++){double a=rng().nextDouble(Math.PI*2);gb(w,l.clone().add(Math.cos(a)*ringR*0.5,0.3,Math.sin(a)*ringR*0.5),rm(bm),Math.cos(a)*0.35,rng().nextDouble(0.2,0.7),Math.sin(a)*0.35,42);}}}.runTaskLater(plugin,pulses[idx]);}
+        new BukkitRunnable(){int t=0;public void run(){if(t>=120||!victim.isOnline()){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}w.spawnParticle(Particle.DUST,l.clone().add(0,0.5,0),12,0.6,0.5,0.6,new Particle.DustOptions(Color.fromRGB(0,60,70),1.8f));w.spawnParticle(Particle.SCULK_CHARGE_POP,l.clone().add(0,0.3,0),6,1.0,0.3,1.0,0.01);if(t%6==0)w.playSound(l,Sound.BLOCK_SCULK_SENSOR_CLICKING,0.4f,1.0f);t+=2;}}.runTaskTimer(plugin,45,2);
+        new BukkitRunnable(){public void run(){Location l=vLoc(victim);if(l==null)return;w.spawnParticle(Particle.SONIC_BOOM,l.clone().add(0,0.5,0),6,1.5,0.5,1.5,0);w.spawnParticle(Particle.SCULK_CHARGE_POP,l,400,6,1.5,6,0.12);w.spawnParticle(Particle.DUST,l,500,6,2,6,new Particle.DustOptions(Color.fromRGB(0,80,100),3.5f));w.spawnParticle(Particle.EXPLOSION_EMITTER,l,5,1.5,0.3,1.5,0);w.playSound(l,Sound.ENTITY_WARDEN_SONIC_BOOM,2.0f,0.3f);w.playSound(l,Sound.ENTITY_GENERIC_EXPLODE,1.5f,0.5f);w.playSound(l,Sound.BLOCK_SCULK_CATALYST_BLOOM,1.5f,0.4f);for(int b=0;b<55;b++){double a=(Math.PI*2/55)*b;double sp=0.7+rng().nextDouble(1.1);ge(w,l.clone().add(0,0.3,0),rm(bm),Math.cos(a)*sp,rng().nextDouble(0.1,0.45),Math.sin(a)*sp,48+rng().nextInt(22));}}}.runTaskLater(plugin,168);
+        new BukkitRunnable(){int t=0;public void run(){if(t>=25){cancel();return;}Location l=vLoc(victim);if(l==null)l=o;w.spawnParticle(Particle.SCULK_CHARGE_POP,l,18-t,4,0.5,4,0.02);if(t%8==0)w.playSound(l,Sound.BLOCK_SCULK_SENSOR_CLICKING,0.3f,1.5f);t+=3;}}.runTaskTimer(plugin,173,3);
+        return D;
+    }
 
-                if (t % 10 == 0) {
-                    Material[] mats = {Material.END_STONE, Material.PURPUR_BLOCK, Material.OBSIDIAN};
-                    for (int p = 0; p < 2; p++) {
-                        double a2 = rng().nextDouble(Math.PI * 2);
-                        double r2 = 1.5 + rng().nextDouble(2);
-                        spawnBlock(w, loc.clone().add(Math.cos(a2) * r2, -1, Math.sin(a2) * r2),
-                                mats[rng().nextInt(mats.length)], 0, rng().nextDouble(0.3, 0.6), 0, 75);
-                    }
-                    w.playSound(loc, Sound.ENTITY_ENDER_DRAGON_FLAP, 0.6f, 0.5f);
-                }
-                t += 2;
+    // === 12. APOCALYPSE — THE ULTIMATE FINISHER (sky+ground, 260t) ===
+    private int playApocalypse(Player victim) {
+        final int D=260; Location o=victim.getLocation().clone(); World w=o.getWorld(); if(w==null)return 20;
+        w.playSound(o,Sound.ENTITY_WITHER_SPAWN,1.5f,0.3f);w.playSound(o,Sound.ENTITY_ENDER_DRAGON_GROWL,1.5f,0.4f);w.playSound(o,Sound.ENTITY_LIGHTNING_BOLT_THUNDER,1.5f,0.5f);
+        Material[] pm={Material.GOLD_BLOCK,Material.DIAMOND_BLOCK,Material.EMERALD_BLOCK,Material.NETHERITE_BLOCK,Material.BEACON,Material.CRYING_OBSIDIAN,Material.AMETHYST_BLOCK,Material.LAPIS_BLOCK};
+        Material[] fire={Material.MAGMA_BLOCK,Material.ORANGE_CONCRETE,Material.RED_CONCRETE};
+        Material[] ice={Material.BLUE_ICE,Material.PACKED_ICE,Material.LIGHT_BLUE_CONCRETE};
+        Material[] soul={Material.SOUL_SAND,Material.SOUL_SOIL,Material.CYAN_CONCRETE};
+        Material[] vd={Material.OBSIDIAN,Material.CRYING_OBSIDIAN,Material.PURPLE_CONCRETE};
+        
+        // Store all task IDs for proper cleanup
+        final UUID victimUuid = victim.getUniqueId();
+        
+        // Phase 1: Reality cracks — 8 golden crack lines on ground + rumble (0-50)
+        BukkitRunnable phase1 = new BukkitRunnable(){int t=0;public void run(){
+            if(t>=50||!victim.isOnline()||!((CoreProtectPlugin)plugin).getFinisherListener().isBeingFinished(victimUuid)){
+                cancel(); immediateGhostCleanup(vLoc(victim)); return;
             }
-        }.runTaskTimer(plugin, 0, 2);
-
-        // Phase 2: Dragon breath spirals (50-180)
-        new BukkitRunnable() {
-            int t = 0;
-            @Override public void run() {
-                if (t >= 130 || !victim.isOnline()) { cancel(); return; }
-                Location loc = vLoc(victim);
-                if (loc == null) { cancel(); return; }
-
-                // 3 spiraling dragon breath arms
-                for (int arm = 0; arm < 3; arm++) {
-                    double a = t * 0.3 + arm * Math.PI * 2 / 3;
-                    double r = 2.0 - t * 0.008;
-                    if (r < 0.5) r = 0.5;
-                    for (double y = 0; y < 3; y += 0.5) {
-                        double x = Math.cos(a + y * 0.6) * r;
-                        double z = Math.sin(a + y * 0.6) * r;
-                        w.spawnParticle(Particle.DRAGON_BREATH, loc.clone().add(x, y - 0.5, z),
-                                4, 0.06, 0.08, 0.06, 0.003);
-                    }
-                }
-
-                // Central purple column
-                w.spawnParticle(Particle.DUST, loc, 12, 0.4, 1.5, 0.4, 0,
-                        new Particle.DustOptions(Color.fromRGB(150, 0, 220), 2.0f));
-                w.spawnParticle(Particle.END_ROD, loc.clone().add(0, 1, 0), 4, 0.3, 0.6, 0.3, 0.02);
-
-                if (t % 14 == 0) {
-                    w.playSound(loc, Sound.ENTITY_ENDER_DRAGON_GROWL, 0.4f, 0.8f + t * 0.005f);
-                    w.spawnParticle(Particle.SONIC_BOOM, loc, 1, 0, 0, 0, 0);
-                }
-
-                // Flying dragon debris
-                if (t % 12 == 0) {
-                    Material[] mats = {Material.END_STONE, Material.PURPUR_BLOCK, Material.PURPLE_CONCRETE};
-                    for (int b = 0; b < 2; b++) {
-                        double bx = rng().nextDouble(-2, 2), bz = rng().nextDouble(-2, 2);
-                        spawnBlock(w, loc.clone().add(bx, -2, bz), mats[rng().nextInt(mats.length)],
-                                -bx * 0.08, rng().nextDouble(0.3, 0.7), -bz * 0.08, 45);
-                    }
-                }
-
-                t += 2;
+            Location l=vLoc(victim);if(l==null){cancel(); return;}
+            double len=0.5+t*0.14;
+            for(int cr=0;cr<8;cr++){double a=(Math.PI*2/8)*cr+Math.sin(t*0.05)*0.1;
+                for(double d=0.3;d<len;d+=0.35){w.spawnParticle(Particle.DUST,l.clone().add(Math.cos(a)*d,0.06,Math.sin(a)*d),3,0.04,0.01,0.04,new Particle.DustOptions(Color.fromRGB(255,200,0),2.5f));w.spawnParticle(Particle.END_ROD,l.clone().add(Math.cos(a)*d,0.1,Math.sin(a)*d),1,0.02,0.02,0.02,0.005);}
+                if(t%6==0){double tip=len-rng().nextDouble(0.3);if(tip<0.3)tip=0.3;gf(w,l.clone().add(Math.cos(a)*tip,-0.1,Math.sin(a)*tip),rm(pm),0,0,0,140);}
             }
-        }.runTaskTimer(plugin, 50, 2);
-
-        // Phase 3: Stronger levitation
-        new BukkitRunnable() {
-            @Override public void run() {
-                if (!victim.isOnline()) return;
-                victim.removePotionEffect(PotionEffectType.LEVITATION);
-                victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, 100, 4, false, false, false));
+            w.spawnParticle(Particle.END_ROD,l,1);
+            if(t%4==0){w.playSound(l,Sound.ENTITY_LIGHTNING_BOLT_IMPACT,0.5f,0.4f+t*0.02f);w.spawnParticle(Particle.ELECTRIC_SPARK,l.clone().add(0,0.2,0),20,len*0.4,0.1,len*0.4,0.04);}
+            if(t%8==0)w.strikeLightningEffect(l.clone().add(rng().nextDouble(-3,3),0,rng().nextDouble(-3,3)));
+            t+=2;
+        }}; phase1.runTaskTimer(plugin,0,2);
+        
+        // Phase 2: 4 elemental pillars — fire/ice/soul/void at cardinal dirs (20-90)
+        BukkitRunnable phase2 = new BukkitRunnable(){int t=0;public void run(){
+            if(t>=70||!victim.isOnline()||!((CoreProtectPlugin)plugin).getFinisherListener().isBeingFinished(victimUuid)){
+                cancel(); immediateGhostCleanup(vLoc(victim)); return;
             }
-        }.runTaskLater(plugin, 100);
-
-        // Phase 4: DRAGON EXPLOSION (tick 200)
-        new BukkitRunnable() {
-            @Override public void run() {
-                Location loc = vLoc(victim);
-                if (loc == null) return;
-
-                w.spawnParticle(Particle.DRAGON_BREATH, loc, 300, 6.0, 6.0, 6.0, 0.1);
-                w.spawnParticle(Particle.DUST, loc, 250, 5.0, 5.0, 5.0, 0,
-                        new Particle.DustOptions(Color.fromRGB(150, 0, 220), 3.0f));
-                w.spawnParticle(Particle.DUST, loc, 150, 4.0, 4.0, 4.0, 0,
-                        new Particle.DustOptions(Color.fromRGB(200, 100, 255), 2.5f));
-                w.spawnParticle(Particle.END_ROD, loc, 100, 4.0, 4.0, 4.0, 0.2);
-                w.spawnParticle(Particle.EXPLOSION_EMITTER, loc, 6, 2.0, 2.0, 2.0, 0);
-                w.spawnParticle(Particle.SONIC_BOOM, loc, 3, 1, 1, 1, 0);
-                w.playSound(loc, Sound.ENTITY_ENDER_DRAGON_DEATH, 1.5f, 0.8f);
-                w.playSound(loc, Sound.ENTITY_GENERIC_EXPLODE, 2.0f, 0.5f);
-
-                Material[] debris = {Material.END_STONE, Material.PURPUR_BLOCK, Material.OBSIDIAN,
-                        Material.PURPLE_CONCRETE, Material.CRYING_OBSIDIAN, Material.DRAGON_EGG};
-                for (int b = 0; b < 30; b++) {
-                    spawnBlock(w, loc.clone().add(0, 1, 0), debris[rng().nextInt(debris.length)],
-                            rng().nextDouble(-2.0, 2.0), rng().nextDouble(0.5, 2.5), rng().nextDouble(-2.0, 2.0),
-                            55 + rng().nextInt(30));
-                }
+            Location l=vLoc(victim);if(l==null){cancel(); return;}
+            double[][] dirs={{3.5,0},{0,3.5},{-3.5,0},{0,-3.5}};
+            Material[][] elMats={fire,ice,soul,vd};
+            Particle[] elParts={Particle.FLAME,Particle.SNOWFLAKE,Particle.SOUL_FIRE_FLAME,Particle.DRAGON_BREATH};
+            Color[] elCols={Color.fromRGB(255,80,0),Color.fromRGB(100,200,255),Color.fromRGB(0,200,200),Color.fromRGB(120,0,180)};
+            for(int p=0;p<4;p++){
+                Location base=l.clone().add(dirs[p][0],0,dirs[p][1]);
+                double h=t*0.08;if(h>5)h=5;
+                for(double y=0;y<h;y+=0.3)w.spawnParticle(elParts[p],base.clone().add(0,y,0),3,0.06,0.04,0.06,0.008);
+                if(t%4==0){double yy=(t/4)*1.0;if(yy>5)yy=5;gf(w,base.clone().add(0,yy,0),rm(elMats[p]),0,0,0,130);}
+                w.spawnParticle(Particle.DUST,base.clone().add(0,h*0.5,0),5,0.1,h*0.3,0.1,new Particle.DustOptions(elCols[p],2.0f));
             }
-        }.runTaskLater(plugin, 200);
-
-        // Phase 5: Lingering dragon breath (205-235)
-        new BukkitRunnable() {
-            int t = 0;
-            @Override public void run() {
-                if (t >= 35) { cancel(); return; }
-                Location loc = vLoc(victim);
-                if (loc == null) loc = origin.clone().add(0, 5, 0);
-                w.spawnParticle(Particle.DRAGON_BREATH, loc, 20 - t / 2, 3.0, 3.0, 3.0, 0.03);
-                w.spawnParticle(Particle.END_ROD, loc, 5, 2.0, 2.0, 2.0, 0.02);
-                if (t % 8 == 0) w.playSound(loc, Sound.ENTITY_ENDER_DRAGON_FLAP, 0.4f, 1.2f);
-                t += 3;
+            // Connecting beams between pillars
+            if(t%6==0)for(int p=0;p<4;p++){int np=(p+1)%4;Location a2=l.clone().add(dirs[p][0],2,dirs[p][1]);Location b2=l.clone().add(dirs[np][0],2,dirs[np][1]);Vector dir=b2.toVector().subtract(a2.toVector());for(double d=0;d<1;d+=0.1){Location pt=a2.clone().add(dir.clone().multiply(d));w.spawnParticle(Particle.ELECTRIC_SPARK,pt,2,0.05,0.05,0.05,0.01);}}
+            if(t%12==0){w.playSound(l,Sound.BLOCK_BEACON_ACTIVATE,0.6f,0.8f+t*0.015f);w.playSound(l,Sound.ENTITY_BLAZE_AMBIENT,0.4f,0.6f);}
+            t+=2;
+        }}; phase2.runTaskTimer(plugin,20,2);
+        
+        // Phase 3: Levitation + golden beacon (tick 65)
+        BukkitRunnable phase3 = new BukkitRunnable(){public void run(){
+            if(!victim.isOnline()||!((CoreProtectPlugin)plugin).getFinisherListener().isBeingFinished(victimUuid)){cancel(); return;}
+            victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION,190,2,false,false,false));
+            Location l=vLoc(victim);if(l!=null){w.playSound(l,Sound.ITEM_TRIDENT_THUNDER,1.5f,1.2f);w.spawnParticle(Particle.END_ROD,l,5);w.spawnParticle(Particle.END_ROD,l,80,0.5,0.5,0.5,0.15);}
+        }}; phase3.runTaskLater(plugin,65);
+        
+        // Phase 4: Golden beacon + energy rings ascending (70-200)
+        BukkitRunnable phase4 = new BukkitRunnable(){int t=0;public void run(){
+            if(t>=130||!victim.isOnline()||!((CoreProtectPlugin)plugin).getFinisherListener().isBeingFinished(victimUuid)){
+                cancel(); immediateGhostCleanup(vLoc(victim)); return;
             }
-        }.runTaskTimer(plugin, 205, 3);
+            Location l=vLoc(victim);if(l==null){cancel(); return;}
+            // Thick golden beam
+            for(double y=-3;y<40;y+=0.4){double wb=Math.sin((y+t)*0.3)*0.12;w.spawnParticle(Particle.DUST,l.clone().add(wb,y,wb),3,0.15,0.06,0.15,new Particle.DustOptions(Color.fromRGB(255,200,50),2.5f));if(y<8)w.spawnParticle(Particle.END_ROD,l.clone().add(wb*0.5,y,wb*0.5),1,0.08,0.04,0.08,0.003);}
+            // 3 ascending energy rings at different speeds
+            for(int ring=0;ring<3;ring++){double ry=(t*(0.6+ring*0.3)+ring*8)%35;int pts=16+ring*4;double rr=1.5+ring*0.8;Color rc=ring==0?Color.fromRGB(255,215,0):ring==1?Color.fromRGB(255,100,50):Color.fromRGB(100,200,255);
+                for(int i=0;i<pts;i++){double a=(Math.PI*2/pts)*i+t*(0.15+ring*0.08);w.spawnParticle(Particle.DUST,l.clone().add(Math.cos(a)*rr,ry,Math.sin(a)*rr),2,0.04,0.04,0.04,new Particle.DustOptions(rc,1.8f));}}
+            if(t%8==0)w.playSound(l,Sound.BLOCK_BEACON_AMBIENT,1.0f,1.5f+t*0.005f);
+            t+=2;
+        }}; phase4.runTaskTimer(plugin,70,2);
+        
+        // Phase 5: TRIPLE block tornado — 3 rings at different heights/speeds (80-210)
+        BukkitRunnable phase5 = new BukkitRunnable(){int t=0;public void run(){
+            if(t>=130||!victim.isOnline()||!((CoreProtectPlugin)plugin).getFinisherListener().isBeingFinished(victimUuid)){
+                cancel(); immediateGhostCleanup(vLoc(victim)); return;
+            }
+            Location l=vLoc(victim);if(l==null){cancel(); return;}
+            // Inner ring — fast, close, low
+            if(t%3==0)for(int b=0;b<3;b++){double a=t*0.55+b*Math.PI*2/3;double r=1.8;gf(w,l.clone().add(Math.cos(a)*r,Math.sin(t*0.08)*1.5,Math.sin(a)*r),rm(pm),0,0.015,0,16);}
+            // Middle ring — medium speed, wider
+            if(t%4==0)for(int b=0;b<4;b++){double a=t*0.35+b*Math.PI/2;double r=3.2;gf(w,l.clone().add(Math.cos(a)*r,1+Math.sin(t*0.06+b)*2,Math.sin(a)*r),rm(pm),0,0.02,0,18);}
+            // Outer ring — slow, widest, highest
+            if(t%5==0)for(int b=0;b<5;b++){double a=t*0.2+b*Math.PI*2/5;double r=4.5;gf(w,l.clone().add(Math.cos(a)*r,2+Math.sin(t*0.04+b)*3,Math.sin(a)*r),rm(pm),0,0.025,0,22);}
+            // Particle tornado trails
+            for(int arm=0;arm<6;arm++){double a=t*0.45+arm*Math.PI/3;for(double y=0;y<6;y+=0.5){double r=1.5+y*0.5;w.spawnParticle(Particle.END_ROD,l.clone().add(Math.cos(a+y*0.4)*r,y-1,Math.sin(a+y*0.4)*r),1,0.03,0.03,0.03,0.003);}}
+            // Blocks ascending through beam
+            if(t%8==0)for(int b=0;b<2;b++)gb(w,l.clone().add(rng().nextDouble(-1.5,1.5),-2,rng().nextDouble(-1.5,1.5)),rm(pm),0,rng().nextDouble(0.5,1.3),0,55);
+            if(t%6==0)w.playSound(l,Sound.ENTITY_ENDER_DRAGON_FLAP,0.5f,1.0f+t*0.005f);
+            t+=2;
+        }}; phase5.runTaskTimer(plugin,80,2);
+        
+        // Phase 6: Stronger lev + intensify (tick 130)
+        BukkitRunnable phase6 = new BukkitRunnable(){public void run(){
+            if(!victim.isOnline()||!((CoreProtectPlugin)plugin).getFinisherListener().isBeingFinished(victimUuid)){cancel(); return;}
+            victim.removePotionEffect(PotionEffectType.LEVITATION);victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION,125,4,false,false,false));
+            Location l=vLoc(victim);if(l!=null){w.playSound(l,Sound.ENTITY_WARDEN_SONIC_BOOM,1.0f,1.5f);w.spawnParticle(Particle.SONIC_BOOM,l,3,0.5,0.5,0.5,0);}
+        }}; phase6.runTaskLater(plugin,130);
+        
+        // Phase 7: Block sphere forming + ALL particles (150-210)
+        BukkitRunnable phase7 = new BukkitRunnable(){int t=0;public void run(){
+            if(t>=60||!victim.isOnline()||!((CoreProtectPlugin)plugin).getFinisherListener().isBeingFinished(victimUuid)){
+                cancel(); immediateGhostCleanup(vLoc(victim)); return;
+            }
+            Location l=vLoc(victim);if(l==null){cancel(); return;}
+            double sR=3.5-t*0.04;if(sR<0.8)sR=0.8;
+            // Sphere of blocks
+            if(t%3==0)for(int b=0;b<6;b++){double phi=rng().nextDouble(Math.PI);double theta=rng().nextDouble(Math.PI*2);double x=Math.sin(phi)*Math.cos(theta)*sR;double y2=Math.cos(phi)*sR;double z=Math.sin(phi)*Math.sin(theta)*sR;gf(w,l.clone().add(x,y2,z),rm(pm),0,0,0,50-t/2);}
+            // ALL particle types
+            w.spawnParticle(Particle.END_ROD,l,12,sR*0.6,sR*0.6,sR*0.6,0.03);
+            w.spawnParticle(Particle.DUST,l,15,sR*0.5,sR*0.5,sR*0.5,0,new Particle.DustOptions(Color.fromRGB(255,200,50),2.2f));
+            w.spawnParticle(Particle.FLAME,l,8,sR*0.4,sR*0.4,sR*0.4,0.02);
+            w.spawnParticle(Particle.SOUL_FIRE_FLAME,l,6,sR*0.4,sR*0.4,sR*0.4,0.02);
+            w.spawnParticle(Particle.DRAGON_BREATH,l,8,sR*0.4,sR*0.4,sR*0.4,0.01);
+            w.spawnParticle(Particle.ELECTRIC_SPARK,l,10,sR*0.5,sR*0.5,sR*0.5,0.05);
+            if(t%4==0){w.spawnParticle(Particle.SONIC_BOOM,l,1,0,0,0,0);w.playSound(l,Sound.ENTITY_WARDEN_HEARTBEAT,1.0f,0.5f+t*0.015f);}
+            if(t%8==0)w.strikeLightningEffect(l.clone().add(rng().nextDouble(-2,2),0,rng().nextDouble(-2,2)));
+            t+=2;
+        }}; phase7.runTaskTimer(plugin,150,2);
+        
+        // Phase 8: SUPERNOVA — the biggest explosion possible (tick 215)
+        BukkitRunnable phase8 = new BukkitRunnable(){public void run(){
+            if(!victim.isOnline()||!((CoreProtectPlugin)plugin).getFinisherListener().isBeingFinished(victimUuid)){cancel(); immediateGhostCleanup(vLoc(victim)); return;}
+            Location l=vLoc(victim);if(l==null){cancel(); return;}
+            // Particles — EVERYTHING
+            w.spawnParticle(Particle.END_ROD,l,600,8,8,8,0.4);
+            w.spawnParticle(Particle.DUST,l,500,7,7,7,0,new Particle.DustOptions(Color.fromRGB(255,215,0),4.0f));
+            w.spawnParticle(Particle.DUST,l,400,6,6,6,0,new Particle.DustOptions(Color.WHITE,3.5f));
+            w.spawnParticle(Particle.DUST,l,300,6,6,6,0,new Particle.DustOptions(Color.fromRGB(255,50,0),3.0f));
+            w.spawnParticle(Particle.FLAME,l,200,6,6,6,0.15);
+            w.spawnParticle(Particle.SOUL_FIRE_FLAME,l,150,5,5,5,0.12);
+            w.spawnParticle(Particle.DRAGON_BREATH,l,150,5,5,5,0.1);
+            w.spawnParticle(Particle.ELECTRIC_SPARK,l,200,6,6,6,0.2);
+            w.spawnParticle(Particle.SNOWFLAKE,l,100,5,5,5,0.1);
+            w.spawnParticle(Particle.EXPLOSION_EMITTER,l,12);
+            w.spawnParticle(Particle.END_ROD,l,10);
+            w.spawnParticle(Particle.SONIC_BOOM,l,5);
+            w.spawnParticle(Particle.TOTEM_OF_UNDYING,l,200,5,5,5,0.5);
+            // Sounds — EVERYTHING
+            w.playSound(l,Sound.ENTITY_GENERIC_EXPLODE,2.0f,0.3f);
+            w.playSound(l,Sound.ENTITY_LIGHTNING_BOLT_THUNDER,2.0f,0.4f);
+            w.playSound(l,Sound.ENTITY_ENDER_DRAGON_DEATH,1.5f,0.6f);
+            w.playSound(l,Sound.ENTITY_WITHER_DEATH,1.5f,0.5f);
+            w.playSound(l,Sound.ITEM_TRIDENT_THUNDER,2.0f,0.3f);
+            w.playSound(l,Sound.ENTITY_WARDEN_SONIC_BOOM,2.0f,0.4f);
+            // 80 blocks flying in ALL directions — the biggest block burst
+            for(int b=0;b<80;b++){double phi=rng().nextDouble(Math.PI);double theta=rng().nextDouble(Math.PI*2);double sp=0.8+rng().nextDouble(1.8);double vx=Math.sin(phi)*Math.cos(theta)*sp;double vy=Math.cos(phi)*sp*0.6+rng().nextDouble(0.3);double vz=Math.sin(phi)*Math.sin(theta)*sp;ge(w,l.clone().add(0,0.5,0),rm(pm),vx,vy,vz,50+rng().nextInt(25));}
+            // 6 lightning strikes
+            for(int i=0;i<6;i++)w.strikeLightningEffect(l.clone().add(rng().nextDouble(-4,4),0,rng().nextDouble(-4,4)));
+        }}; phase8.runTaskLater(plugin,215);
+        
+        // Phase 9: Firework cascade + aftershock (220-255)
+        BukkitRunnable phase9 = new BukkitRunnable(){int t=0;public void run(){
+            if(t>=35||!victim.isOnline()||!((CoreProtectPlugin)plugin).getFinisherListener().isBeingFinished(victimUuid)){
+                cancel(); immediateGhostCleanup(vLoc(victim)); return;
+            }
+            Location l=vLoc(victim);if(l==null)l=o.clone().add(0,6,0);
+            // Firework bursts
+            for(int f=0;f<6;f++){Location fl=l.clone().add(rng().nextDouble(-7,7),rng().nextDouble(-2,8),rng().nextDouble(-7,7));
+                Color[] cs={Color.YELLOW,Color.RED,Color.AQUA,Color.FUCHSIA,Color.WHITE,Color.ORANGE};Color c=cs[rng().nextInt(cs.length)];
+                w.spawnParticle(Particle.DUST,fl,20,1.2,1.2,1.2,0,new Particle.DustOptions(c,2.5f));w.spawnParticle(Particle.END_ROD,fl,15,0.8,0.8,0.8,0.1);}
+            if(t%3==0){w.playSound(l,Sound.ENTITY_FIREWORK_ROCKET_BLAST,1.0f,0.6f+t*0.03f);w.playSound(l,Sound.ENTITY_FIREWORK_ROCKET_TWINKLE,0.8f,0.8f+t*0.02f);}
+            // Lingering golden dust
+            w.spawnParticle(Particle.DUST,l,40-t,6,6,6,0,new Particle.DustOptions(Color.fromRGB(255,200,50),1.5f));
+            w.spawnParticle(Particle.END_ROD,l,15-t/3,4,4,4,0.04);
+            if(t%6==0&&t<20)gb(w,l.clone().add(rng().nextDouble(-3,3),rng().nextDouble(-1,3),rng().nextDouble(-3,3)),rm(pm),rng().nextDouble(-0.5,0.5),rng().nextDouble(0.2,0.8),rng().nextDouble(-0.5,0.5),35);
+            t+=2;
+        }}; phase9.runTaskTimer(plugin,220,2);
+        
+        return D;
+    }
 
-        return DUR;
+    // === TOTEM ===
+    public void playTotemExplosion(Location loc) { World w=loc.getWorld();if(w==null)return;w.spawnParticle(Particle.EXPLOSION_EMITTER,loc.clone().add(0,1,0),1);w.spawnParticle(Particle.TOTEM_OF_UNDYING,loc.clone().add(0,1,0),100,1,1,1,0.5);w.spawnParticle(Particle.END_ROD,loc.clone().add(0,1,0),3);w.playSound(loc,Sound.ENTITY_GENERIC_EXPLODE,1.0f,1.5f);w.playSound(loc,Sound.ITEM_TOTEM_USE,1.0f,1.0f); }
+    public int playTotemCounter(Player victim, Player killer) {
+        final int D=100;Location o=victim.getLocation().clone();World w=o.getWorld();if(w==null)return 20;
+        w.spawnParticle(Particle.TOTEM_OF_UNDYING,o.clone().add(0,1,0),150,1,1.5,1,0.5);w.spawnParticle(Particle.END_ROD,o.clone().add(0,1,0),3);w.playSound(o,Sound.ITEM_TOTEM_USE,1.2f,1.0f);
+        new BukkitRunnable(){int t=0;public void run(){if(t>=20||!victim.isOnline()){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}double r=1.2+t*0.05;for(int i=0;i<16;i++){double a=(Math.PI*2/16)*i+t*0.2;w.spawnParticle(Particle.DUST,l.clone().add(Math.cos(a)*r,0.5+t*0.1,Math.sin(a)*r),1,0,0,0,0,new Particle.DustOptions(Color.fromRGB(255,223,50),1.5f));}if(t%5==0)w.playSound(l,Sound.BLOCK_AMETHYST_BLOCK_CHIME,0.5f,1.5f);t+=2;}}.runTaskTimer(plugin,15,2);
+        new BukkitRunnable(){int t=0;public void run(){if(t>=30||!victim.isOnline()||!killer.isOnline()){cancel();return;}Location vl=victim.getLocation();Location kl=killer.getLocation();Vector dir=vl.toVector().subtract(kl.toVector()).normalize();for(double d=0;d<vl.distance(kl)&&d<6;d+=1.0){Location pt=kl.clone().add(dir.clone().multiply(d)).add(0,1,0);w.spawnParticle(Particle.DUST,pt,2,0.1,0.1,0.1,0,new Particle.DustOptions(Color.RED,1.5f));}Vector rev=kl.toVector().subtract(vl.toVector()).normalize();for(double d=0;d<3;d+=0.8){Location pt=vl.clone().add(rev.clone().multiply(d)).add(0,1,0);w.spawnParticle(Particle.DUST,pt,2,0.1,0.1,0.1,0,new Particle.DustOptions(Color.fromRGB(255,215,0),1.5f));}Location mid=vl.clone().add(kl).multiply(0.5).add(0,1,0);w.spawnParticle(Particle.ELECTRIC_SPARK,mid,10,0.3,0.3,0.3,0.1);if(t%6==0)w.playSound(mid,Sound.ENTITY_WARDEN_SONIC_BOOM,0.5f,1.5f);t+=3;}}.runTaskTimer(plugin,35,3);
+        new BukkitRunnable(){public void run(){Location l=vLoc(victim);if(l==null)return;w.spawnParticle(Particle.TOTEM_OF_UNDYING,l.clone().add(0,1,0),200,3,2,3,0.3);w.spawnParticle(Particle.END_ROD,l.clone().add(0,1,0),2);w.playSound(l,Sound.ENTITY_GENERIC_EXPLODE,1.2f,1.2f);for(int i=0;i<32;i++){double a=(Math.PI*2/32)*i;w.spawnParticle(Particle.END_ROD,l.clone().add(Math.cos(a)*2,0.5,Math.sin(a)*2),2,0,0,0,0.1);}}}.runTaskLater(plugin,65);
+        new BukkitRunnable(){int t=0;public void run(){if(t>=15||!victim.isOnline()){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}w.spawnParticle(Particle.HEART,l.clone().add(0,2,0),2,0.3,0.2,0.3,0);w.spawnParticle(Particle.END_ROD,l.clone().add(0,1,0),3,0.5,1,0.5,0.05);t+=3;}}.runTaskTimer(plugin,85,3);
+        return D;
     }
 }

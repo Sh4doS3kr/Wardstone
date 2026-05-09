@@ -16,11 +16,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import com.moonlight.coreprotect.util.SmallCaps;
 
 public class CoreMembersGUI {
 
-    public static final String GUI_TITLE = ChatColor.DARK_GRAY + "" + ChatColor.BOLD + "✦ Miembros ✦";
-    public static final String INVITE_TITLE = ChatColor.DARK_GRAY + "" + ChatColor.BOLD + "✦ Invitar Jugador ✦";
+    static final String GUI_TITLE = SmallCaps.convert(ChatColor.DARK_GRAY + "" + ChatColor.BOLD + "✦ Miembros ✦");
+    static final String INVITE_TITLE = SmallCaps.convert(ChatColor.DARK_GRAY + "" + ChatColor.BOLD + "✦ Invitar Jugador ✦");
     private static final int GUI_SIZE = 54;
 
     private final CoreProtectPlugin plugin;
@@ -94,7 +95,7 @@ public class CoreMembersGUI {
         if (isOwner) {
             ItemStack inviteBtn = new ItemStack(Material.EMERALD);
             ItemMeta invMeta = inviteBtn.getItemMeta();
-            invMeta.setDisplayName(ChatColor.GREEN + "" + ChatColor.BOLD + "➕ INVITAR JUGADOR");
+            invMeta.setDisplayName(SmallCaps.convert(ChatColor.GREEN + "" + ChatColor.BOLD + "➕ INVITAR JUGADOR"));
             invMeta.setLore(Arrays.asList(
                     "",
                     ChatColor.GRAY + "Selecciona un jugador online",
@@ -108,8 +109,8 @@ public class CoreMembersGUI {
         // === BACK BUTTON (slot 49) ===
         ItemStack backBtn = new ItemStack(Material.ARROW);
         ItemMeta backMeta = backBtn.getItemMeta();
-        backMeta.setDisplayName(ChatColor.YELLOW + "" + ChatColor.BOLD + "◀ VOLVER");
-        backMeta.setLore(Arrays.asList("", ChatColor.GRAY + "Volver al panel principal"));
+        backMeta.setDisplayName(SmallCaps.convert(ChatColor.YELLOW + "" + ChatColor.BOLD + "◀ VOLVER"));
+        backMeta.setLore(SmallCaps.convertList(Arrays.asList("", ChatColor.GRAY + "Volver al panel principal")));
         backBtn.setItemMeta(backMeta);
         inv.setItem(49, backBtn);
 
@@ -175,8 +176,8 @@ public class CoreMembersGUI {
         if (slotIdx == 0) {
             ItemStack noPlayers = new ItemStack(Material.BARRIER);
             ItemMeta npMeta = noPlayers.getItemMeta();
-            npMeta.setDisplayName(ChatColor.RED + "No hay jugadores disponibles");
-            npMeta.setLore(Arrays.asList("", ChatColor.GRAY + "Todos los jugadores online", ChatColor.GRAY + "ya son miembros o no hay nadie."));
+            npMeta.setDisplayName(SmallCaps.convert(ChatColor.RED + "No hay jugadores disponibles"));
+            npMeta.setLore(SmallCaps.convertList(Arrays.asList("", ChatColor.GRAY + "Todos los jugadores online", ChatColor.GRAY + "ya son miembros o no hay nadie.")));
             noPlayers.setItemMeta(npMeta);
             inv.setItem(22, noPlayers);
         }
@@ -184,8 +185,8 @@ public class CoreMembersGUI {
         // === BACK BUTTON (slot 49) ===
         ItemStack backBtn = new ItemStack(Material.ARROW);
         ItemMeta backMeta = backBtn.getItemMeta();
-        backMeta.setDisplayName(ChatColor.YELLOW + "" + ChatColor.BOLD + "◀ VOLVER");
-        backMeta.setLore(Arrays.asList("", ChatColor.GRAY + "Volver a miembros"));
+        backMeta.setDisplayName(SmallCaps.convert(ChatColor.YELLOW + "" + ChatColor.BOLD + "◀ VOLVER"));
+        backMeta.setLore(SmallCaps.convertList(Arrays.asList("", ChatColor.GRAY + "Volver a miembros")));
         backBtn.setItemMeta(backMeta);
         inv.setItem(49, backBtn);
 
@@ -195,16 +196,16 @@ public class CoreMembersGUI {
     private ItemStack createGlass(Material material) {
         ItemStack glass = new ItemStack(material);
         ItemMeta meta = glass.getItemMeta();
-        meta.setDisplayName(" ");
+        meta.setDisplayName(SmallCaps.convert(" "));
         glass.setItemMeta(meta);
         return glass;
     }
 
     public static boolean isMembersGUI(String title) {
-        return title.contains("Miembros") && !title.contains("Invitar");
+        return title.contains(SmallCaps.convert("Miembros")) && !title.contains(SmallCaps.convert("Invitar"));
     }
 
     public static boolean isInviteGUI(String title) {
-        return title.contains("Invitar Jugador");
+        return title.contains(SmallCaps.convert("Invitar Jugador"));
     }
 }

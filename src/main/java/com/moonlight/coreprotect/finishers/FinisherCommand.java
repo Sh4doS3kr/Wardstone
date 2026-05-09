@@ -6,6 +6,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import com.moonlight.coreprotect.util.SmallCaps;
 
 public class FinisherCommand implements CommandExecutor {
 
@@ -18,7 +19,7 @@ public class FinisherCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage(ChatColor.RED + "Solo los jugadores pueden usar este comando.");
+            sender.sendMessage(SmallCaps.convert(ChatColor.RED + "Solo los jugadores pueden usar este comando."));
             return true;
         }
 

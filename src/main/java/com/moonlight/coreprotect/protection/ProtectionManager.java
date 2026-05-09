@@ -24,36 +24,50 @@ public class ProtectionManager {
         startBuffTask(plugin);
         startFixedTimeTask(plugin);
         startResourceGeneratorTask(plugin);
+        startCoreIntegrityTask(plugin);
     }
 
     private void startAmbientTask(CoreProtectPlugin plugin) {
         new org.bukkit.scheduler.BukkitRunnable() {
             @Override
             public void run() {
-                for (ProtectedRegion region : regions.values()) {
-                    if (region.getCoreLocation() == null || region.getCoreLocation().getWorld() == null)
-                        continue;
+                java.util.Collection<? extends org.bukkit.entity.Player> online = org.bukkit.Bukkit.getOnlinePlayers();
+                if (online.isEmpty()) return;
 
+                for (ProtectedRegion region : regions.values()) {
                     Location center = region.getCoreLocation();
-                    int size = region.getSize();
+                    if (center == null || center.getWorld() == null) continue;
+
+                    // Only spawn particles if a player is within 80 blocks
+                    boolean hasNearbyPlayer = false;
+                    for (org.bukkit.entity.Player p : online) {
+                        if (p.getWorld().equals(center.getWorld()) && p.getLocation().distanceSquared(center) < 6400) {
+                            hasNearbyPlayer = true;
+                            break;
+                        }
+                    }
+                    if (!hasNearbyPlayer) continue;
+
+                    // Check chunk is loaded
+                    if (!center.getWorld().isChunkLoaded(center.getBlockX() >> 4, center.getBlockZ() >> 4)) continue;
+
+                    int size = region.getEffectiveSize();
                     int radius = size / 2;
 
-                    // Esquinas: Pilares SUPER ALTOS de particulas BLANCAS
+                    // Pilares de particulas en esquinas (reducido a 5 niveles)
                     for (int corner = 0; corner < 4; corner++) {
-                        double cx = (corner < 2 ? 1 : -1) * radius + (corner < 2 ? 0.5 : 0.5);
-                        double cz = (corner % 2 == 0 ? 1 : -1) * radius + (corner % 2 == 0 ? 0.5 : 0.5);
+                        double cx = (corner < 2 ? 1 : -1) * radius + 0.5;
+                        double cz = (corner % 2 == 0 ? 1 : -1) * radius + 0.5;
                         Location baseLoc = center.clone().add(cx, 0.0, cz);
 
-                        // Pilar de 20 bloques de altura (SUPER ALTO)
-                        for (int y = 0; y < 20; y++) {
+                        for (int y = 0; y < 10; y += 2) {
                             Location pilarLoc = baseLoc.clone().add(0, y + 0.5, 0);
-                            // END_ROD = particulas blancas brillantes
-                            center.getWorld().spawnParticle(org.bukkit.Particle.END_ROD, pilarLoc, 2, 0.1, 0.1, 0.1, 0);
+                            center.getWorld().spawnParticle(org.bukkit.Particle.END_ROD, pilarLoc, 1, 0.05, 0.1, 0.05, 0);
                         }
                     }
                 }
             }
-        }.runTaskTimer(plugin, 40L, 40L); // 2 segundos
+        }.runTaskTimer(plugin, 60L, 60L); // 3 segundos
     }
 
     private void startActionBarTask(CoreProtectPlugin plugin) {
@@ -61,6 +75,13 @@ public class ProtectionManager {
             @Override
             public void run() {
                 for (org.bukkit.entity.Player player : org.bukkit.Bukkit.getOnlinePlayers()) {
+                    // No mostrar actionbar de protección en mundos especiales
+                    String wName = player.getWorld().getName().toLowerCase();
+                    if (wName.equals("minigames") || wName.contains("bossarena")) continue;
+
+                    // No sobreescribir action bar prioritario (racha, vault warning, etc.)
+                    if (com.moonlight.coreprotect.streak.DailyStreakListener.hasActiveOverride(player.getUniqueId())) continue;
+
                     ProtectedRegion region = getRegionAt(player.getLocation());
                     String message;
 
@@ -178,6 +199,61 @@ public class ProtectionManager {
         }.runTaskTimer(plugin, 6000L, 6000L); // Every 5 minutes
     }
 
+    private void startCoreIntegrityTask(CoreProtectPlugin plugin) {
+        new org.bukkit.scheduler.BukkitRunnable() {
+            @Override
+            public void run() {
+                for (ProtectedRegion region : regions.values()) {
+                    Location coreLoc = region.getCoreLocation();
+                    if (coreLoc == null || coreLoc.getWorld() == null) continue;
+
+                    // Only check loaded chunks
+                    if (!coreLoc.getWorld().isChunkLoaded(coreLoc.getBlockX() >> 4, coreLoc.getBlockZ() >> 4)) continue;
+
+                    // Skip if location is currently locked (animation in progress)
+                    if (lockedLocations.contains(coreLoc)) continue;
+
+                    org.bukkit.Material currentMat = coreLoc.getBlock().getType();
+
+                    // If the core block is AIR or a non-core material, restore it
+                    if (currentMat == org.bukkit.Material.AIR || currentMat == org.bukkit.Material.CAVE_AIR || currentMat == org.bukkit.Material.VOID_AIR) {
+                        com.moonlight.coreprotect.core.CoreLevel coreLevel =
+                                com.moonlight.coreprotect.core.CoreLevel.fromConfig(plugin.getConfig(), region.getLevel());
+                        if (coreLevel != null) {
+                            coreLoc.getBlock().setType(coreLevel.getMaterial());
+                            plugin.getLogger().warning("[CoreIntegrity] Restored core at " +
+                                    coreLoc.getWorld().getName() + " " + coreLoc.getBlockX() + " " +
+                                    coreLoc.getBlockY() + " " + coreLoc.getBlockZ() +
+                                    " (level " + region.getLevel() + " -> " + coreLevel.getMaterial() + ")");
+                        }
+                    }
+                }
+            }
+        }.runTaskTimer(plugin, 600L, 600L); // Every 30 seconds
+    }
+
+    public boolean isSpawnProtected(Location loc) {
+        return isSpawn(loc);
+    }
+
+    /**
+     * Zona interna del spawn (barrera de cristales rojos PvP).
+     * Dentro de esta zona se bloquean habilidades.
+     * Fuera de esta zona pero dentro de isSpawnProtected se permite usar habilidades
+     * (pero NO construir/romper).
+     * Coordenadas: X -75 a 75, Z -40 a 110
+     */
+    public boolean isSpawnCore(Location loc) {
+        if (loc.getWorld() == null) return false;
+        String wn = loc.getWorld().getName().toLowerCase();
+        if (wn.contains("bossarena") || wn.equals("minigames")) return false;
+        org.bukkit.World.Environment env = loc.getWorld().getEnvironment();
+        if (env == org.bukkit.World.Environment.NETHER || env == org.bukkit.World.Environment.THE_END) return false;
+        double x = loc.getX();
+        double z = loc.getZ();
+        return (x >= -75 && x <= 75) && (z >= -40 && z <= 110);
+    }
+    
     private boolean isSpawn(Location loc) {
         // Area: 101, 136 a -101, -66
         // X: -101 a 101
@@ -185,8 +261,12 @@ public class ProtectionManager {
         // Ignoramos Y (infinito)
         if (loc.getWorld() == null)
             return false; // Asumimos world principal si no chequeamos nombre
-        // Podriamos chequear loc.getWorld().getName().equals("world")?
-        // Mejor aplicarlo globalmente a esas coordenadas por si acaso.
+            
+        // Ignorar mundos de boss arenas y minijuegos
+        String worldName = loc.getWorld().getName().toLowerCase();
+        if (worldName.contains("bossarena") || worldName.contains("_arena") || worldName.equals("minigames")) {
+            return false;
+        }
 
         double x = loc.getX();
         double z = loc.getZ();
@@ -380,13 +460,50 @@ public class ProtectionManager {
                 continue;
             }
 
-            int regionHalfSize = region.getSize() / 2;
+            int regionHalfSize = region.getEffectiveSize() / 2;
             int rMinX = region.getCoreX() - regionHalfSize;
             int rMaxX = region.getCoreX() + regionHalfSize;
             int rMinZ = region.getCoreZ() - regionHalfSize;
             int rMaxZ = region.getCoreZ() + regionHalfSize;
 
             // Verificar si hay solapamiento
+            if (minX <= rMaxX && maxX >= rMinX && minZ <= rMaxZ && maxZ >= rMinZ) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Checks if a core can be upgraded to a new size without overlapping
+     * another player's protection or the spawn zone.
+     * The region's own area is excluded from the check.
+     */
+    public boolean canUpgradeCore(ProtectedRegion upgrading, int newSize) {
+        int halfSize = newSize / 2;
+        int minX = upgrading.getCoreX() - halfSize;
+        int maxX = upgrading.getCoreX() + halfSize;
+        int minZ = upgrading.getCoreZ() - halfSize;
+        int maxZ = upgrading.getCoreZ() + halfSize;
+
+        // 1. Check spawn overlap
+        int spawnMinX = -101, spawnMaxX = 101, spawnMinZ = -66, spawnMaxZ = 136;
+        if (minX <= spawnMaxX && maxX >= spawnMinX && minZ <= spawnMaxZ && maxZ >= spawnMinZ) {
+            return false;
+        }
+
+        // 2. Check overlap with other regions (skip self)
+        for (ProtectedRegion region : regions.values()) {
+            if (region.getId().equals(upgrading.getId())) continue;
+            Location core = region.getCoreLocation();
+            if (core == null || !core.getWorld().getName().equals(upgrading.getWorldName())) continue;
+
+            int rHalf = region.getEffectiveSize() / 2;
+            int rMinX = region.getCoreX() - rHalf;
+            int rMaxX = region.getCoreX() + rHalf;
+            int rMinZ = region.getCoreZ() - rHalf;
+            int rMaxZ = region.getCoreZ() + rHalf;
+
             if (minX <= rMaxX && maxX >= rMinX && minZ <= rMaxZ && maxZ >= rMinZ) {
                 return false;
             }

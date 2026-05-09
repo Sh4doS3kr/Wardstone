@@ -19,6 +19,7 @@ protection:
   cannot-break: "&cNo puedes destruir bloques en esta zona protegida"
   cannot-interact: "&cNo puedes interactuar en esta zona protegida"
   removed: "&aProtección eliminada correctamente"
+  cannot-attack-mob: "&c¡No puedes atacar criaturas en esta zona protegida!"
   not-owner: "&cNo eres el propietario de esta protección"
   no-protection: "&cNo hay ninguna protección en esta ubicación"
   core-info: "&7Propietario: &f{owner} &8| &7Nivel: &f{level} &8| &7Área: &f{size}x{size}"

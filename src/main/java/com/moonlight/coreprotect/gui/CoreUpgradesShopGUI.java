@@ -14,10 +14,11 @@ import org.bukkit.inventory.meta.ItemMeta;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import com.moonlight.coreprotect.util.SmallCaps;
 
 public class CoreUpgradesShopGUI {
 
-    public static final String GUI_TITLE_BASE = ChatColor.DARK_GRAY + "" + ChatColor.BOLD + "✦ Mejoras de Zona";
+    static final String GUI_TITLE_BASE = SmallCaps.convert(ChatColor.DARK_GRAY + "" + ChatColor.BOLD + "✦ Mejoras de Zona");
     public static final String GUI_TITLE = GUI_TITLE_BASE + " ✦";
     public static final String GUI_TITLE_P2 = GUI_TITLE_BASE + " (2) ✦";
     private static final int GUI_SIZE = 54;
@@ -167,7 +168,7 @@ public class CoreUpgradesShopGUI {
         // === INFO ITEM (slot 31) ===
         ItemStack infoItem = new ItemStack(Material.BOOK);
         ItemMeta infoMeta = infoItem.getItemMeta();
-        infoMeta.setDisplayName(ChatColor.GOLD + "" + ChatColor.BOLD + "Información");
+        infoMeta.setDisplayName(SmallCaps.convert(ChatColor.GOLD + "" + ChatColor.BOLD + "Información"));
         infoMeta.setLore(Arrays.asList(
                 "",
                 ChatColor.GRAY + "Compra mejoras para potenciar",
@@ -184,16 +185,16 @@ public class CoreUpgradesShopGUI {
         // === NEXT PAGE (slot 50) ===
         ItemStack nextBtn = new ItemStack(Material.ARROW);
         ItemMeta nextMeta = nextBtn.getItemMeta();
-        nextMeta.setDisplayName(ChatColor.GREEN + "" + ChatColor.BOLD + "Página 2 ▶");
-        nextMeta.setLore(Arrays.asList("", ChatColor.GRAY + "Ver más mejoras"));
+        nextMeta.setDisplayName(SmallCaps.convert(ChatColor.GREEN + "" + ChatColor.BOLD + "Página 2 ▶"));
+        nextMeta.setLore(SmallCaps.convertList(Arrays.asList("", ChatColor.GRAY + "Ver más mejoras")));
         nextBtn.setItemMeta(nextMeta);
         inv.setItem(50, nextBtn);
 
         // === BACK BUTTON (slot 48) ===
         ItemStack backBtn = new ItemStack(Material.ARROW);
         ItemMeta backMeta = backBtn.getItemMeta();
-        backMeta.setDisplayName(ChatColor.YELLOW + "" + ChatColor.BOLD + "◀ VOLVER");
-        backMeta.setLore(Arrays.asList("", ChatColor.GRAY + "Volver al panel principal"));
+        backMeta.setDisplayName(SmallCaps.convert(ChatColor.YELLOW + "" + ChatColor.BOLD + "◀ VOLVER"));
+        backMeta.setLore(SmallCaps.convertList(Arrays.asList("", ChatColor.GRAY + "Volver al panel principal")));
         backBtn.setItemMeta(backMeta);
         inv.setItem(49, backBtn);
 
@@ -282,7 +283,7 @@ public class CoreUpgradesShopGUI {
         // Info
         ItemStack infoItem = new ItemStack(Material.BOOK);
         ItemMeta infoMeta = infoItem.getItemMeta();
-        infoMeta.setDisplayName(ChatColor.GOLD + "" + ChatColor.BOLD + "Información");
+        infoMeta.setDisplayName(SmallCaps.convert(ChatColor.GOLD + "" + ChatColor.BOLD + "Información"));
         infoMeta.setLore(Arrays.asList("",
                 ChatColor.GRAY + "Mejoras adicionales para",
                 ChatColor.GRAY + "potenciar tu zona.",
@@ -295,16 +296,16 @@ public class CoreUpgradesShopGUI {
         // Prev page
         ItemStack prevBtn = new ItemStack(Material.ARROW);
         ItemMeta prevMeta = prevBtn.getItemMeta();
-        prevMeta.setDisplayName(ChatColor.GREEN + "" + ChatColor.BOLD + "◀ Página 1");
-        prevMeta.setLore(Arrays.asList("", ChatColor.GRAY + "Volver a mejoras básicas"));
+        prevMeta.setDisplayName(SmallCaps.convert(ChatColor.GREEN + "" + ChatColor.BOLD + "◀ Página 1"));
+        prevMeta.setLore(SmallCaps.convertList(Arrays.asList("", ChatColor.GRAY + "Volver a mejoras básicas")));
         prevBtn.setItemMeta(prevMeta);
         inv.setItem(48, prevBtn);
 
         // Back to management
         ItemStack backBtn = new ItemStack(Material.BARRIER);
         ItemMeta backMeta = backBtn.getItemMeta();
-        backMeta.setDisplayName(ChatColor.YELLOW + "" + ChatColor.BOLD + "◀ VOLVER");
-        backMeta.setLore(Arrays.asList("", ChatColor.GRAY + "Volver al panel principal"));
+        backMeta.setDisplayName(SmallCaps.convert(ChatColor.YELLOW + "" + ChatColor.BOLD + "◀ VOLVER"));
+        backMeta.setLore(SmallCaps.convertList(Arrays.asList("", ChatColor.GRAY + "Volver al panel principal")));
         backBtn.setItemMeta(backMeta);
         inv.setItem(49, backBtn);
 
@@ -317,7 +318,7 @@ public class CoreUpgradesShopGUI {
         meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
 
         if (active) {
-            meta.setDisplayName(ChatColor.GREEN + "" + ChatColor.BOLD + "✔ " + name);
+            meta.setDisplayName(SmallCaps.convert(ChatColor.GREEN + "" + ChatColor.BOLD + "✔ " + name));
             List<String> lore = new ArrayList<>();
             lore.add("");
             lore.addAll(description);
@@ -326,7 +327,7 @@ public class CoreUpgradesShopGUI {
             lore.add(ChatColor.DARK_RED + "" + ChatColor.ITALIC + "Shift+Click para desactivar");
             meta.setLore(lore);
         } else if (unlocked) {
-            meta.setDisplayName(ChatColor.GOLD + "" + ChatColor.BOLD + "⏸ " + name + " (Desactivado)");
+            meta.setDisplayName(SmallCaps.convert(ChatColor.GOLD + "" + ChatColor.BOLD + "⏸ " + name + " (Desactivado)"));
             List<String> lore = new ArrayList<>();
             lore.add("");
             lore.addAll(description);
@@ -335,7 +336,7 @@ public class CoreUpgradesShopGUI {
             lore.add(ChatColor.YELLOW + "▶ Click para reactivar (gratis)");
             meta.setLore(lore);
         } else {
-            meta.setDisplayName(ChatColor.RED + "" + ChatColor.BOLD + "✖ " + name);
+            meta.setDisplayName(SmallCaps.convert(ChatColor.RED + "" + ChatColor.BOLD + "✖ " + name));
             List<String> lore = new ArrayList<>();
             lore.add("");
             lore.addAll(description);
@@ -359,11 +360,11 @@ public class CoreUpgradesShopGUI {
         String bar = buildProgressBar(currentLevel, maxLevel);
 
         if (maxed) {
-            meta.setDisplayName(ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "★ " + name + " MÁXIMO");
+            meta.setDisplayName(SmallCaps.convert(ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "★ " + name + " MÁXIMO"));
         } else if (currentLevel > 0) {
-            meta.setDisplayName(ChatColor.GREEN + "" + ChatColor.BOLD + "✔ " + name + " Nv." + currentLevel);
+            meta.setDisplayName(SmallCaps.convert(ChatColor.GREEN + "" + ChatColor.BOLD + "✔ " + name + " Nv." + currentLevel));
         } else {
-            meta.setDisplayName(ChatColor.RED + "" + ChatColor.BOLD + "✖ " + name);
+            meta.setDisplayName(SmallCaps.convert(ChatColor.RED + "" + ChatColor.BOLD + "✖ " + name));
         }
 
         List<String> lore = new ArrayList<>();
@@ -403,7 +404,7 @@ public class CoreUpgradesShopGUI {
     private ItemStack createGlass(Material material) {
         ItemStack glass = new ItemStack(material);
         ItemMeta meta = glass.getItemMeta();
-        meta.setDisplayName(" ");
+        meta.setDisplayName(SmallCaps.convert(" "));
         glass.setItemMeta(meta);
         return glass;
     }
@@ -418,7 +419,7 @@ public class CoreUpgradesShopGUI {
     }
 
     public static boolean isUpgradesShopGUI(String title) {
-        return title.contains("Mejoras de Zona");
+        return title.contains(SmallCaps.convert("Mejoras de Zona"));
     }
 
     public static int getPageFromTitle(String title) {

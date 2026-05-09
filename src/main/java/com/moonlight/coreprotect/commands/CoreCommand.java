@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import com.moonlight.coreprotect.util.SmallCaps;
 
 public class CoreCommand implements CommandExecutor, TabCompleter {
 
@@ -29,7 +30,7 @@ public class CoreCommand implements CommandExecutor, TabCompleter {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage(plugin.getMessageManager().getMessage("errors.player-only"));
+            sender.sendMessage(SmallCaps.convert(plugin.getMessageManager().getMessage("errors.player-only")));
             return true;
         }
 
@@ -84,6 +85,15 @@ public class CoreCommand implements CommandExecutor, TabCompleter {
             case "help":
             case "ayuda":
                 plugin.getMessageManager().sendList(player, "commands.help");
+                break;
+            case "restore":
+            case "restaurar":
+                if (!player.hasPermission("wardstone.admin")) {
+                    player.sendMessage(SmallCaps.convert("§c§l⚠ §fNo tienes permiso para usar este comando."));
+                    return true;
+                }
+                plugin.getTpsMonitor().forceRestoreNormal();
+                player.sendMessage(SmallCaps.convert("§a§l✓ §fRestauración del servidor forzada manualmente."));
                 break;
             default:
                 plugin.getMessageManager().send(player, "commands.usage");
@@ -269,7 +279,7 @@ public class CoreCommand implements CommandExecutor, TabCompleter {
                 player.sendMessage("\u00a78[\u00a7b" + (i + 1) + "\u00a78] \u00a7fNv." + r.getLevel()
                         + " \u00a77(" + r.getCoreX() + ", " + r.getCoreZ() + ")");
             }
-            player.sendMessage("\u00a77Usa \u00a7f/cores tp <n\u00famero> \u00a77para teletransportarte.");
+            player.sendMessage(SmallCaps.convert("\u00a77Usa \u00a7f/cores tp <n\u00famero> \u00a77para teletransportarte."));
             return;
         }
 

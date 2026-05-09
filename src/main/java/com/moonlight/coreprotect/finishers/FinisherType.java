@@ -9,12 +9,12 @@ public enum FinisherType {
             ChatColor.YELLOW + "" + ChatColor.BOLD + "⚡ El Juicio del Trueno",
             Material.LIGHTNING_ROD,
             new String[]{
-                    ChatColor.GRAY + "Al eliminar a un jugador,",
-                    ChatColor.GRAY + "caen 3 rayos seguidos sobre",
-                    ChatColor.GRAY + "su cadáver con una explosión",
-                    ChatColor.GRAY + "de chispas eléctricas.",
+                    ChatColor.GRAY + "Una jaula eléctrica atrapa",
+                    ChatColor.GRAY + "a la víctima en el suelo.",
+                    ChatColor.GRAY + "Rayos caen en círculo hasta",
+                    ChatColor.GRAY + "una explosión devastadora.",
                     "",
-                    ChatColor.DARK_PURPLE + "Estilo: " + ChatColor.YELLOW + "Zeus"
+                    ChatColor.DARK_PURPLE + "Tipo: " + ChatColor.YELLOW + "Suelo"
             },
             50000),
 
@@ -22,12 +22,12 @@ public enum FinisherType {
             ChatColor.DARK_PURPLE + "" + ChatColor.BOLD + "🌀 Invocación del Vacío",
             Material.ENDER_EYE,
             new String[]{
-                    ChatColor.GRAY + "Un agujero negro absorbe",
-                    ChatColor.GRAY + "al jugador eliminado, que",
-                    ChatColor.GRAY + "levita y explota en una",
-                    ChatColor.GRAY + "nube de oscuridad.",
+                    ChatColor.GRAY + "Un vórtice oscuro atrapa a",
+                    ChatColor.GRAY + "la víctima haciéndola girar",
+                    ChatColor.GRAY + "sin control mientras bloques",
+                    ChatColor.GRAY + "son absorbidos al centro.",
                     "",
-                    ChatColor.DARK_PURPLE + "Estilo: " + ChatColor.LIGHT_PURPLE + "Void"
+                    ChatColor.DARK_PURPLE + "Tipo: " + ChatColor.LIGHT_PURPLE + "Giro"
             },
             75000),
 
@@ -35,12 +35,12 @@ public enum FinisherType {
             ChatColor.DARK_RED + "" + ChatColor.BOLD + "🩸 Erupción de Sangre",
             Material.REDSTONE,
             new String[]{
-                    ChatColor.GRAY + "Una fuente de sangre brota",
-                    ChatColor.GRAY + "del suelo con gotas cayendo",
-                    ChatColor.GRAY + "que simulan un baño carmesí",
-                    ChatColor.GRAY + "sobre el campo de batalla.",
+                    ChatColor.GRAY + "Géiseres de sangre brotan",
+                    ChatColor.GRAY + "del suelo en un anillo",
+                    ChatColor.GRAY + "alrededor de la víctima",
+                    ChatColor.GRAY + "con oleadas carmesí.",
                     "",
-                    ChatColor.DARK_PURPLE + "Estilo: " + ChatColor.RED + "Gore"
+                    ChatColor.DARK_PURPLE + "Tipo: " + ChatColor.RED + "Suelo"
             },
             60000),
 
@@ -48,12 +48,12 @@ public enum FinisherType {
             ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "💎 Shattered Amethyst",
             Material.AMETHYST_SHARD,
             new String[]{
-                    ChatColor.GRAY + "El jugador explota en mil",
-                    ChatColor.GRAY + "pedazos de cristal con",
-                    ChatColor.GRAY + "sonidos de amatista",
-                    ChatColor.GRAY + "rompiéndose en el aire.",
+                    ChatColor.GRAY + "Cristales crecen formando",
+                    ChatColor.GRAY + "una prisión hexagonal que",
+                    ChatColor.GRAY + "atrapa y luego estalla en",
+                    ChatColor.GRAY + "miles de fragmentos.",
                     "",
-                    ChatColor.DARK_PURPLE + "Estilo: " + ChatColor.LIGHT_PURPLE + "Crystal"
+                    ChatColor.DARK_PURPLE + "Tipo: " + ChatColor.LIGHT_PURPLE + "Suelo"
             },
             65000),
 
@@ -74,12 +74,12 @@ public enum FinisherType {
             ChatColor.RED + "" + ChatColor.BOLD + "🔥 Infierno Demoníaco",
             Material.MAGMA_BLOCK,
             new String[]{
-                    ChatColor.GRAY + "Una columna de fuego infernal",
-                    ChatColor.GRAY + "envuelve a la víctima mientras",
-                    ChatColor.GRAY + "asciende rodeada de lava y",
-                    ChatColor.GRAY + "llamas demoníacas.",
+                    ChatColor.GRAY + "Un lago de lava se expande",
+                    ChatColor.GRAY + "y 8 pilares de fuego erucionan",
+                    ChatColor.GRAY + "alrededor de la víctima con",
+                    ChatColor.GRAY + "una erupción volcánica final.",
                     "",
-                    ChatColor.DARK_PURPLE + "Estilo: " + ChatColor.RED + "Demonio"
+                    ChatColor.DARK_PURPLE + "Tipo: " + ChatColor.RED + "Suelo"
             },
             70000),
 
@@ -87,12 +87,12 @@ public enum FinisherType {
             ChatColor.AQUA + "" + ChatColor.BOLD + "❄ Tormenta de Hielo",
             Material.BLUE_ICE,
             new String[]{
-                    ChatColor.GRAY + "La víctima se congela en",
-                    ChatColor.GRAY + "un pilar de hielo que se",
-                    ChatColor.GRAY + "eleva y estalla en una",
-                    ChatColor.GRAY + "ventisca de cristales.",
+                    ChatColor.GRAY + "Spikes de hielo crecen desde",
+                    ChatColor.GRAY + "la víctima en 12 direcciones",
+                    ChatColor.GRAY + "como una explosión glacial",
+                    ChatColor.GRAY + "que congela todo a su paso.",
                     "",
-                    ChatColor.DARK_PURPLE + "Estilo: " + ChatColor.AQUA + "Glacial"
+                    ChatColor.DARK_PURPLE + "Tipo: " + ChatColor.AQUA + "Suelo"
             },
             72000),
 
@@ -100,14 +100,67 @@ public enum FinisherType {
             ChatColor.DARK_PURPLE + "" + ChatColor.BOLD + "🐉 Ira del Dragón",
             Material.DRAGON_HEAD,
             new String[]{
-                    ChatColor.GRAY + "El aliento de un dragón",
-                    ChatColor.GRAY + "ancestral envuelve a la",
-                    ChatColor.GRAY + "víctima en espirales de",
-                    ChatColor.GRAY + "fuego púrpura y destrucción.",
+                    ChatColor.GRAY + "La víctima asciende envuelta",
+                    ChatColor.GRAY + "en espirales de aliento de",
+                    ChatColor.GRAY + "dragón púrpura hasta una",
+                    ChatColor.GRAY + "explosión celestial.",
                     "",
-                    ChatColor.DARK_PURPLE + "Estilo: " + ChatColor.LIGHT_PURPLE + "Dragón"
+                    ChatColor.DARK_PURPLE + "Tipo: " + ChatColor.LIGHT_PURPLE + "Cielo"
             },
-            90000);
+            90000),
+
+    SOUL_VORTEX("soul",
+            ChatColor.DARK_AQUA + "" + ChatColor.BOLD + "👻 Vórtice de Almas",
+            Material.SOUL_LANTERN,
+            new String[]{
+                    ChatColor.GRAY + "La víctima gira sin control",
+                    ChatColor.GRAY + "a una velocidad demencial",
+                    ChatColor.GRAY + "mientras las almas drenan",
+                    ChatColor.GRAY + "su esencia vital.",
+                    "",
+                    ChatColor.DARK_PURPLE + "Tipo: " + ChatColor.DARK_AQUA + "Giro"
+            },
+            85000),
+
+    WITHER_STORM("wither",
+            ChatColor.DARK_GRAY + "" + ChatColor.BOLD + "💀 Tormenta Wither",
+            Material.WITHER_SKELETON_SKULL,
+            new String[]{
+                    ChatColor.GRAY + "La oscuridad consume todo.",
+                    ChatColor.GRAY + "Cráneos wither orbitan la",
+                    ChatColor.GRAY + "víctima en el suelo hasta",
+                    ChatColor.GRAY + "una explosión de tinieblas.",
+                    "",
+                    ChatColor.DARK_PURPLE + "Tipo: " + ChatColor.DARK_GRAY + "Suelo"
+            },
+            95000),
+
+    SCULK_RESONANCE("sculk",
+            ChatColor.DARK_AQUA + "" + ChatColor.BOLD + "🔊 Resonancia Sculk",
+            Material.SCULK_CATALYST,
+            new String[]{
+                    ChatColor.GRAY + "Zarcillos de sculk se extienden",
+                    ChatColor.GRAY + "por el suelo. Ondas sónicas",
+                    ChatColor.GRAY + "pulsan hacia afuera hasta un",
+                    ChatColor.GRAY + "boom sónico devastador.",
+                    "",
+                    ChatColor.DARK_PURPLE + "Tipo: " + ChatColor.DARK_AQUA + "Suelo"
+            },
+            100000),
+
+    APOCALYPSE("apocalypse",
+            ChatColor.GOLD + "" + ChatColor.BOLD + "💥 Apocalipsis Divino",
+            Material.NETHER_STAR,
+            new String[]{
+                    ChatColor.GRAY + "La realidad colapsa. Pilares",
+                    ChatColor.GRAY + "elementales, un tornado de",
+                    ChatColor.GRAY + "bloques premium y una supernova",
+                    ChatColor.GRAY + "que destruye todo a su paso.",
+                    "",
+                    ChatColor.GOLD + "★ " + ChatColor.RED + "EL FINISHER DEFINITIVO",
+                    ChatColor.DARK_PURPLE + "Tipo: " + ChatColor.GOLD + "Celestial + Suelo"
+            },
+            250000);
 
     private final String id;
     private final String displayName;

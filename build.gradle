@@ -18,7 +18,9 @@ repositories {
 }
 
 dependencies {
-    compileOnly 'org.spigotmc:spigot-api:1.20.4-R0.1-SNAPSHOT'
+    compileOnly fileTree(dir: 'libs', include: ['*.jar'])
+    compileOnly fileTree(dir: 'libs/jda-deps', include: ['*.jar'])
+    compileOnly fileTree(dir: 'lib', include: ['*.jar'])
     compileOnly 'com.github.MilkBowl:VaultAPI:1.7.1'
 }
 

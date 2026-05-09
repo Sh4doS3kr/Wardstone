@@ -13,6 +13,7 @@ import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.*;
+import com.moonlight.coreprotect.util.SmallCaps;
 
 public class AutoEventManager {
 
@@ -113,7 +114,7 @@ public class AutoEventManager {
                     Entity mob = world.spawnEntity(spawnLoc, type);
                     if (mob instanceof LivingEntity) {
                         LivingEntity living = (LivingEntity) mob;
-                        living.setCustomName(ChatColor.DARK_RED + "☠ Invasor Oscuro");
+                        living.setCustomName(SmallCaps.convert(ChatColor.DARK_RED + "☠ Invasor Oscuro"));
                         living.setCustomNameVisible(true);
                         living.setRemoveWhenFarAway(false);
                     }

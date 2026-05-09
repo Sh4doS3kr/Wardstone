@@ -17,12 +17,14 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.persistence.PersistentDataType;
 
 import java.util.*;
+import com.moonlight.coreprotect.util.SmallCaps;
 
 public class GUIListener implements Listener {
 
@@ -55,32 +57,61 @@ public class GUIListener implements Listener {
 
         // === SHOP GUI ===
         if (ShopGUI.isShopGUI(title)) {
+            event.setCancelled(true); // Cancel first to prevent any item movement
             handleShopClick(event, player, title);
             return;
         }
 
         // === MANAGEMENT GUI ===
         if (CoreManagementGUI.isManagementGUI(title)) {
+            event.setCancelled(true); // Cancel first to prevent any item movement
             handleManagementClick(event, player);
             return;
         }
 
         // === UPGRADES SHOP GUI ===
         if (CoreUpgradesShopGUI.isUpgradesShopGUI(title)) {
+            event.setCancelled(true); // Cancel first to prevent any item movement
             handleUpgradesShopClick(event, player);
             return;
         }
 
         // === MEMBERS GUI ===
         if (CoreMembersGUI.isMembersGUI(title)) {
+            event.setCancelled(true); // Cancel first to prevent any item movement
             handleMembersClick(event, player);
             return;
         }
 
         // === INVITE GUI ===
         if (CoreMembersGUI.isInviteGUI(title)) {
+            event.setCancelled(true); // Cancel first to prevent any item movement
             handleInviteClick(event, player);
             return;
+        }
+
+        // === PETS INFO GUI ===
+        if (title.equals(PetsInfoGUI.INVENTORY_TITLE)) {
+            event.setCancelled(true); // Prevent taking items
+            return;
+        }
+    }
+
+    @EventHandler
+    public void onInventoryDrag(InventoryDragEvent event) {
+        if (!(event.getWhoClicked() instanceof Player))
+            return;
+
+        String title = event.getView().getTitle();
+        
+        // Cancel any drag operations in GUI inventories
+        if (ShopGUI.isShopGUI(title) ||
+            CoreManagementGUI.isManagementGUI(title) ||
+            CoreUpgradesShopGUI.isUpgradesShopGUI(title) ||
+            CoreMembersGUI.isMembersGUI(title) ||
+            CoreMembersGUI.isInviteGUI(title) ||
+            title.equals(PetsInfoGUI.INVENTORY_TITLE)) {
+            event.setCancelled(true);
         }
     }
 
@@ -130,6 +161,16 @@ public class GUIListener implements Listener {
         if (slot == 20 && clicked.getType() == Material.BEACON) {
             SoundManager.playGUIClick(player.getLocation());
             processUpgradeCore(player, region);
+            return;
+        }
+
+        // Slot 20: PRESTIGE CORE (Dragon Egg)
+        if (slot == 20 && clicked.getType() == Material.DRAGON_EGG) {
+            SoundManager.playGUIClick(player.getLocation());
+            player.closeInventory();
+            if (plugin.getCorePrestigeManager() != null) {
+                plugin.getCorePrestigeManager().performPrestige(player, region);
+            }
             return;
         }
 
@@ -225,7 +266,7 @@ public class GUIListener implements Listener {
             if (shift && region.isNoExplosion()) {
                 region.setNoExplosion(false);
                 plugin.getDataManager().saveData();
-                player.sendMessage(ChatColor.YELLOW + "Anti-Explosión " + ChatColor.RED + "desactivado.");
+                player.sendMessage(SmallCaps.convert(ChatColor.YELLOW + "Anti-Explosión " + ChatColor.RED + "desactivado."));
                 SoundManager.playGUIClick(player.getLocation());
                 new CoreUpgradesShopGUI(plugin).open(player, region, 1);
                 return;
@@ -235,7 +276,7 @@ public class GUIListener implements Listener {
             if (region.isUnlocked("noExplosion")) {
                 region.setNoExplosion(true);
                 plugin.getDataManager().saveData();
-                player.sendMessage(ChatColor.GREEN + "Anti-Explosión reactivado.");
+                player.sendMessage(SmallCaps.convert(ChatColor.GREEN + "Anti-Explosión reactivado."));
                 SoundManager.playUpgradePurchased(player.getLocation());
                 new CoreUpgradesShopGUI(plugin).open(player, region, 1);
             } else if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_NO_EXPLOSION)) {
@@ -253,7 +294,7 @@ public class GUIListener implements Listener {
             if (shift && region.isNoPvP()) {
                 region.setNoPvP(false);
                 plugin.getDataManager().saveData();
-                player.sendMessage(ChatColor.YELLOW + "Anti-PvP " + ChatColor.RED + "desactivado.");
+                player.sendMessage(SmallCaps.convert(ChatColor.YELLOW + "Anti-PvP " + ChatColor.RED + "desactivado."));
                 SoundManager.playGUIClick(player.getLocation());
                 new CoreUpgradesShopGUI(plugin).open(player, region, 1);
                 return;
@@ -263,7 +304,7 @@ public class GUIListener implements Listener {
             if (region.isUnlocked("noPvP")) {
                 region.setNoPvP(true);
                 plugin.getDataManager().saveData();
-                player.sendMessage(ChatColor.GREEN + "Anti-PvP reactivado.");
+                player.sendMessage(SmallCaps.convert(ChatColor.GREEN + "Anti-PvP reactivado."));
                 SoundManager.playUpgradePurchased(player.getLocation());
                 new CoreUpgradesShopGUI(plugin).open(player, region, 1);
             } else if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_NO_PVP)) {
@@ -281,7 +322,7 @@ public class GUIListener implements Listener {
             if (shift && region.isNoMobSpawn()) {
                 region.setNoMobSpawn(false);
                 plugin.getDataManager().saveData();
-                player.sendMessage(ChatColor.YELLOW + "Anti-Mobs " + ChatColor.RED + "desactivado.");
+                player.sendMessage(SmallCaps.convert(ChatColor.YELLOW + "Anti-Mobs " + ChatColor.RED + "desactivado."));
                 SoundManager.playGUIClick(player.getLocation());
                 new CoreUpgradesShopGUI(plugin).open(player, region, 1);
                 return;
@@ -291,7 +332,7 @@ public class GUIListener implements Listener {
             if (region.isUnlocked("noMobSpawn")) {
                 region.setNoMobSpawn(true);
                 plugin.getDataManager().saveData();
-                player.sendMessage(ChatColor.GREEN + "Anti-Mobs reactivado.");
+                player.sendMessage(SmallCaps.convert(ChatColor.GREEN + "Anti-Mobs reactivado."));
                 SoundManager.playUpgradePurchased(player.getLocation());
                 new CoreUpgradesShopGUI(plugin).open(player, region, 1);
             } else if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_NO_MOB_SPAWN)) {
@@ -309,7 +350,7 @@ public class GUIListener implements Listener {
             if (shift && region.isNoFallDamage()) {
                 region.setNoFallDamage(false);
                 plugin.getDataManager().saveData();
-                player.sendMessage(ChatColor.YELLOW + "Sin Caída " + ChatColor.RED + "desactivado.");
+                player.sendMessage(SmallCaps.convert(ChatColor.YELLOW + "Sin Caída " + ChatColor.RED + "desactivado."));
                 SoundManager.playGUIClick(player.getLocation());
                 new CoreUpgradesShopGUI(plugin).open(player, region, 1);
                 return;
@@ -319,7 +360,7 @@ public class GUIListener implements Listener {
             if (region.isUnlocked("noFallDamage")) {
                 region.setNoFallDamage(true);
                 plugin.getDataManager().saveData();
-                player.sendMessage(ChatColor.GREEN + "Sin Caída reactivado.");
+                player.sendMessage(SmallCaps.convert(ChatColor.GREEN + "Sin Caída reactivado."));
                 SoundManager.playUpgradePurchased(player.getLocation());
                 new CoreUpgradesShopGUI(plugin).open(player, region, 1);
             } else if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_NO_FALL_DAMAGE)) {
@@ -337,7 +378,7 @@ public class GUIListener implements Listener {
             if (shift && region.isAutoHeal()) {
                 region.setAutoHeal(false);
                 plugin.getDataManager().saveData();
-                player.sendMessage(ChatColor.YELLOW + "Auto-Curación " + ChatColor.RED + "desactivado.");
+                player.sendMessage(SmallCaps.convert(ChatColor.YELLOW + "Auto-Curación " + ChatColor.RED + "desactivado."));
                 SoundManager.playGUIClick(player.getLocation());
                 new CoreUpgradesShopGUI(plugin).open(player, region, 1);
                 return;
@@ -347,7 +388,7 @@ public class GUIListener implements Listener {
             if (region.isUnlocked("autoHeal")) {
                 region.setAutoHeal(true);
                 plugin.getDataManager().saveData();
-                player.sendMessage(ChatColor.GREEN + "Auto-Curación reactivado.");
+                player.sendMessage(SmallCaps.convert(ChatColor.GREEN + "Auto-Curación reactivado."));
                 SoundManager.playUpgradePurchased(player.getLocation());
                 new CoreUpgradesShopGUI(plugin).open(player, region, 1);
             } else if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_AUTO_HEAL)) {
@@ -365,7 +406,7 @@ public class GUIListener implements Listener {
             if (shift && region.isSpeedBoost()) {
                 region.setSpeedBoost(false);
                 plugin.getDataManager().saveData();
-                player.sendMessage(ChatColor.YELLOW + "Velocidad " + ChatColor.RED + "desactivado.");
+                player.sendMessage(SmallCaps.convert(ChatColor.YELLOW + "Velocidad " + ChatColor.RED + "desactivado."));
                 SoundManager.playGUIClick(player.getLocation());
                 new CoreUpgradesShopGUI(plugin).open(player, region, 1);
                 return;
@@ -375,7 +416,7 @@ public class GUIListener implements Listener {
             if (region.isUnlocked("speedBoost")) {
                 region.setSpeedBoost(true);
                 plugin.getDataManager().saveData();
-                player.sendMessage(ChatColor.GREEN + "Velocidad reactivado.");
+                player.sendMessage(SmallCaps.convert(ChatColor.GREEN + "Velocidad reactivado."));
                 SoundManager.playUpgradePurchased(player.getLocation());
                 new CoreUpgradesShopGUI(plugin).open(player, region, 1);
             } else if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_SPEED_BOOST)) {
@@ -423,7 +464,7 @@ public class GUIListener implements Listener {
             if (shift && region.isAntiEnderman()) {
                 region.setAntiEnderman(false);
                 plugin.getDataManager().saveData();
-                player.sendMessage(ChatColor.YELLOW + "Anti-Enderman " + ChatColor.RED + "desactivado.");
+                player.sendMessage(SmallCaps.convert(ChatColor.YELLOW + "Anti-Enderman " + ChatColor.RED + "desactivado."));
                 SoundManager.playGUIClick(player.getLocation());
                 new CoreUpgradesShopGUI(plugin).open(player, region, 2);
                 return;
@@ -433,7 +474,7 @@ public class GUIListener implements Listener {
             if (region.isUnlocked("antiEnderman")) {
                 region.setAntiEnderman(true);
                 plugin.getDataManager().saveData();
-                player.sendMessage(ChatColor.GREEN + "Anti-Enderman reactivado.");
+                player.sendMessage(SmallCaps.convert(ChatColor.GREEN + "Anti-Enderman reactivado."));
                 SoundManager.playUpgradePurchased(player.getLocation());
                 new CoreUpgradesShopGUI(plugin).open(player, region, 2);
             } else if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_ANTI_ENDERMAN)) {
@@ -451,7 +492,7 @@ public class GUIListener implements Listener {
             if (shift && region.isNoHunger()) {
                 region.setNoHunger(false);
                 plugin.getDataManager().saveData();
-                player.sendMessage(ChatColor.YELLOW + "Sin Hambre " + ChatColor.RED + "desactivado.");
+                player.sendMessage(SmallCaps.convert(ChatColor.YELLOW + "Sin Hambre " + ChatColor.RED + "desactivado."));
                 SoundManager.playGUIClick(player.getLocation());
                 new CoreUpgradesShopGUI(plugin).open(player, region, 2);
                 return;
@@ -461,7 +502,7 @@ public class GUIListener implements Listener {
             if (region.isUnlocked("noHunger")) {
                 region.setNoHunger(true);
                 plugin.getDataManager().saveData();
-                player.sendMessage(ChatColor.GREEN + "Sin Hambre reactivado.");
+                player.sendMessage(SmallCaps.convert(ChatColor.GREEN + "Sin Hambre reactivado."));
                 SoundManager.playUpgradePurchased(player.getLocation());
                 new CoreUpgradesShopGUI(plugin).open(player, region, 2);
             } else if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_NO_HUNGER)) {
@@ -479,7 +520,7 @@ public class GUIListener implements Listener {
             if (shift && region.getFixedTime() > 0) {
                 region.setFixedTime(0);
                 plugin.getDataManager().saveData();
-                player.sendMessage(ChatColor.YELLOW + "Tiempo Fijo " + ChatColor.RED + "desactivado. " + ChatColor.GRAY + "(ciclo normal)");
+                player.sendMessage(SmallCaps.convert(ChatColor.YELLOW + "Tiempo Fijo " + ChatColor.RED + "desactivado. " + ChatColor.GRAY + "(ciclo normal)"));
                 SoundManager.playGUIClick(player.getLocation());
                 new CoreUpgradesShopGUI(plugin).open(player, region, 2);
                 return;
@@ -488,7 +529,7 @@ public class GUIListener implements Listener {
                 if (region.isUnlocked("fixedTime")) {
                     region.setFixedTime(1);
                     plugin.getDataManager().saveData();
-                    player.sendMessage(ChatColor.GREEN + "Tiempo Fijo reactivado (Día).");
+                    player.sendMessage(SmallCaps.convert(ChatColor.GREEN + "Tiempo Fijo reactivado (Día)."));
                     SoundManager.playUpgradePurchased(player.getLocation());
                     new CoreUpgradesShopGUI(plugin).open(player, region, 2);
                 } else if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_FIXED_TIME)) {
@@ -514,7 +555,7 @@ public class GUIListener implements Listener {
             if (shift && region.isCoreTeleport()) {
                 region.setCoreTeleport(false);
                 plugin.getDataManager().saveData();
-                player.sendMessage(ChatColor.YELLOW + "Teletransporte " + ChatColor.RED + "desactivado.");
+                player.sendMessage(SmallCaps.convert(ChatColor.YELLOW + "Teletransporte " + ChatColor.RED + "desactivado."));
                 SoundManager.playGUIClick(player.getLocation());
                 new CoreUpgradesShopGUI(plugin).open(player, region, 2);
                 return;
@@ -524,7 +565,7 @@ public class GUIListener implements Listener {
             if (region.isUnlocked("coreTeleport")) {
                 region.setCoreTeleport(true);
                 plugin.getDataManager().saveData();
-                player.sendMessage(ChatColor.GREEN + "Teletransporte reactivado.");
+                player.sendMessage(SmallCaps.convert(ChatColor.GREEN + "Teletransporte reactivado."));
                 SoundManager.playUpgradePurchased(player.getLocation());
                 new CoreUpgradesShopGUI(plugin).open(player, region, 2);
             } else if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_CORE_TELEPORT)) {
@@ -542,7 +583,7 @@ public class GUIListener implements Listener {
             if (shift && region.isAntiPhantom()) {
                 region.setAntiPhantom(false);
                 plugin.getDataManager().saveData();
-                player.sendMessage(ChatColor.YELLOW + "Anti-Phantoms " + ChatColor.RED + "desactivado.");
+                player.sendMessage(SmallCaps.convert(ChatColor.YELLOW + "Anti-Phantoms " + ChatColor.RED + "desactivado."));
                 SoundManager.playGUIClick(player.getLocation());
                 new CoreUpgradesShopGUI(plugin).open(player, region, 2);
                 return;
@@ -552,7 +593,7 @@ public class GUIListener implements Listener {
             if (region.isUnlocked("antiPhantom")) {
                 region.setAntiPhantom(true);
                 plugin.getDataManager().saveData();
-                player.sendMessage(ChatColor.GREEN + "Anti-Phantoms reactivado.");
+                player.sendMessage(SmallCaps.convert(ChatColor.GREEN + "Anti-Phantoms reactivado."));
                 SoundManager.playUpgradePurchased(player.getLocation());
                 new CoreUpgradesShopGUI(plugin).open(player, region, 2);
             } else if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_ANTI_PHANTOM)) {
@@ -567,23 +608,22 @@ public class GUIListener implements Listener {
             return;
         }
         if (slot == 22) {
-            if (shift && region.isResourceGenerator()) {
-                region.setResourceGenerator(false);
-                plugin.getDataManager().saveData();
-                player.sendMessage(ChatColor.YELLOW + "Generador de Recursos " + ChatColor.RED + "desactivado.");
-                SoundManager.playGUIClick(player.getLocation());
-                new CoreUpgradesShopGUI(plugin).open(player, region, 2);
-                return;
-            }
-        }
-        if (slot == 22 && !region.isResourceGenerator()) {
             if (region.isUnlocked("resourceGenerator")) {
-                region.setResourceGenerator(true);
-                plugin.getDataManager().saveData();
-                player.sendMessage(ChatColor.GREEN + "Generador de Recursos reactivado.");
-                SoundManager.playUpgradePurchased(player.getLocation());
+                // Ya comprado: toggle on/off sin cobrar
+                if (region.isResourceGenerator()) {
+                    region.setResourceGenerator(false);
+                    plugin.getDataManager().saveData();
+                    player.sendMessage(SmallCaps.convert(ChatColor.YELLOW + "Generador de Recursos " + ChatColor.RED + "desactivado."));
+                    SoundManager.playGUIClick(player.getLocation());
+                } else {
+                    region.setResourceGenerator(true);
+                    plugin.getDataManager().saveData();
+                    player.sendMessage(SmallCaps.convert(ChatColor.GREEN + "Generador de Recursos " + ChatColor.GREEN + "reactivado."));
+                    SoundManager.playUpgradePurchased(player.getLocation());
+                }
                 new CoreUpgradesShopGUI(plugin).open(player, region, 2);
             } else if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_RESOURCE_GEN)) {
+                // Primera compra
                 region.setResourceGenerator(true);
                 region.unlockUpgrade("resourceGenerator");
                 plugin.getDataManager().saveData();
@@ -706,11 +746,20 @@ public class GUIListener implements Listener {
             return;
         }
 
+        // Overlap check: verify the new larger area doesn't overlap another protection
+        if (!plugin.getProtectionManager().canUpgradeCore(region, nextCoreLevel.getSize())) {
+            player.sendMessage(SmallCaps.convert("§c§l✖ §cNo puedes mejorar: la nueva área solaparía otra protección o el spawn."));
+            player.sendMessage(SmallCaps.convert("§7Necesitas más espacio libre alrededor de tu núcleo."));
+            SoundManager.playUpgradeDenied(player.getLocation());
+            player.closeInventory();
+            return;
+        }
+
         // VIP permission check for upgrading to VIP cores
         if (nextCoreLevel.isVip() && !player.hasPermission(nextCoreLevel.getVipPermission())) {
             player.sendMessage(ChatColor.RED + "Necesitas el rango " + ChatColor.LIGHT_PURPLE + ChatColor.BOLD +
                     nextCoreLevel.getVipRank().toUpperCase() + ChatColor.RED + " para mejorar a este nucleo.");
-            player.sendMessage(ChatColor.GRAY + "Consiguelo en: " + ChatColor.YELLOW + "moonlightmc.tebex.io");
+            player.sendMessage(SmallCaps.convert(ChatColor.GRAY + "Consiguelo en: " + ChatColor.YELLOW + "moonlightmc.tebex.io"));
             SoundManager.playUpgradeDenied(player.getLocation());
             player.closeInventory();
             return;
@@ -807,7 +856,17 @@ public class GUIListener implements Listener {
     }
 
     private boolean isGlassPane(Material material) {
-        return material.name().contains("STAINED_GLASS_PANE");
+        return material.name().contains("STAINED_GLASS_PANE") || 
+               material.name().contains("GLASS_PANE") ||
+               material == Material.BLACK_STAINED_GLASS ||
+               material == Material.GRAY_STAINED_GLASS ||
+               material == Material.WHITE_STAINED_GLASS ||
+               material == Material.LIGHT_GRAY_STAINED_GLASS ||
+               material == Material.CYAN_STAINED_GLASS ||
+               material == Material.PURPLE_STAINED_GLASS ||
+               material == Material.RED_STAINED_GLASS ||
+               material == Material.LIME_STAINED_GLASS ||
+               material == Material.BARRIER; // Also protect close buttons from being taken
     }
 
     private int getLevelFromSlot(int slot, int page) {
@@ -834,7 +893,7 @@ public class GUIListener implements Listener {
         if (coreLevel.isVip() && !player.hasPermission(coreLevel.getVipPermission())) {
             player.sendMessage(ChatColor.RED + "Necesitas el rango " + ChatColor.LIGHT_PURPLE + ChatColor.BOLD +
                     coreLevel.getVipRank().toUpperCase() + ChatColor.RED + " para comprar este nucleo.");
-            player.sendMessage(ChatColor.GRAY + "Consiguelo en: " + ChatColor.YELLOW + "moonlightmc.tebex.io");
+            player.sendMessage(SmallCaps.convert(ChatColor.GRAY + "Consiguelo en: " + ChatColor.YELLOW + "moonlightmc.tebex.io"));
             SoundManager.playUpgradeDenied(player.getLocation());
             player.closeInventory();
             return;

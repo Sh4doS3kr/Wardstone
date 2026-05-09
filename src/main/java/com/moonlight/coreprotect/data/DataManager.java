@@ -96,6 +96,10 @@ public class DataManager {
                         noMobSpawn, autoHeal, speedBoost, noFallDamage,
                         antiEnderman, resourceGenerator, fixedTime, coreTeleport, noHunger, antiPhantom);
 
+                // Load prestige
+                int prestige = regionSection.getInt("prestige", 0);
+                region.setPrestige(prestige);
+
                 // Load unlocked upgrades set
                 List<String> unlockedList = regionSection.getStringList("upgrades.unlocked");
                 if (!unlockedList.isEmpty()) {
@@ -178,6 +182,9 @@ public class DataManager {
             dataConfig.set(path + ".upgrades.noHunger", region.isNoHunger());
             dataConfig.set(path + ".upgrades.antiPhantom", region.isAntiPhantom());
             dataConfig.set(path + ".upgrades.unlocked", new ArrayList<>(region.getUnlockedUpgrades()));
+
+            // Save prestige
+            dataConfig.set(path + ".prestige", region.getPrestige());
         }
 
         // Save homes

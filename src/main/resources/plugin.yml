@@ -1,12 +1,12 @@
 name: Wardstone
-version: ${project.version}
+version: ${version}
 main: com.moonlight.coreprotect.CoreProtectPlugin
 api-version: 1.21
 description: Sistema de nucleos de proteccion con 20 niveles y animaciones de particulas
 author: MoonlightMC
 website: moonlightmc.xyz
 depend: [Vault]
-softdepend: [BlueMap]
+softdepend: [BlueMap, PlaceholderAPI, LibsDisguises]
 
 commands:
   cores:
@@ -20,10 +20,162 @@ commands:
   gaspi:
     description: Reclamar recompensa unica de llaves
     usage: /<command>
+  zatre:
+    description: Reclamar kit de diamante y llave especial
+    usage: /<command>
   finishers:
     description: Menu de Death Finishers
     usage: /<command>
     aliases: [finisher, deathfinisher]
+  recompensas:
+    description: Sistema de recompensas por tiempo de juego
+    usage: /<command> [reclamar|stats|top]
+  savekoth:
+    description: Guarda manualmente el mundo KOTH sin que se restablezca
+    usage: /<command> [confirmar]
+    permission: wardstone.admin
+  wardstone:
+    description: Comandos de admin MoonKOTH y Misiones
+    usage: /<command> [setupkoth|setspawn|setzone|startkoth|stopkoth|kothinfo|reload|spawnnpc|enablespawn|markascompleted|givetool]
+    permission: coreprotect.admin
+  koth:
+    description: Ir al evento MoonKOTH
+    usage: /<command> [salir|info|top]
+  ah:
+    description: Auction House - Compra y vende items
+    usage: /<command> [vender|mis|expirados|buscar|ayuda]
+    aliases: [auctionhouse, subasta, subastas]
+  bounty:
+    description: Sistema de Bounties - Pon recompensas por la cabeza de otros jugadores
+    usage: /<command> [poner|mis|top|ayuda]
+    aliases: [bounties, recompensa]
+  errante:
+    description: Panel de misiones del Errante
+    usage: /<command>
+  pv:
+    description: Private Vault - Tu cofre personal seguro
+    usage: /<command> [número]
+    aliases: [privatevault]
+  wardboss:
+    description: Comandos de admin para Boss Arena
+    usage: /<command> [setup|setboss|setspawn|setmin|setmax|done|forcespawn|forcestop|list|info]
+    permission: coreprotect.admin
+  boss:
+    description: Ir a la arena de boss
+    usage: /<command>
+    aliases: [bossarena]
+  bossarena:
+    description: Ir a la arena de boss
+    usage: /<command>
+  esencias:
+    description: Sistema de esencias - tienda y saldo
+    usage: /<command> [convertir|add|remove]
+    aliases: [esencia, essence]
+  kits:
+    description: Menu de kits premium
+    usage: /<command>
+    aliases: [kit]
+  artistdagu:
+    description: Reclamar materiales de construccion basicos
+    usage: /<command>
+  giveswordcandle:
+    description: Obtener espada Vela Combos (solo operadores)
+    usage: /<command>
+    permission: coreprotect.admin
+  wardgames:
+    description: Comandos de admin para el sistema de minijuegos
+    usage: /<command> [forcestart|stop|info|settime|list]
+    permission: coreprotect.admin
+  join:
+    description: Unirse al minijuego activo
+    usage: /<command> [info|salir]
+  minijuegos:
+    description: Unirse al minijuego activo
+    usage: /<command> [info|salir]
+  mg:
+    description: Unirse al minijuego activo
+    usage: /<command> [info|salir|leave]
+    aliases: [minigames]
+  leave:
+    description: Salir del minijuego actual
+    usage: /<command>
+    aliases: [salir]
+  claimcore:
+    description: Reclamar nucleo de rango VIP gratuito
+    usage: /<command>
+    aliases: [reclamarcore, reclamarnucleo]
+  survivalupdate:
+    description: Setup de la gran actualización del survival (lobby, RTP)
+    usage: /<command> [setup|1|2|3|4|5|info|reset]
+    permission: coreprotect.admin
+  petsinfo:
+    description: Información sobre Cubees (pets)
+    usage: /<command>
+    aliases: [cubeeinfo, cubees]
+  mobdiag:
+    description: Diagnóstico de spawn de mobs
+    usage: /<command>
+    permission: coreprotect.admin
+  racha:
+    description: Racha diaria - recompensas por conectarte cada día
+    usage: /<command>
+    aliases: [streak, daily]
+  streak:
+    description: Racha diaria - recompensas por conectarte cada día
+    usage: /<command>
+  daily:
+    description: Racha diaria - recompensas por conectarte cada día
+    usage: /<command>
+  tiempojugado:
+    description: Panel de recompensas por tiempo jugado
+    usage: /<command>
+    aliases: [playtime]
+  playtime:
+    description: Panel de recompensas por tiempo jugado (Wardstone)
+    usage: /<command>
+  prestigio:
+    description: Sistema de prestigios y misiones
+    usage: /<command>
+    aliases: [prestige]
+  prestige:
+    description: Sistema de prestigios y misiones
+    usage: /<command>
+  ytsecretkit:
+    description: Kit secreto de YouTube
+    usage: /<command>
+  pwarp:
+    description: Player Warps - crea y visita warps de jugadores
+    usage: /<command> [set|delete|<nombre>]
+    aliases: [playerwarp]
+  pwarps:
+    description: Abrir GUI de Player Warps
+    usage: /<command>
+    aliases: [playerwarps]
+  staffinspect:
+    description: Panel de inspección de staff — datos completos de jugadores
+    usage: /<command> [jugador]
+    permission: wardstone.staff
+    aliases: [sinspect, si]
+  trade:
+    description: Intercambia ítems, dinero y esencias con otro jugador
+    usage: /<command> <jugador|aceptar|rechazar>
+    aliases: [intercambio, intercambiar]
+  voicechat:
+    description: Conectar al chat de voz de proximidad
+    usage: /<command>
+    aliases: [vc, proxichat]
+  ruleta:
+    description: Abre tus ruletas y rascas pendientes
+    usage: /<command>
+    aliases: [roulette, misruletas]
+  ownerkit:
+    description: Kit divino exclusivo para OPs — absolutamente roto
+    usage: /<command>
+    permission: op
+  ratones:
+    description: Craftea queso suizo para atraer ratones
+    usage: /<command>
+    aliases: [mice, queso, cheese]
 
 permissions:
   coreprotect.use:
@@ -44,3 +196,15 @@ permissions:
   wardstone.vip.moonlord:
     description: Acceso al nucleo VIP MoonLord
     default: false
+  wardstone.privatevault.extra:
+    description: Acceso a 1 vault privado adicional (total 2)
+    default: false
+  wardstone.privatevault.4:
+    description: Acceso a 4 vaults privados
+    default: false
+  wardstone.privatevault.5:
+    description: Acceso a 5 vaults privados
+    default: false
+  wardstone.staff:
+    description: Acceso al panel de Staff Inspect
+    default: op

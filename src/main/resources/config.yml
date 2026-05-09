@@ -1,6 +1,20 @@
 # CoreProtect - Configuracion
 # Sistema de nucleos de proteccion
 
+# ====================================
+# ===   BOT DE DISCORD             ===
+# ====================================
+# Sistema de verificación para /gaspi, /zatre, /artistdagu
+discord:
+  # Token del bot de Discord
+  # Obtén tu token en: https://discord.com/developers/applications
+  bot-token: "YOUR_BOT_TOKEN_HERE"
+  
+  # ID del canal #general donde se escriben los códigos
+  # Para obtener el ID: Click derecho en el canal → Copiar ID
+  # (Activa el Modo Desarrollador en Discord: Configuración → Avanzado → Modo Desarrollador)
+  verification-channel: "1373603300791812147"
+
 # Configuracion general
 settings:
   # Tiempo de animacion en ticks (20 ticks = 1 segundo)
@@ -160,3 +174,108 @@ finishers:
     hellfire: 70000
     ice: 72000
     dragon: 90000
+
+# ====================================
+# ===   MOONKOTH (King of the Hill) ===
+# ====================================
+# Sistema de puntos en mundo dedicado con recompensas
+koth:
+  # Nombre del evento (se muestra en BossBar, scoreboard, etc.)
+  name: "MoonKOTH"
+
+  # === DURACIÓN DEL EVENTO ===
+  # Duración del evento en minutos
+  duration-minutes: 10
+
+  # === ZONA DE CAPTURA ===
+  # Coordenadas de la zona rectangular dentro del mundo "koth"
+  # Los jugadores ganan puntos al permanecer dentro de esta zona
+  # Configura con: /wardstone setzone <x1> <z1> <x2> <z2>
+  zone:
+    x1: -15
+    z1: -15
+    x2: 15
+    z2: 15
+
+  # === SPAWN ===
+  # Donde aparecen los jugadores al usar /koth
+  # Configura con: /wardstone setspawn (estando en el mundo koth)
+  # spawn:
+  #   x: 0
+  #   y: 65
+  #   z: 0
+  #   yaw: 0
+  #   pitch: 0
+
+  # === SISTEMA DE PUNTOS ===
+  points:
+    # Puntos por segundo dentro de la zona de captura
+    per-second: 1
+    # Puntos bonus por matar a otro jugador en el KOTH
+    per-kill: 5
+
+  # === SCHEDULER AUTOMÁTICO ===
+  # El KOTH se inicia automáticamente a las horas indicadas
+  schedule:
+    enabled: true
+    # Lunes a Viernes (UTC)
+    weekday-times:
+      - "19:00"
+      - "23:00"
+    # Sábados y Domingos (UTC)
+    weekend-times:
+      - "21:00"
+      - "01:01" # Evitar medianoche por bugs de día, 01:00 UTC es técnicamente el día siguiente pero el usuario pidió 01:00.
+    # Legacy: NO USAR, usar los de arriba
+    times: []
+
+  # === RECOMPENSAS ===
+  rewards:
+    # Dinero vía Vault para el ganador (puesto 1)
+    money: 50000
+    # Comandos ejecutados como consola para el GANADOR ({player} = nombre)
+    # Compatible con ExcellentCrates y cualquier otro plugin
+    winner-commands:
+      - "excellentcrates key give {player} legendary 2"
+      - "excellentcrates key give {player} special 4"
+    # Comandos para los puestos 2 y 3 ({player} = nombre, {position} = puesto)
+    runnerup-commands:
+      - "excellentcrates key give {player} special 2"
+
+  # === LÍMITES DEL MAPA ===
+  # El área total del mundo KOTH permitida.
+  # Si un jugador intenta salir, verá cristales rojos bloqueando el paso.
+  # Configura con: /wardstone setmap <x1> <z1> <x2> <z2>
+  map:
+    x1: -100
+    z1: -100
+    x2: 100
+    z2: 100
+
+  # === CENTRO DEL KOTH (FARO) ===
+  # El faro cambiará de color según el estado: Verde (Capturando), Rojo (Bochinche)
+  # Configura con: /wardstone setcenterkoth
+  center:
+    x: 0
+    y: 64
+    z: 0
+
+  # === MECÁNICAS ESPECIALES ===
+  mechanics:
+    # Tiempo inicial MINUTOS durante el cual SÍ hay keepInventory (Modo Seguridad).
+    # Después de este tiempo, el keepInventory se DESACTIVA para el resto del evento.
+    keep-inventory-delay: 1
+    # Tiempo en SEGUNDOS que duran las telarañas antes de desaparecer.
+    # (600 = 10 minutos)
+    cobweb-decay-seconds: 600
+
+  # === MENSAJES PERSONALIZABLES ===
+  # Soporta códigos de color § y placeholders {name}, {player}, {points}, {minutes}
+  messages:
+    start: "§6§l⚔ §e§lMOONKOTH §6§l⚔ §f¡Empieza el salseo! §7Usa §f/koth §7para que no te lo cuenten."
+    stop: "§6§l⚔ §c§lMOONKOTH §6§l⚔ §fSe acabó lo que se daba. El KOTH ha sido §cdetenido§f."
+    capturing: "§6§l⚔ §a{player} §fse está adueñando de lo ajeno..."
+    contested: "§6§l⚔ §c§l¡ZONA EN DISPUTA! §fDemasiada gente en la zona, ¡repartid leña!"
+    captured: "§6§l⚔ §a§l¡HABEMUS GANADOR! §f¡{player} se ha llevado la corona de §e{name}§f! §6§l⚔"
+    keep-inv-off: "§c§l⚠ §f¡Se acabó el recreo! §cKeepInventory §fdesactivado. ¡Si mueres, lloras!"
+    keep-inv-warn: "§a§l✔ §f¡Modo cobarde activado! Tienes §e{minutes} minutos §fde §aKeepInventory §fantes del PvP real."

@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import com.moonlight.coreprotect.util.SmallCaps;
 
 public class FinisherGUI {
 
@@ -36,7 +37,7 @@ public class FinisherGUI {
         // Border
         ItemStack border = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
         ItemMeta borderMeta = border.getItemMeta();
-        borderMeta.setDisplayName(" ");
+        borderMeta.setDisplayName(SmallCaps.convert(" "));
         border.setItemMeta(borderMeta);
         for (int i = 0; i < 9; i++) inv.setItem(i, border);
         for (int i = 45; i < 54; i++) inv.setItem(i, border);
@@ -48,7 +49,7 @@ public class FinisherGUI {
         // Fill middle with gray glass
         ItemStack fill = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
         ItemMeta fillMeta = fill.getItemMeta();
-        fillMeta.setDisplayName(" ");
+        fillMeta.setDisplayName(SmallCaps.convert(" "));
         fill.setItemMeta(fillMeta);
         for (int i = 9; i < 45; i++) {
             if (inv.getItem(i) == null) inv.setItem(i, fill);
@@ -57,7 +58,7 @@ public class FinisherGUI {
         // Title item
         ItemStack titleItem = new ItemStack(Material.WITHER_SKELETON_SKULL);
         ItemMeta titleMeta = titleItem.getItemMeta();
-        titleMeta.setDisplayName(ChatColor.RED + "" + ChatColor.BOLD + "☠ DEATH FINISHERS");
+        titleMeta.setDisplayName(SmallCaps.convert(ChatColor.RED + "" + ChatColor.BOLD + "☠ DEATH FINISHERS"));
         titleMeta.setLore(Arrays.asList(
                 "",
                 ChatColor.GRAY + "Efectos épicos al eliminar",
@@ -68,8 +69,8 @@ public class FinisherGUI {
         titleItem.setItemMeta(titleMeta);
         inv.setItem(4, titleItem);
 
-        // Finisher items: row 1 (slots 10-16), row 2 (slots 19-25)
-        int[] slots = {10, 12, 14, 16, 19, 21, 23, 25};
+        // Finisher items: row 1 (slots 10-16), row 2 (slots 19-25), row 3 (slots 28-34)
+        int[] slots = {10, 12, 14, 16, 19, 21, 23, 25, 28, 30, 32, 34};
         FinisherType[] types = FinisherType.values();
 
         for (int i = 0; i < types.length && i < slots.length; i++) {
@@ -79,10 +80,11 @@ public class FinisherGUI {
         // Deselect button
         ItemStack deselect = new ItemStack(Material.BARRIER);
         ItemMeta deselectMeta = deselect.getItemMeta();
-        deselectMeta.setDisplayName(ChatColor.RED + "" + ChatColor.BOLD + "✖ Quitar Finisher");
-        deselectMeta.setLore(Arrays.asList("", ChatColor.GRAY + "Click para no usar ningún finisher."));
+        deselectMeta.setDisplayName(SmallCaps.convert(ChatColor.RED + "" + ChatColor.BOLD + "✖ Quitar Finisher"));
+        deselectMeta.setLore(SmallCaps.convertList(Arrays.asList("", ChatColor.GRAY + "Click para no usar ningún finisher.")));
         deselect.setItemMeta(deselectMeta);
         inv.setItem(49, deselect);
+
 
         player.openInventory(inv);
     }
@@ -102,20 +104,22 @@ public class FinisherGUI {
         lore.add("");
 
         if (selected) {
-            meta.setDisplayName(ChatColor.GREEN + "" + ChatColor.BOLD + "✔ " + type.getDisplayName());
+            meta.setDisplayName(SmallCaps.convert(ChatColor.GREEN + "" + ChatColor.BOLD + "✔ " + type.getDisplayName()));
             lore.add(ChatColor.GREEN + "" + ChatColor.BOLD + "✔ EQUIPADO");
-            lore.add(ChatColor.DARK_GRAY + "Click para desequipar");
+            lore.add(ChatColor.DARK_GRAY + "Click izq. para desequipar");
             meta.setEnchantmentGlintOverride(true);
         } else if (owned) {
-            meta.setDisplayName(ChatColor.AQUA + "" + ChatColor.BOLD + "★ " + type.getDisplayName());
+            meta.setDisplayName(SmallCaps.convert(ChatColor.AQUA + "" + ChatColor.BOLD + "★ " + type.getDisplayName()));
             lore.add(ChatColor.AQUA + "" + ChatColor.BOLD + "★ DESBLOQUEADO");
-            lore.add(ChatColor.YELLOW + "▶ Click para equipar");
+            lore.add(ChatColor.YELLOW + "▶ Click izq. para equipar");
         } else {
-            meta.setDisplayName(ChatColor.RED + "" + ChatColor.BOLD + "✖ " + type.getDisplayName());
+            meta.setDisplayName(SmallCaps.convert(ChatColor.RED + "" + ChatColor.BOLD + "✖ " + type.getDisplayName()));
             lore.add(ChatColor.GRAY + "Precio: " + ChatColor.GOLD + "$" + PRICE_FORMAT.format(price));
             lore.add("");
-            lore.add(ChatColor.YELLOW + "▶ Click para comprar");
+            lore.add(ChatColor.YELLOW + "▶ Click izq. para comprar");
         }
+        lore.add("");
+        lore.add(ChatColor.GOLD + "⚡ Click derecho para probar");
 
         meta.setLore(lore);
         item.setItemMeta(meta);

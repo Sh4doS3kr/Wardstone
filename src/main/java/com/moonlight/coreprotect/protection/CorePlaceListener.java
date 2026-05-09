@@ -16,6 +16,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
+import com.moonlight.coreprotect.util.SmallCaps;
 
 public class CorePlaceListener implements Listener {
 
@@ -54,12 +55,22 @@ public class CorePlaceListener implements Listener {
         int level = container.get(activeKey, PersistentDataType.INTEGER);
         CoreLevel coreLevel = CoreLevel.fromConfig(plugin.getConfig(), level);
 
-        // VIP permission check
-        if (coreLevel.isVip() && !player.hasPermission(coreLevel.getVipPermission())) {
+        // Bloquear colocacion de cores en el mundo KOTH
+        if (event.getBlock().getWorld().getName().equalsIgnoreCase("koth")) {
+            event.setCancelled(true);
+            player.sendMessage(SmallCaps.convert("§c§l✖ §cNo puedes colocar un núcleo en el mundo KOTH."));
+            SoundManager.playProtectionDenied(player.getLocation());
+            return;
+        }
+
+        // VIP permission check (wardstone.vip.X, group.X, or essentials.kits.X)
+        if (coreLevel.isVip() && !player.hasPermission(coreLevel.getVipPermission())
+                && !player.hasPermission("group." + coreLevel.getVipRank())
+                && !player.hasPermission("essentials.kits." + coreLevel.getVipRank())) {
             player.sendMessage(org.bukkit.ChatColor.RED + "Necesitas el rango " + org.bukkit.ChatColor.LIGHT_PURPLE +
                     org.bukkit.ChatColor.BOLD + coreLevel.getVipRank().toUpperCase() + org.bukkit.ChatColor.RED +
                     " para colocar este nucleo.");
-            player.sendMessage(org.bukkit.ChatColor.GRAY + "Consiguelo en: " + org.bukkit.ChatColor.YELLOW + "moonlightmc.tebex.io");
+            player.sendMessage(SmallCaps.convert(org.bukkit.ChatColor.GRAY + "Consiguelo en: " + org.bukkit.ChatColor.YELLOW + "moonlightmc.tebex.io"));
             SoundManager.playProtectionDenied(player.getLocation());
             event.setCancelled(true);
             return;
@@ -89,80 +100,85 @@ public class CorePlaceListener implements Listener {
         SoundManager.playCorePlaced(event.getBlock().getLocation());
         plugin.getMessageManager().send(player, "protection.creating");
 
-        // Lock the core block during construction animation so it can't be broken
-        plugin.getProtectionManager().lockLocation(event.getBlock().getLocation());
+        // Lock the core block briefly during construction animation
+        final org.bukkit.Location coreLoc = event.getBlock().getLocation().clone();
+        plugin.getProtectionManager().lockLocation(coreLoc);
+        // Safety: force-unlock after 10 seconds in case animation callback never fires
+        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+            plugin.getProtectionManager().unlockLocation(coreLoc);
+        }, 200L);
 
-        // Ejecutar animacion y crear proteccion al terminar
-        Runnable onRegionCreated = () -> {
-                    // Unlock the core block after animation
-                    plugin.getProtectionManager().unlockLocation(event.getBlock().getLocation());
-                    // Crear la region protegida
-                    ProtectedRegion region = new ProtectedRegion(
-                            player.getUniqueId(),
-                            event.getBlock().getLocation(),
-                            level,
-                            coreLevel.getSize());
+        // Create the protection region IMMEDIATELY (don't wait for animation)
+        ProtectedRegion region = new ProtectedRegion(
+                player.getUniqueId(),
+                event.getBlock().getLocation(),
+                level,
+                coreLevel.getSize());
 
-                    // Restore upgrades if the core had them
-                    if (upgradeData != null) {
-                        try {
-                            String[] parts = upgradeData.split(",");
-                            if (parts.length >= 8) {
-                                region.setNoExplosion(parts[0].equals("1"));
-                                region.setNoPvP(parts[1].equals("1"));
-                                region.setDamageBoostLevel(Integer.parseInt(parts[2]));
-                                region.setHealthBoostLevel(Integer.parseInt(parts[3]));
-                                region.setNoMobSpawn(parts[4].equals("1"));
-                                region.setAutoHeal(parts[5].equals("1"));
-                                region.setSpeedBoost(parts[6].equals("1"));
-                                region.setNoFallDamage(parts[7].equals("1"));
-                            }
-                            if (parts.length >= 13) {
-                                region.setAntiEnderman(parts[8].equals("1"));
-                                region.setResourceGenerator(parts[9].equals("1"));
-                                region.setFixedTime(Integer.parseInt(parts[10]));
-                                region.setCoreTeleport(parts[11].equals("1"));
-                                region.setNoHunger(parts[12].equals("1"));
-                            }
-                            if (parts.length >= 14) {
-                                region.setAntiPhantom(parts[13].equals("1"));
-                            }
-                        } catch (Exception ignored) {
-                        }
-                    }
+        // Restore upgrades if the core had them
+        if (upgradeData != null) {
+            try {
+                String[] parts = upgradeData.split(",");
+                if (parts.length >= 8) {
+                    region.setNoExplosion(parts[0].equals("1"));
+                    region.setNoPvP(parts[1].equals("1"));
+                    region.setDamageBoostLevel(Integer.parseInt(parts[2]));
+                    region.setHealthBoostLevel(Integer.parseInt(parts[3]));
+                    region.setNoMobSpawn(parts[4].equals("1"));
+                    region.setAutoHeal(parts[5].equals("1"));
+                    region.setSpeedBoost(parts[6].equals("1"));
+                    region.setNoFallDamage(parts[7].equals("1"));
+                }
+                if (parts.length >= 13) {
+                    region.setAntiEnderman(parts[8].equals("1"));
+                    region.setResourceGenerator(parts[9].equals("1"));
+                    region.setFixedTime(Integer.parseInt(parts[10]));
+                    region.setCoreTeleport(parts[11].equals("1"));
+                    region.setNoHunger(parts[12].equals("1"));
+                }
+                if (parts.length >= 14) {
+                    region.setAntiPhantom(parts[13].equals("1"));
+                }
+            } catch (Exception ignored) {
+            }
+        }
 
-                    // Restore members if the core had them
-                    if (membersData != null && !membersData.isEmpty()) {
-                        try {
-                            for (String uuidStr : membersData.split(";")) {
-                                region.addMember(java.util.UUID.fromString(uuidStr.trim()));
-                            }
-                        } catch (Exception ignored) {
-                        }
-                    }
+        // Restore members if the core had them
+        if (membersData != null && !membersData.isEmpty()) {
+            try {
+                for (String uuidStr : membersData.split(";")) {
+                    region.addMember(java.util.UUID.fromString(uuidStr.trim()));
+                }
+            } catch (Exception ignored) {
+            }
+        }
 
-                    plugin.getProtectionManager().addRegion(region);
-                    plugin.getDataManager().saveData();
+        plugin.getProtectionManager().addRegion(region);
+        plugin.getDataManager().saveData();
 
-                    if (player.isOnline()) {
-                        plugin.getMessageManager().send(player, "protection.created");
-                        plugin.getAchievementListener().onCorePlaced(player, region);
-                        if (upgradeData != null) {
-                            plugin.getAchievementListener().onCoreMoved(player);
-                        }
-                    }
-                };
+        // Callback for when animation finishes (unlock + notify)
+        final String savedUpgradeData = upgradeData;
+        Runnable onAnimationDone = () -> {
+            plugin.getProtectionManager().unlockLocation(event.getBlock().getLocation());
+            if (player.isOnline()) {
+                plugin.getMessageManager().send(player, "protection.created");
+                plugin.getAchievementListener().onCorePlaced(player, region);
+                if (savedUpgradeData != null) {
+                    plugin.getAchievementListener().onCoreMoved(player);
+                }
+            }
+        };
 
         // Use VIP animation if it's a VIP core, otherwise standard
         if (coreLevel.isVip()) {
             VipAnimation vipAnim = new VipAnimation(plugin);
             vipAnim.playVipPlacement(event.getBlock().getLocation(), coreLevel.getMaterial(),
-                    coreLevel.getVipRank(), onRegionCreated);
+                    coreLevel.getVipRank(), onAnimationDone);
         } else {
             CoreAnimation animation = new CoreAnimation(plugin);
             animation.playActivationAnimation(
                     event.getBlock().getLocation().add(0.5, 0.5, 0.5),
-                    coreLevel, onRegionCreated);
+                    coreLevel, onAnimationDone);
         }
     }
 }

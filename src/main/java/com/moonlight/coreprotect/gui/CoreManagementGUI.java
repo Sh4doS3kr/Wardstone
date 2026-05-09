@@ -18,10 +18,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import com.moonlight.coreprotect.util.SmallCaps;
 
 public class CoreManagementGUI {
 
-    public static final String GUI_TITLE = ChatColor.DARK_GRAY + "" + ChatColor.BOLD + "✦ Panel de Núcleo ✦";
+    static final String GUI_TITLE = SmallCaps.convert(ChatColor.DARK_GRAY + "" + ChatColor.BOLD + "✦ Panel de Núcleo ✦");
     private static final int GUI_SIZE = 54;
 
     private final CoreProtectPlugin plugin;
@@ -73,12 +74,16 @@ public class CoreManagementGUI {
         CoreLevel coreLevel = CoreLevel.fromConfig(plugin.getConfig(), region.getLevel());
         ItemStack coreDisplay = new ItemStack(coreLevel.getMaterial());
         ItemMeta coreMeta = coreDisplay.getItemMeta();
-        coreMeta.setDisplayName(ChatColor.AQUA + "" + ChatColor.BOLD + coreLevel.getName());
+        coreMeta.setDisplayName(SmallCaps.convert(ChatColor.AQUA + "" + ChatColor.BOLD + coreLevel.getName()));
         coreMeta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_ENCHANTS);
         List<String> coreLore = new ArrayList<>();
         coreLore.add("");
-        coreLore.add(ChatColor.DARK_GRAY + "▸ " + ChatColor.GRAY + "Nivel: " + ChatColor.WHITE + region.getLevel() + ChatColor.DARK_GRAY + "/20");
+        coreLore.add(ChatColor.DARK_GRAY + "▸ " + ChatColor.GRAY + "Nivel: " + ChatColor.WHITE + region.getLevel() + ChatColor.DARK_GRAY + "/24");
         coreLore.add(ChatColor.DARK_GRAY + "▸ " + ChatColor.GRAY + "Área: " + ChatColor.WHITE + region.getSize() + "x" + region.getSize());
+        if (region.getPrestige() > 0) {
+            coreLore.add(ChatColor.DARK_GRAY + "▸ " + ChatColor.GRAY + "Prestigio: " + com.moonlight.coreprotect.core.CorePrestigeManager.getPrestigeName(region.getPrestige()));
+            coreLore.add(ChatColor.DARK_GRAY + "▸ " + ChatColor.GRAY + "Área efectiva: " + ChatColor.GREEN + region.getEffectiveSize() + "x" + region.getEffectiveSize());
+        }
         coreLore.add(ChatColor.DARK_GRAY + "▸ " + ChatColor.GRAY + "Miembros: " + ChatColor.WHITE + region.getMembers().size());
         coreLore.add(ChatColor.DARK_GRAY + "▸ " + ChatColor.GRAY + "Mejoras: " + ChatColor.WHITE + region.getActiveUpgradeCount() + "/8");
         String ownerName = Bukkit.getOfflinePlayer(region.getOwner()).getName();
@@ -93,7 +98,7 @@ public class CoreManagementGUI {
             CoreLevel nextLevel = CoreLevel.fromConfig(plugin.getConfig(), region.getLevel() + 1);
             ItemStack upgradeBtn = new ItemStack(Material.BEACON);
             ItemMeta upgMeta = upgradeBtn.getItemMeta();
-            upgMeta.setDisplayName(ChatColor.GREEN + "" + ChatColor.BOLD + "⬆ MEJORAR NÚCLEO");
+            upgMeta.setDisplayName(SmallCaps.convert(ChatColor.GREEN + "" + ChatColor.BOLD + "⬆ MEJORAR NÚCLEO"));
             List<String> upgLore = new ArrayList<>();
             upgLore.add("");
             upgLore.add(ChatColor.GRAY + "Nivel actual: " + ChatColor.WHITE + region.getLevel());
@@ -110,18 +115,48 @@ public class CoreManagementGUI {
             upgradeBtn.setItemMeta(upgMeta);
             inv.setItem(20, upgradeBtn);
         } else {
-            ItemStack maxBtn = new ItemStack(Material.NETHER_STAR);
-            ItemMeta maxMeta = maxBtn.getItemMeta();
-            maxMeta.setDisplayName(ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "★ NIVEL MÁXIMO ★");
-            maxMeta.setLore(Arrays.asList("", ChatColor.GRAY + "Tu núcleo está al máximo!", ChatColor.GOLD + "¡Eres imparable!"));
-            maxBtn.setItemMeta(maxMeta);
-            inv.setItem(20, maxBtn);
+            // Level 24 - show prestige button if available
+            if (region.getPrestige() < com.moonlight.coreprotect.core.CorePrestigeManager.MAX_PRESTIGE) {
+                int nextPrestige = region.getPrestige() + 1;
+                double prestigeCost = plugin.getCorePrestigeManager().getPrestigeCost(region.getPrestige());
+                ItemStack prestigeBtn = new ItemStack(Material.DRAGON_EGG);
+                ItemMeta pMeta = prestigeBtn.getItemMeta();
+                pMeta.setDisplayName(SmallCaps.convert(com.moonlight.coreprotect.core.CorePrestigeManager.getPrestigeColor(nextPrestige) + "" + ChatColor.BOLD + "✦ PRESTIGIAR NÚCLEO ✦"));
+                List<String> pLore = new ArrayList<>();
+                pLore.add("");
+                pLore.add(ChatColor.GRAY + "Prestigio actual: " + com.moonlight.coreprotect.core.CorePrestigeManager.getPrestigeName(region.getPrestige()));
+                pLore.add(ChatColor.GRAY + "Siguiente: " + com.moonlight.coreprotect.core.CorePrestigeManager.getPrestigeName(nextPrestige));
+                pLore.add("");
+                pLore.add(ChatColor.GRAY + "Bonus: " + com.moonlight.coreprotect.core.CorePrestigeManager.getPrestigeBonus(nextPrestige));
+                pLore.add("");
+                pLore.add(ChatColor.RED + "⚠ Tu nivel se resetea a 1");
+                pLore.add(ChatColor.RED + "⚠ Las mejoras de zona se mantienen");
+                pLore.add("");
+                pLore.add(ChatColor.GRAY + "Precio: " + ChatColor.GOLD + "$" + CoreUpgradesShopGUI.formatPrice(prestigeCost));
+                pLore.add("");
+                pLore.add(ChatColor.YELLOW + "▶ Click para prestigiar");
+                pMeta.setLore(pLore);
+                prestigeBtn.setItemMeta(pMeta);
+                inv.setItem(20, prestigeBtn);
+            } else {
+                ItemStack maxBtn = new ItemStack(Material.NETHER_STAR);
+                ItemMeta maxMeta = maxBtn.getItemMeta();
+                maxMeta.setDisplayName(SmallCaps.convert(ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "★ NIVEL MÁXIMO ★"));
+                List<String> maxLore = new ArrayList<>();
+                maxLore.add("");
+                maxLore.add(ChatColor.GRAY + "Tu núcleo está al máximo!");
+                maxLore.add(ChatColor.GRAY + "Prestigio: " + com.moonlight.coreprotect.core.CorePrestigeManager.getPrestigeName(region.getPrestige()));
+                maxLore.add(ChatColor.GOLD + "¡Eres imparable!");
+                maxMeta.setLore(maxLore);
+                maxBtn.setItemMeta(maxMeta);
+                inv.setItem(20, maxBtn);
+            }
         }
 
         // === MEMBERS BUTTON (slot 22) ===
         ItemStack membersBtn = new ItemStack(Material.PLAYER_HEAD);
         ItemMeta membersMeta = membersBtn.getItemMeta();
-        membersMeta.setDisplayName(ChatColor.AQUA + "" + ChatColor.BOLD + "👥 MIEMBROS");
+        membersMeta.setDisplayName(SmallCaps.convert(ChatColor.AQUA + "" + ChatColor.BOLD + "👥 MIEMBROS"));
         List<String> membersLore = new ArrayList<>();
         membersLore.add("");
         membersLore.add(ChatColor.GRAY + "Miembros actuales: " + ChatColor.WHITE + region.getMembers().size());
@@ -141,7 +176,7 @@ public class CoreManagementGUI {
         // === UPGRADES SHOP BUTTON (slot 24) ===
         ItemStack shopBtn = new ItemStack(Material.NETHER_STAR);
         ItemMeta shopMeta = shopBtn.getItemMeta();
-        shopMeta.setDisplayName(ChatColor.GOLD + "" + ChatColor.BOLD + "🛒 MEJORAS DE ZONA");
+        shopMeta.setDisplayName(SmallCaps.convert(ChatColor.GOLD + "" + ChatColor.BOLD + "🛒 MEJORAS DE ZONA"));
         List<String> shopLore = new ArrayList<>();
         shopLore.add("");
         shopLore.add(ChatColor.GRAY + "Mejoras activas: " + ChatColor.GREEN + region.getActiveUpgradeCount() + ChatColor.DARK_GRAY + "/8");
@@ -195,7 +230,7 @@ public class CoreManagementGUI {
         boolean visualsActive = plugin.getProtectionManager().isVisualActive(region.getId());
         ItemStack visualsBtn = new ItemStack(visualsActive ? Material.ENDER_EYE : Material.ENDER_PEARL);
         ItemMeta visMeta = visualsBtn.getItemMeta();
-        visMeta.setDisplayName(ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "👁 VISUALIZAR ZONA");
+        visMeta.setDisplayName(SmallCaps.convert(ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "👁 VISUALIZAR ZONA"));
         List<String> visLore = new ArrayList<>();
         visLore.add("");
         visLore.add(ChatColor.GRAY + "Muestra los bordes de tu zona");
@@ -219,7 +254,7 @@ public class CoreManagementGUI {
         // === CLOSE BUTTON (slot 51) ===
         ItemStack closeBtn = new ItemStack(Material.BARRIER);
         ItemMeta closeMeta = closeBtn.getItemMeta();
-        closeMeta.setDisplayName(ChatColor.RED + "" + ChatColor.BOLD + "✖ CERRAR");
+        closeMeta.setDisplayName(SmallCaps.convert(ChatColor.RED + "" + ChatColor.BOLD + "✖ CERRAR"));
         closeBtn.setItemMeta(closeMeta);
         inv.setItem(51, closeBtn);
 
@@ -229,7 +264,7 @@ public class CoreManagementGUI {
     private ItemStack createGlass(Material material) {
         ItemStack glass = new ItemStack(material);
         ItemMeta meta = glass.getItemMeta();
-        meta.setDisplayName(" ");
+        meta.setDisplayName(SmallCaps.convert(" "));
         glass.setItemMeta(meta);
         return glass;
     }
@@ -237,7 +272,7 @@ public class CoreManagementGUI {
     private ItemStack createUpgradeStatus(Material material, String name, boolean active, String desc) {
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
-        meta.setDisplayName((active ? ChatColor.GREEN + "✔ " : ChatColor.RED + "✖ ") + ChatColor.WHITE + name);
+        meta.setDisplayName(SmallCaps.convert((active ? ChatColor.GREEN + "✔ " : ChatColor.RED + "✖ ") + ChatColor.WHITE + name));
         meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
         meta.setLore(Arrays.asList(
                 "",
@@ -252,7 +287,7 @@ public class CoreManagementGUI {
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
         boolean active = currentLevel > 0;
-        meta.setDisplayName((active ? ChatColor.GREEN + "✔ " : ChatColor.RED + "✖ ") + ChatColor.WHITE + name);
+        meta.setDisplayName(SmallCaps.convert((active ? ChatColor.GREEN + "✔ " : ChatColor.RED + "✖ ") + ChatColor.WHITE + name));
         meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
 
         String bar = buildProgressBar(currentLevel, maxLevel);
@@ -284,6 +319,6 @@ public class CoreManagementGUI {
     }
 
     public static boolean isManagementGUI(String title) {
-        return title.contains("Panel de N\u00facleo");
+        return title.contains(SmallCaps.convert("Panel de Núcleo"));
     }
 }

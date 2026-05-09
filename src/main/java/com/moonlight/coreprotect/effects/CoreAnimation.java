@@ -68,7 +68,18 @@ public class CoreAnimation {
             double z = Math.sin(offsetAngle) * radius;
 
             Location particleLoc = center.clone().add(x, height, z);
-            center.getWorld().spawnParticle(level.getParticle(), particleLoc, 2, 0.05, 0.05, 0.05, 0);
+            // Wrap in try-catch to prevent ANY particle from causing errors
+            try {
+                if (level.getParticle() == Particle.DUST) {
+                    org.bukkit.Particle.DustOptions dustOpts = new org.bukkit.Particle.DustOptions(org.bukkit.Color.RED, 1.0f);
+                    center.getWorld().spawnParticle(level.getParticle(), particleLoc, 2, 0, 0, 0, 0, dustOpts);
+                } else {
+                    center.getWorld().spawnParticle(level.getParticle(), particleLoc, 2, 0.05, 0.05, 0.05, 0);
+                }
+            } catch (Exception e) {
+                // Silently skip particles that fail - use fallback
+                center.getWorld().spawnParticle(Particle.END_ROD, particleLoc, 2, 0.05, 0.05, 0.05, 0);
+            }
         }
 
         // Particulas centrales
@@ -87,7 +98,18 @@ public class CoreAnimation {
             double z = Math.sin(angle) * currentRadius;
 
             Location particleLoc = center.clone().add(x, 0.5, z);
-            center.getWorld().spawnParticle(level.getParticle(), particleLoc, 1, 0, 0, 0, 0);
+            // Wrap in try-catch to prevent ANY particle from causing errors
+            try {
+                if (level.getParticle() == Particle.DUST) {
+                    org.bukkit.Particle.DustOptions dustOpts = new org.bukkit.Particle.DustOptions(org.bukkit.Color.RED, 1.0f);
+                    center.getWorld().spawnParticle(level.getParticle(), particleLoc, 1, 0, 0, 0, 0, dustOpts);
+                } else {
+                    center.getWorld().spawnParticle(level.getParticle(), particleLoc, 1, 0, 0, 0, 0);
+                }
+            } catch (Exception e) {
+                // Silently skip particles that fail - use fallback
+                center.getWorld().spawnParticle(Particle.END_ROD, particleLoc, 1, 0, 0, 0, 0);
+            }
         }
 
         // Columnas en las esquinas
@@ -116,7 +138,18 @@ public class CoreAnimation {
                 double x = Math.cos(angle) * distance;
                 double z = Math.sin(angle) * distance;
                 Location particleLoc = center.clone().add(x, 1, z);
-                center.getWorld().spawnParticle(level.getParticle(), particleLoc, 3, 0.1, 0.1, 0.1, 0.05);
+                // Wrap in try-catch to prevent ANY particle from causing errors
+                try {
+                    if (level.getParticle() == Particle.DUST) {
+                        org.bukkit.Particle.DustOptions dustOpts = new org.bukkit.Particle.DustOptions(org.bukkit.Color.RED, 1.0f);
+                        center.getWorld().spawnParticle(level.getParticle(), particleLoc, 3, 0.1, 0.1, 0.1, 0.05, dustOpts);
+                    } else {
+                        center.getWorld().spawnParticle(level.getParticle(), particleLoc, 3, 0.1, 0.1, 0.1, 0.05);
+                    }
+                } catch (Exception e) {
+                    // Silently skip particles that fail - use fallback
+                    center.getWorld().spawnParticle(Particle.END_ROD, particleLoc, 3, 0.1, 0.1, 0.1, 0.05);
+                }
             }
         }
 
@@ -140,7 +173,18 @@ public class CoreAnimation {
             double x = Math.cos(angle) * size;
             double z = Math.sin(angle) * size;
             Location borderLoc = center.clone().add(x, 0.5, z);
-            center.getWorld().spawnParticle(level.getParticle(), borderLoc, 10, 0.2, 0.5, 0.2, 0.05);
+            // Wrap in try-catch to prevent ANY particle from causing errors
+            try {
+                if (level.getParticle() == Particle.DUST) {
+                    org.bukkit.Particle.DustOptions dustOpts = new org.bukkit.Particle.DustOptions(org.bukkit.Color.RED, 1.0f);
+                    center.getWorld().spawnParticle(level.getParticle(), borderLoc, 10, 0.2, 0.5, 0.2, 0.05, dustOpts);
+                } else {
+                    center.getWorld().spawnParticle(level.getParticle(), borderLoc, 10, 0.2, 0.5, 0.2, 0.05);
+                }
+            } catch (Exception e) {
+                // Silently skip particles that fail - use fallback
+                center.getWorld().spawnParticle(Particle.END_ROD, borderLoc, 10, 0.2, 0.5, 0.2, 0.05);
+            }
         }
 
         // Columnas de luz en las 4 esquinas
@@ -254,10 +298,8 @@ public class CoreAnimation {
                 double angle = ticks * 0.5;
                 double x = Math.cos(angle) * r;
                 double z = Math.sin(angle) * r;
-                center.getWorld().spawnParticle(Particle.FIREWORK, center.clone().add(0.5 + x, y, 0.5 + z), 1, 0,
-                        0, 0, 0);
-                center.getWorld().spawnParticle(Particle.FIREWORK, center.clone().add(0.5 - x, y, 0.5 - z), 1, 0,
-                        0, 0, 0);
+                center.getWorld().spawnParticle(Particle.FIREWORK, center.clone().add(0.5 + x, y, 0.5 + z), 1);
+                center.getWorld().spawnParticle(Particle.FIREWORK, center.clone().add(0.5 - x, y, 0.5 - z), 1);
 
                 ticks++;
             }
@@ -295,62 +337,71 @@ public class CoreAnimation {
 
             @Override
             public void run() {
-                if (tick >= totalDuration || stand.isDead() || !stand.isValid()) {
-                    // FINAL: Remove stand, place new block, epic explosion
-                    if (!stand.isDead()) stand.remove();
-                    playUpgradeFinalExplosion(center, newMaterial);
-                    SoundManager.playUpgradeComplete(center);
+                try {
+                    if (tick >= totalDuration || stand.isDead() || !stand.isValid()) {
+                        // FINAL: Remove stand, place new block, epic explosion
+                        if (!stand.isDead()) stand.remove();
+                        try { playUpgradeFinalExplosion(center, newMaterial); } catch (Exception ignored) {}
+                        SoundManager.playUpgradeComplete(center);
 
-                    // Place the new block after a short delay
-                    new BukkitRunnable() {
-                        @Override
-                        public void run() {
-                            center.getBlock().setType(newMaterial);
-                            if (onComplete != null) onComplete.run();
-                        }
-                    }.runTaskLater(plugin, 10L);
+                        // Place the new block after a short delay
+                        new BukkitRunnable() {
+                            @Override
+                            public void run() {
+                                center.getBlock().setType(newMaterial);
+                                if (onComplete != null) onComplete.run();
+                            }
+                        }.runTaskLater(plugin, 10L);
 
-                    cancel();
-                    return;
-                }
-
-                // === PHASE 1: LEVITATION (0-80 ticks) ===
-                if (tick < 80) {
-                    phaseOneLevitate(center, stand, tick);
-                }
-                // === PHASE 2: FAST SPIN + RINGS (80-160 ticks) ===
-                else if (tick < 160) {
-                    phaseTwoSpin(center, stand, tick - 80);
-                }
-                // === PHASE 3: ENERGY CONVERGENCE (160-240 ticks) ===
-                else if (tick < 240) {
-                    phaseThreeEnergy(center, stand, tick - 160);
-                }
-                // === PHASE 4: TRANSFORMATION VORTEX (240-320 ticks) ===
-                else if (tick < 320) {
-                    phaseFourTransform(center, stand, tick - 240, oldMaterial, newMaterial);
-                    if (!materialChanged && tick >= 280) {
-                        stand.setHelmet(new org.bukkit.inventory.ItemStack(newMaterial));
-                        materialChanged = true;
-                        SoundManager.playUpgradeTransform(center);
-                        // Burst of particles on transform
-                        center.getWorld().spawnParticle(Particle.TOTEM_OF_UNDYING,
-                                stand.getLocation().add(0, 1.5, 0), 80, 0.5, 0.5, 0.5, 0.3);
-                        center.getWorld().spawnParticle(Particle.FLASH,
-                                stand.getLocation().add(0, 1.5, 0), 3, 0, 0, 0, 0);
+                        cancel();
+                        return;
                     }
-                }
-                // === PHASE 5: DESCENT + FIREWORKS (320-400 ticks) ===
-                else {
-                    phaseFiveDescent(center, stand, tick - 320, newMaterial);
-                }
 
-                // Periodic sounds
-                if (tick % 40 == 0 && tick < 320) {
-                    SoundManager.playUpgradeAmbient(center, tick);
-                }
+                    // === PHASE 1: LEVITATION (0-80 ticks) ===
+                    if (tick < 80) {
+                        phaseOneLevitate(center, stand, tick);
+                    }
+                    // === PHASE 2: FAST SPIN + RINGS (80-160 ticks) ===
+                    else if (tick < 160) {
+                        phaseTwoSpin(center, stand, tick - 80);
+                    }
+                    // === PHASE 3: ENERGY CONVERGENCE (160-240 ticks) ===
+                    else if (tick < 240) {
+                        phaseThreeEnergy(center, stand, tick - 160);
+                    }
+                    // === PHASE 4: TRANSFORMATION VORTEX (240-320 ticks) ===
+                    else if (tick < 320) {
+                        phaseFourTransform(center, stand, tick - 240, oldMaterial, newMaterial);
+                        if (!materialChanged && tick >= 280) {
+                            stand.setHelmet(new org.bukkit.inventory.ItemStack(newMaterial));
+                            materialChanged = true;
+                            SoundManager.playUpgradeTransform(center);
+                            // Burst of particles on transform
+                            center.getWorld().spawnParticle(Particle.TOTEM_OF_UNDYING,
+                                    stand.getLocation().add(0, 1.5, 0), 80, 0.5, 0.5, 0.5, 0.3);
+                            center.getWorld().spawnParticle(Particle.END_ROD,
+                                    stand.getLocation().add(0, 1.5, 0), 10, 0.3, 0.3, 0.3, 0.1);
+                        }
+                    }
+                    // === PHASE 5: DESCENT + FIREWORKS (320-400 ticks) ===
+                    else {
+                        phaseFiveDescent(center, stand, tick - 320, newMaterial);
+                    }
 
-                tick++;
+                    // Periodic sounds
+                    if (tick % 40 == 0 && tick < 320) {
+                        SoundManager.playUpgradeAmbient(center, tick);
+                    }
+
+                    tick++;
+                } catch (Exception e) {
+                    // Safety: if ANY exception occurs, restore the block immediately
+                    plugin.getLogger().warning("Error in upgrade animation, restoring block: " + e.getMessage());
+                    if (!stand.isDead()) stand.remove();
+                    center.getBlock().setType(newMaterial);
+                    if (onComplete != null) onComplete.run();
+                    cancel();
+                }
             }
         }.runTaskTimer(plugin, 0L, 1L);
     }
@@ -361,92 +412,127 @@ public class CoreAnimation {
         Location newLoc = center.clone().add(0.5, -0.5 + targetHeight, 0.5);
 
         // Slow rotation
-        float yaw = tick * 4.5f; // 4.5 degrees per tick
+        float yaw = tick * 4.5f;
         newLoc.setYaw(yaw);
         stand.teleport(newLoc);
 
-        // Rising particle trail
         Location particleCenter = center.clone().add(0.5, targetHeight + 0.5, 0.5);
 
-        // Spiral trail below
-        for (int i = 0; i < 2; i++) {
-            double angle = Math.toRadians(tick * 15 + i * 180);
-            double radius = 0.8;
+        // Triple spiral trail
+        for (int i = 0; i < 3; i++) {
+            double angle = Math.toRadians(tick * 18 + i * 120);
+            double radius = 0.6 + (tick / 80.0) * 0.5;
             double px = Math.cos(angle) * radius;
             double pz = Math.sin(angle) * radius;
             center.getWorld().spawnParticle(Particle.END_ROD,
-                    particleCenter.clone().add(px, -0.5, pz), 1, 0, 0, 0, 0);
+                    particleCenter.clone().add(px, -0.3, pz), 1, 0, 0, 0, 0);
+            center.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME,
+                    particleCenter.clone().add(-px, -0.6, -pz), 1, 0, 0, 0, 0);
         }
 
-        // Soft glow at block
-        center.getWorld().spawnParticle(Particle.ENCHANT,
-                particleCenter, 5, 0.3, 0.3, 0.3, 0.5);
+        // Beacon beam upwards from block
+        if (tick % 2 == 0) {
+            for (double y = 0; y < targetHeight + 6; y += 0.5) {
+                center.getWorld().spawnParticle(Particle.END_ROD,
+                        center.clone().add(0.5, y, 0.5), 1, 0.02, 0, 0.02, 0);
+            }
+        }
 
-        // Ground ring expanding
-        if (tick % 4 == 0) {
-            double ringRadius = (tick / 80.0) * 3.0;
-            for (int i = 0; i < 24; i++) {
-                double angle = Math.toRadians(i * 15);
-                double gx = Math.cos(angle) * ringRadius;
-                double gz = Math.sin(angle) * ringRadius;
+        // Enchant glow intensifying
+        center.getWorld().spawnParticle(Particle.ENCHANT,
+                particleCenter, 5 + tick / 8, 0.3, 0.3, 0.3, 0.8);
+
+        // Ground pulse ring expanding
+        if (tick % 3 == 0) {
+            double ringRadius = (tick / 80.0) * 4.0;
+            org.bukkit.Particle.DustOptions dustPulse = new org.bukkit.Particle.DustOptions(
+                    org.bukkit.Color.fromRGB(0, 200 + (tick % 55), 255), 1.3f);
+            for (int i = 0; i < 36; i++) {
+                double angle = Math.toRadians(i * 10);
+                center.getWorld().spawnParticle(Particle.DUST,
+                        center.clone().add(0.5 + Math.cos(angle) * ringRadius, 0.1, 0.5 + Math.sin(angle) * ringRadius),
+                        1, 0, 0, 0, 0, dustPulse);
+            }
+        }
+
+        // Ground soul flame ring
+        if (tick % 5 == 0) {
+            for (int i = 0; i < 16; i++) {
+                double angle = Math.toRadians(i * 22.5 + tick * 3);
+                double r = 1.5;
                 center.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME,
-                        center.clone().add(0.5 + gx, 0.1, 0.5 + gz), 1, 0, 0, 0, 0);
+                        center.clone().add(0.5 + Math.cos(angle) * r, 0.1, 0.5 + Math.sin(angle) * r), 1, 0, 0, 0, 0);
             }
         }
     }
 
     private void phaseTwoSpin(Location center, org.bukkit.entity.ArmorStand stand, int phase) {
-        // Stay at height 4, spin progressively faster
-        double height = 4.0;
+        double height = 4.0 + Math.sin(phase * 0.08) * 0.3;
         Location newLoc = center.clone().add(0.5, -0.5 + height, 0.5);
 
-        // Accelerating rotation
-        float spinSpeed = 9.0f + (phase * 0.3f); // Gets faster
+        float spinSpeed = 9.0f + (phase * 0.4f);
         float yaw = stand.getLocation().getYaw() + spinSpeed;
         newLoc.setYaw(yaw);
         stand.teleport(newLoc);
 
         Location particleCenter = center.clone().add(0.5, height + 0.5, 0.5);
 
-        // Orbiting rings (2 rings at different angles)
-        for (int ring = 0; ring < 2; ring++) {
-            double ringAngle = Math.toRadians(phase * 8 + ring * 90);
-            double tiltAngle = Math.toRadians(phase * 3 + ring * 45);
-            double radius = 1.5 + Math.sin(phase * 0.1) * 0.3;
+        // 3 orbiting rings at different tilts
+        for (int ring = 0; ring < 3; ring++) {
+            double ringAngle = Math.toRadians(phase * 10 + ring * 60);
+            double tiltAngle = Math.toRadians(phase * 4 + ring * 40);
+            double radius = 1.8 + Math.sin(phase * 0.12) * 0.4;
 
-            for (int i = 0; i < 12; i++) {
-                double a = Math.toRadians(i * 30) + ringAngle;
+            for (int i = 0; i < 16; i++) {
+                double a = Math.toRadians(i * 22.5) + ringAngle;
                 double px = Math.cos(a) * radius;
-                double py = Math.sin(tiltAngle) * Math.sin(a) * 0.5;
+                double py = Math.sin(tiltAngle) * Math.sin(a) * 0.7;
                 double pz = Math.sin(a) * radius;
 
-                center.getWorld().spawnParticle(Particle.WITCH,
+                Particle p = ring == 0 ? Particle.WITCH : ring == 1 ? Particle.SOUL_FIRE_FLAME : Particle.END_ROD;
+                center.getWorld().spawnParticle(p,
                         particleCenter.clone().add(px, py, pz), 1, 0, 0, 0, 0);
             }
         }
 
-        // Electric sparks
-        if (phase % 5 == 0) {
-            double sparkAngle = Math.random() * Math.PI * 2;
-            double sparkDist = Math.random() * 2.0;
-            center.getWorld().spawnParticle(Particle.ELECTRIC_SPARK,
-                    particleCenter.clone().add(
-                            Math.cos(sparkAngle) * sparkDist,
-                            (Math.random() - 0.5) * 2,
-                            Math.sin(sparkAngle) * sparkDist),
-                    3, 0.1, 0.1, 0.1, 0.1);
+        // Electric arcs
+        if (phase % 3 == 0) {
+            for (int i = 0; i < 3; i++) {
+                double sparkAngle = Math.random() * Math.PI * 2;
+                double sparkDist = 0.5 + Math.random() * 2.0;
+                center.getWorld().spawnParticle(Particle.ELECTRIC_SPARK,
+                        particleCenter.clone().add(
+                                Math.cos(sparkAngle) * sparkDist,
+                                (Math.random() - 0.5) * 2.5,
+                                Math.sin(sparkAngle) * sparkDist),
+                        5, 0.15, 0.15, 0.15, 0.15);
+            }
         }
 
-        // Vertical light beams from ground
-        if (phase % 10 == 0) {
-            for (int corner = 0; corner < 4; corner++) {
-                double bx = (corner < 2 ? 1.5 : -1.5);
-                double bz = (corner % 2 == 0 ? 1.5 : -1.5);
-                for (int y = 0; y < 6; y++) {
+        // 8 vertical light beams from ground, rotating
+        if (phase % 6 == 0) {
+            for (int b = 0; b < 8; b++) {
+                double bAngle = Math.toRadians(b * 45 + phase * 3);
+                double bx = Math.cos(bAngle) * 2.5;
+                double bz = Math.sin(bAngle) * 2.5;
+                for (int y = 0; y < 8; y++) {
                     center.getWorld().spawnParticle(Particle.END_ROD,
-                            center.clone().add(0.5 + bx, y * 0.7, 0.5 + bz),
+                            center.clone().add(0.5 + bx, y * 0.6, 0.5 + bz),
                             1, 0, 0, 0, 0);
                 }
+            }
+        }
+
+        // Pulsating dust ring at feet
+        if (phase % 4 == 0) {
+            double pulseR = 2.0 + Math.sin(phase * 0.15) * 0.8;
+            org.bukkit.Particle.DustOptions cyanDust = new org.bukkit.Particle.DustOptions(
+                    org.bukkit.Color.fromRGB(0, 255, 255), 1.5f);
+            for (int i = 0; i < 48; i++) {
+                double a = Math.toRadians(i * 7.5);
+                center.getWorld().spawnParticle(Particle.DUST,
+                        center.clone().add(0.5 + Math.cos(a) * pulseR, 0.2, 0.5 + Math.sin(a) * pulseR),
+                        1, 0, 0, 0, 0, cyanDust);
             }
         }
     }
@@ -498,9 +584,9 @@ public class CoreAnimation {
             double h2z = Math.sin(helixAngle2 + y) * helixRadius;
 
             center.getWorld().spawnParticle(Particle.DRAGON_BREATH,
-                    particleCenter.clone().add(h1x, y, h1z), 1, 0, 0, 0, 0);
+                    particleCenter.clone().add(h1x, y, h1z), 1);
             center.getWorld().spawnParticle(Particle.DRAGON_BREATH,
-                    particleCenter.clone().add(h2x, y, h2z), 1, 0, 0, 0, 0);
+                    particleCenter.clone().add(h2x, y, h2z), 1);
         }
     }
 
@@ -539,14 +625,14 @@ public class CoreAnimation {
                 double ringR = 2.0 + Math.random();
                 center.getWorld().spawnParticle(Particle.FIREWORK,
                         particleCenter.clone().add(Math.cos(angle) * ringR, ringY, Math.sin(angle) * ringR),
-                        1, 0, 0, 0, 0);
+                        1);
             }
         }
 
         // Lightning-like flashes
         if (phase % 15 == 0) {
-            center.getWorld().spawnParticle(Particle.FLASH,
-                    particleCenter, 2, 0.5, 0.5, 0.5, 0);
+            center.getWorld().spawnParticle(Particle.END_ROD,
+                    particleCenter, 8, 0.3, 0.3, 0.3, 0.1);
             center.getWorld().strikeLightningEffect(particleCenter);
         }
     }
@@ -558,42 +644,58 @@ public class CoreAnimation {
         if (height < 0) height = 0;
         Location newLoc = center.clone().add(0.5, -0.5 + height, 0.5);
 
-        // Decelerating spin
-        float spinSpeed = Math.max(2f, 20f - (phase * 0.2f));
+        float spinSpeed = Math.max(2f, 25f - (phase * 0.28f));
         float yaw = stand.getLocation().getYaw() + spinSpeed;
         newLoc.setYaw(yaw);
         stand.teleport(newLoc);
 
         Location particleCenter = center.clone().add(0.5, height + 0.5, 0.5);
 
-        // Trailing golden particles
+        // Rainbow trail transitioning colors as it descends
+        double progress = phase / 80.0;
+        int r = (int)(255 * (1 - progress));
+        int g = (int)(215 + 40 * progress);
+        int b = (int)(255 * progress);
+        org.bukkit.Particle.DustOptions trailDust = new org.bukkit.Particle.DustOptions(
+                org.bukkit.Color.fromRGB(Math.max(0, Math.min(255, r)), Math.max(0, Math.min(255, g)), Math.max(0, Math.min(255, b))), 1.5f);
         center.getWorld().spawnParticle(Particle.TOTEM_OF_UNDYING,
-                particleCenter, 3, 0.3, 0.5, 0.3, 0.1);
+                particleCenter, 5, 0.4, 0.6, 0.4, 0.15);
+        center.getWorld().spawnParticle(Particle.DUST,
+                particleCenter, 3, 0.3, 0.3, 0.3, 0, trailDust);
 
-        // Expanding shockwave on ground
-        if (phase % 5 == 0) {
-            double ringRadius = (phase / 80.0) * 8.0;
+        // Expanding gold shockwave on ground
+        if (phase % 4 == 0) {
+            double ringRadius = progress * 10.0;
             org.bukkit.Particle.DustOptions goldDust = new org.bukkit.Particle.DustOptions(
-                    org.bukkit.Color.fromRGB(255, 215, 0), 1.2f);
-            for (int i = 0; i < 48; i++) {
-                double angle = Math.toRadians(i * 7.5);
-                double gx = Math.cos(angle) * ringRadius;
-                double gz = Math.sin(angle) * ringRadius;
+                    org.bukkit.Color.fromRGB(255, 215, 0), 1.4f);
+            for (int i = 0; i < 60; i++) {
+                double angle = Math.toRadians(i * 6);
                 center.getWorld().spawnParticle(Particle.DUST,
-                        center.clone().add(0.5 + gx, 0.2, 0.5 + gz), 1, 0, 0, 0, 0, goldDust);
+                        center.clone().add(0.5 + Math.cos(angle) * ringRadius, 0.2, 0.5 + Math.sin(angle) * ringRadius),
+                        1, 0, 0, 0, 0, goldDust);
             }
         }
 
-        // Firework bursts
-        if (phase % 20 == 0 && phase < 60) {
-            spawnFireworkEffect(center.clone().add(
-                    (Math.random() - 0.5) * 6, 3 + Math.random() * 3, (Math.random() - 0.5) * 6));
+        // Many fireworks during descent
+        if (phase % 12 == 0 && phase < 70) {
+            for (int i = 0; i < 2; i++) {
+                spawnFireworkEffect(center.clone().add(
+                        (Math.random() - 0.5) * 8, 2 + Math.random() * 5, (Math.random() - 0.5) * 8));
+            }
         }
 
-        // Final settling particles
-        if (phase > 60) {
+        // Beacon fade-in at landing
+        if (phase > 50) {
+            for (double y = 0; y < 10; y += 0.6) {
+                center.getWorld().spawnParticle(Particle.END_ROD,
+                        center.clone().add(0.5, y, 0.5), 1, 0.03, 0, 0.03, 0);
+            }
+        }
+
+        // Final settling cloud
+        if (phase > 65) {
             center.getWorld().spawnParticle(Particle.CLOUD,
-                    center.clone().add(0.5, 0.5, 0.5), 3, 0.5, 0.2, 0.5, 0.02);
+                    center.clone().add(0.5, 0.5, 0.5), 5, 0.6, 0.3, 0.6, 0.03);
         }
     }
 
@@ -601,51 +703,83 @@ public class CoreAnimation {
         Location particleCenter = center.clone().add(0.5, 1, 0.5);
 
         // Massive totem burst
-        center.getWorld().spawnParticle(Particle.TOTEM_OF_UNDYING, particleCenter, 200, 1, 1.5, 1, 0.5);
+        center.getWorld().spawnParticle(Particle.TOTEM_OF_UNDYING, particleCenter, 300, 1.5, 2, 1.5, 0.6);
 
         // Large explosion visual
-        center.getWorld().spawnParticle(Particle.EXPLOSION_EMITTER, particleCenter, 2);
+        center.getWorld().spawnParticle(Particle.EXPLOSION_EMITTER, particleCenter, 3);
 
         // End rod shower
-        center.getWorld().spawnParticle(Particle.END_ROD, particleCenter, 100, 2, 3, 2, 0.1);
+        center.getWorld().spawnParticle(Particle.END_ROD, particleCenter, 150, 3, 4, 3, 0.15);
 
-        // Flash
-        center.getWorld().spawnParticle(Particle.FLASH, particleCenter, 5, 0, 0, 0, 0);
+        // Flash burst
+        center.getWorld().spawnParticle(Particle.END_ROD, particleCenter, 25, 0.5, 0.5, 0.5, 0.2);
 
-        // Firework ring
-        for (int i = 0; i < 8; i++) {
-            double angle = Math.toRadians(i * 45);
-            Location fwLoc = center.clone().add(Math.cos(angle) * 3, 2 + Math.random() * 2, Math.sin(angle) * 3);
-            spawnFireworkEffect(fwLoc);
+        // Double firework ring (inner + outer)
+        for (int i = 0; i < 12; i++) {
+            double angle = Math.toRadians(i * 30);
+            spawnFireworkEffect(center.clone().add(Math.cos(angle) * 3, 2 + Math.random() * 2, Math.sin(angle) * 3));
+            if (i % 2 == 0) {
+                spawnFireworkEffect(center.clone().add(Math.cos(angle) * 5.5, 3 + Math.random() * 3, Math.sin(angle) * 5.5));
+            }
         }
 
-        // Ground shockwave
-        for (double r = 0; r < 8; r += 0.5) {
+        // Animated ground shockwave with color transition (cyan → gold → white)
+        for (double r = 0; r < 12; r += 0.4) {
             final double radius = r;
             new BukkitRunnable() {
                 @Override
                 public void run() {
+                    double progress = radius / 12.0;
+                    int cr = (int)(255 * progress);
+                    int cg = (int)(255 * (1 - progress * 0.3));
+                    int cb = (int)(255 * (1 - progress));
                     org.bukkit.Particle.DustOptions dust = new org.bukkit.Particle.DustOptions(
-                            org.bukkit.Color.fromRGB(0, 255, 255), 1.5f);
-                    for (int i = 0; i < 36; i++) {
-                        double angle = Math.toRadians(i * 10);
+                            org.bukkit.Color.fromRGB(Math.max(0, Math.min(255, cr)),
+                                    Math.max(0, Math.min(255, cg)),
+                                    Math.max(0, Math.min(255, cb))), 1.8f);
+                    for (int i = 0; i < 48; i++) {
+                        double angle = Math.toRadians(i * 7.5);
                         center.getWorld().spawnParticle(Particle.DUST,
                                 center.clone().add(0.5 + Math.cos(angle) * radius, 0.3, 0.5 + Math.sin(angle) * radius),
                                 1, 0, 0, 0, 0, dust);
                     }
+                    // Secondary flame wave
+                    if (radius > 2) {
+                        for (int i = 0; i < 12; i++) {
+                            double angle = Math.toRadians(i * 30);
+                            center.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME,
+                                    center.clone().add(0.5 + Math.cos(angle) * radius, 0.5, 0.5 + Math.sin(angle) * radius),
+                                    1, 0, 0, 0, 0);
+                        }
+                    }
                 }
-            }.runTaskLater(plugin, (long) (r * 2));
+            }.runTaskLater(plugin, (long) (r * 1.5));
         }
 
-        // 4 corner light pillars
-        for (int corner = 0; corner < 4; corner++) {
-            double cx = (corner < 2 ? 3 : -3);
-            double cz = (corner % 2 == 0 ? 3 : -3);
+        // 8 rotating corner light pillars
+        for (int corner = 0; corner < 8; corner++) {
+            double cAngle = Math.toRadians(corner * 45);
+            double cx = Math.cos(cAngle) * 3.5;
+            double cz = Math.sin(cAngle) * 3.5;
             for (int h = 0; h < 30; h++) {
                 center.getWorld().spawnParticle(Particle.END_ROD,
                         center.clone().add(0.5 + cx, h * 0.5, 0.5 + cz), 2, 0.1, 0.1, 0.1, 0);
             }
         }
+
+        // Central beacon beam after explosion
+        new BukkitRunnable() {
+            int t = 0;
+            @Override
+            public void run() {
+                if (t >= 40) { cancel(); return; }
+                for (double y = 0; y < 15; y += 0.4) {
+                    center.getWorld().spawnParticle(Particle.END_ROD,
+                            center.clone().add(0.5, y, 0.5), 1, 0.02, 0, 0.02, 0);
+                }
+                t++;
+            }
+        }.runTaskTimer(plugin, 5L, 2L);
     }
 
     private void spawnFireworkEffect(Location location) {

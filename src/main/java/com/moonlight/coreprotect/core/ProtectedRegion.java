@@ -42,6 +42,9 @@ public class ProtectedRegion {
     private boolean noHunger;
     private boolean antiPhantom;
 
+    // Prestige system (post level 24)
+    private int prestige = 0; // 0 = no prestige, 1 = Prestige I, 2 = Prestige II, etc.
+
     public ProtectedRegion(UUID owner, Location coreLocation, int level, int size) {
         this.id = UUID.randomUUID();
         this.owner = owner;
@@ -106,7 +109,8 @@ public class ProtectedRegion {
             return false;
         }
 
-        int halfSize = size / 2;
+        int effectiveSize = getEffectiveSize();
+        int halfSize = effectiveSize / 2;
         int minX = coreX - halfSize;
         int maxX = coreX + halfSize;
         int minZ = coreZ - halfSize;
@@ -150,6 +154,30 @@ public class ProtectedRegion {
 
     public void setSize(int size) {
         this.size = size;
+    }
+
+    // --- Prestige ---
+    public int getPrestige() {
+        return prestige;
+    }
+
+    public void setPrestige(int prestige) {
+        this.prestige = prestige;
+    }
+
+    /**
+     * Returns the prestige zone size bonus (percentage).
+     * Prestige 1: +5%, Prestige 2: +10%, Prestige 3: +15%
+     */
+    public double getPrestigeSizeMultiplier() {
+        return 1.0 + (prestige * 0.05);
+    }
+
+    /**
+     * Returns the effective size including prestige bonus.
+     */
+    public int getEffectiveSize() {
+        return (int) Math.round(size * getPrestigeSizeMultiplier());
     }
 
     // --- Upgrade flag getters/setters ---

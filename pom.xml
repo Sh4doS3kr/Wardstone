@@ -5,34 +5,42 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.moonlight</groupId>
-    <artifactId>CoreProtect</artifactId>
+    <artifactId>Wardstone</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
 
-    <name>CoreProtect</name>
+    <name>Wardstone</name>
     <description>Plugin de nucleos de proteccion con 20 niveles y animaciones de particulas</description>
 
     <properties>
-        <java.version>17</java.version>
+        <java.version>21</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
     <repositories>
         <repository>
-            <id>spigot-repo</id>
-            <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
+            <id>papermc</id>
+            <url>https://repo.papermc.io/repository/maven-public/</url>
         </repository>
         <repository>
             <id>jitpack.io</id>
             <url>https://jitpack.io</url>
         </repository>
+        <repository>
+            <id>md5-repo</id>
+            <url>https://repo.md-5.net/content/groups/public/</url>
+        </repository>
+        <repository>
+            <id>minecraft-repo</id>
+            <url>https://repo.minebench.de/</url>
+        </repository>
     </repositories>
 
     <dependencies>
         <dependency>
-            <groupId>org.spigotmc</groupId>
-            <artifactId>spigot-api</artifactId>
-            <version>1.21.8-R0.1-SNAPSHOT</version>
+            <groupId>io.papermc.paper</groupId>
+            <artifactId>paper-api</artifactId>
+            <version>1.21.11-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -40,6 +48,37 @@
             <artifactId>VaultAPI</artifactId>
             <version>1.7.1</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.github.BlueMap-Minecraft</groupId>
+            <artifactId>BlueMapAPI</artifactId>
+            <version>v2.6.2</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.github.PlaceholderAPI</groupId>
+            <artifactId>PlaceholderAPI</artifactId>
+            <version>2.11.6</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>net.dv8tion</groupId>
+            <artifactId>JDA</artifactId>
+            <version>5.0.0-beta.20</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>club.minnced</groupId>
+                    <artifactId>opus-java</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <!-- LibsDisguises dependency - requires manual installation in server plugins folder -->
+        <dependency>
+            <groupId>me.libraryaddict</groupId>
+            <artifactId>LibsDisguises</artifactId>
+            <version>10.0.44</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/LibsDisguises.jar</systemPath>
         </dependency>
     </dependencies>
 
@@ -50,8 +89,7 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.11.0</version>
                 <configuration>
-                    <source>${java.version}</source>
-                    <target>${java.version}</target>
+                    <release>${java.version}</release>
                 </configuration>
             </plugin>
             <plugin>
@@ -65,6 +103,40 @@
                         </manifest>
                     </archive>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.5.1</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <artifactSet>
+                                <excludes>
+                                    <exclude>org.spigotmc:*</exclude>
+                                    <exclude>com.github.MilkBowl:*</exclude>
+                                    <exclude>com.github.BlueMap-Minecraft:*</exclude>
+                                    <exclude>com.github.PlaceholderAPI:*</exclude>
+                                </excludes>
+                            </artifactSet>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
         <resources>

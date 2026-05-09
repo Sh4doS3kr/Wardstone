@@ -13,10 +13,11 @@ import org.bukkit.inventory.meta.ItemMeta;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import com.moonlight.coreprotect.util.SmallCaps;
 
 public class ShopGUI {
 
-    private static final String GUI_TITLE = ChatColor.DARK_GRAY + "Tienda de Nucleos";
+    static final String GUI_TITLE = SmallCaps.convert(ChatColor.DARK_GRAY + "Tienda de Nucleos");
     private static final int GUI_SIZE = 54;
 
     private final CoreProtectPlugin plugin;
@@ -104,7 +105,7 @@ public class ShopGUI {
     private ItemStack createInfoItem() {
         ItemStack item = new ItemStack(Material.BOOK);
         ItemMeta meta = item.getItemMeta();
-        meta.setDisplayName(ChatColor.GOLD + "Informacion");
+        meta.setDisplayName(SmallCaps.convert(ChatColor.GOLD + "Informacion"));
         meta.setLore(Arrays.asList(
                 "",
                 ChatColor.GRAY + "Compra un nucleo y colocalo",

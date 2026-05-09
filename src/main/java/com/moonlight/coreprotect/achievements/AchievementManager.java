@@ -1,48 +1,181 @@
 package com.moonlight.coreprotect.achievements;
 
 import com.moonlight.coreprotect.CoreProtectPlugin;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Sound;
 import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
+import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class AchievementManager {
 
     private final CoreProtectPlugin plugin;
-    private final File dataFile;
-    private FileConfiguration dataConfig;
+    private final File jsonFile;
+    private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
     // playerUUID -> set of achieved achievement IDs
     private final Map<UUID, Set<String>> playerAchievements = new HashMap<>();
+
+    // playerUUID -> stat -> value
+    private final Map<UUID, Map<String, Integer>> playerStats = new HashMap<>();
 
     // All defined achievements
     private final List<Achievement> achievements = new ArrayList<>();
 
     public AchievementManager(CoreProtectPlugin plugin) {
         this.plugin = plugin;
-        this.dataFile = new File(plugin.getDataFolder(), "achievements.yml");
-        loadConfig();
+        this.jsonFile = new File(plugin.getDataFolder(), "achievements.json");
         registerAchievements();
+        loadFromJson();
     }
 
-    private void loadConfig() {
-        if (!dataFile.exists()) {
-            try {
-                dataFile.getParentFile().mkdirs();
-                dataFile.createNewFile();
-            } catch (IOException e) {
-                plugin.getLogger().severe("No se pudo crear achievements.yml: " + e.getMessage());
-            }
+    // ── JSON persistence ──────────────────────────────────────────────────
+
+    @SuppressWarnings("unchecked")
+    private void loadFromJson() {
+        // Migrate from old YAML if JSON doesn't exist yet
+        File oldYaml = new File(plugin.getDataFolder(), "achievements.yml");
+        if (!jsonFile.exists() && oldYaml.exists()) {
+            migrateFromYaml(oldYaml);
+            return;
         }
-        dataConfig = YamlConfiguration.loadConfiguration(dataFile);
+
+        if (!jsonFile.exists())
+            return;
+
+        try (Reader reader = new InputStreamReader(new FileInputStream(jsonFile), StandardCharsets.UTF_8)) {
+            Type rootType = new TypeToken<Map<String, Object>>() {
+            }.getType();
+            Map<String, Object> root = gson.fromJson(reader, rootType);
+            if (root == null)
+                return;
+
+            // Load player achievements
+            Object playersObj = root.get("players");
+            if (playersObj instanceof Map) {
+                Map<String, Object> playersMap = (Map<String, Object>) playersObj;
+                for (Map.Entry<String, Object> entry : playersMap.entrySet()) {
+                    try {
+                        UUID uuid = UUID.fromString(entry.getKey());
+                        if (entry.getValue() instanceof List) {
+                            List<String> list = (List<String>) entry.getValue();
+                            playerAchievements.put(uuid, new HashSet<>(list));
+                        }
+                    } catch (IllegalArgumentException ignored) {
+                    }
+                }
+            }
+
+            // Load player stats
+            Object statsObj = root.get("stats");
+            if (statsObj instanceof Map) {
+                Map<String, Object> statsMap = (Map<String, Object>) statsObj;
+                for (Map.Entry<String, Object> entry : statsMap.entrySet()) {
+                    try {
+                        UUID uuid = UUID.fromString(entry.getKey());
+                        if (entry.getValue() instanceof Map) {
+                            Map<String, Object> raw = (Map<String, Object>) entry.getValue();
+                            Map<String, Integer> statMap = new HashMap<>();
+                            for (Map.Entry<String, Object> s : raw.entrySet()) {
+                                if (s.getValue() instanceof Number) {
+                                    statMap.put(s.getKey(), ((Number) s.getValue()).intValue());
+                                }
+                            }
+                            playerStats.put(uuid, statMap);
+                        }
+                    } catch (IllegalArgumentException ignored) {
+                    }
+                }
+            }
+        } catch (Exception e) {
+            plugin.getLogger().severe("Error al cargar achievements.json: " + e.getMessage());
+        }
     }
+
+    public void savePlayerData() {
+        Map<String, Object> root = new LinkedHashMap<>();
+
+        // Players section
+        Map<String, List<String>> playersMap = new LinkedHashMap<>();
+        for (Map.Entry<UUID, Set<String>> entry : playerAchievements.entrySet()) {
+            playersMap.put(entry.getKey().toString(), new ArrayList<>(entry.getValue()));
+        }
+        root.put("players", playersMap);
+
+        // Stats section
+        Map<String, Map<String, Integer>> statsMap = new LinkedHashMap<>();
+        for (Map.Entry<UUID, Map<String, Integer>> entry : playerStats.entrySet()) {
+            statsMap.put(entry.getKey().toString(), entry.getValue());
+        }
+        root.put("stats", statsMap);
+
+        try {
+            jsonFile.getParentFile().mkdirs();
+            try (Writer writer = new OutputStreamWriter(new FileOutputStream(jsonFile), StandardCharsets.UTF_8)) {
+                gson.toJson(root, writer);
+            }
+        } catch (IOException e) {
+            plugin.getLogger().severe("Error al guardar achievements.json: " + e.getMessage());
+        }
+    }
+
+    /** One-time migration from achievements.yml to JSON */
+    private void migrateFromYaml(File yamlFile) {
+        plugin.getLogger().info("Migrando achievements.yml -> achievements.json...");
+        try {
+            YamlConfiguration yaml = YamlConfiguration.loadConfiguration(yamlFile);
+
+            // Migrate players
+            ConfigurationSection players = yaml.getConfigurationSection("players");
+            if (players != null) {
+                for (String key : players.getKeys(false)) {
+                    try {
+                        UUID uuid = UUID.fromString(key);
+                        List<String> achieved = players.getStringList(key);
+                        playerAchievements.put(uuid, new HashSet<>(achieved));
+                    } catch (IllegalArgumentException ignored) {
+                    }
+                }
+            }
+
+            // Migrate stats
+            ConfigurationSection stats = yaml.getConfigurationSection("stats");
+            if (stats != null) {
+                for (String uuidKey : stats.getKeys(false)) {
+                    try {
+                        UUID uuid = UUID.fromString(uuidKey);
+                        ConfigurationSection statSection = stats.getConfigurationSection(uuidKey);
+                        if (statSection != null) {
+                            Map<String, Integer> statMap = new HashMap<>();
+                            for (String stat : statSection.getKeys(false)) {
+                                statMap.put(stat, statSection.getInt(stat));
+                            }
+                            playerStats.put(uuid, statMap);
+                        }
+                    } catch (IllegalArgumentException ignored) {
+                    }
+                }
+            }
+
+            savePlayerData();
+            // Rename old file so it's not picked up again
+            yamlFile.renameTo(new File(yamlFile.getParentFile(), "achievements.yml.bak"));
+            plugin.getLogger().info("Migración completada. Antiguo archivo renombrado a achievements.yml.bak");
+        } catch (Exception e) {
+            plugin.getLogger().severe("Error migrando YAML a JSON: " + e.getMessage());
+        }
+    }
+
+    // ── Achievement registration ──────────────────────────────────────────
 
     private void registerAchievements() {
         // === PRIMEROS PASOS ===
@@ -110,30 +243,12 @@ public class AchievementManager {
         achievements.add(new Achievement(id, title, description));
     }
 
+    // ── Public API (unchanged) ────────────────────────────────────────────
+
     public void loadPlayerData() {
         playerAchievements.clear();
-        ConfigurationSection section = dataConfig.getConfigurationSection("players");
-        if (section == null) return;
-
-        for (String key : section.getKeys(false)) {
-            try {
-                UUID playerId = UUID.fromString(key);
-                List<String> achieved = section.getStringList(key);
-                playerAchievements.put(playerId, new HashSet<>(achieved));
-            } catch (IllegalArgumentException ignored) {}
-        }
-    }
-
-    public void savePlayerData() {
-        dataConfig.set("players", null);
-        for (Map.Entry<UUID, Set<String>> entry : playerAchievements.entrySet()) {
-            dataConfig.set("players." + entry.getKey().toString(), new ArrayList<>(entry.getValue()));
-        }
-        try {
-            dataConfig.save(dataFile);
-        } catch (IOException e) {
-            plugin.getLogger().severe("Error al guardar achievements: " + e.getMessage());
-        }
+        playerStats.clear();
+        loadFromJson();
     }
 
     public boolean hasAchievement(UUID playerId, String achievementId) {
@@ -142,10 +257,12 @@ public class AchievementManager {
     }
 
     public void grant(Player player, String achievementId) {
-        if (hasAchievement(player.getUniqueId(), achievementId)) return;
+        if (hasAchievement(player.getUniqueId(), achievementId))
+            return;
 
         Achievement achievement = getAchievement(achievementId);
-        if (achievement == null) return;
+        if (achievement == null)
+            return;
 
         playerAchievements.computeIfAbsent(player.getUniqueId(), k -> new HashSet<>()).add(achievementId);
         savePlayerData();
@@ -187,23 +304,27 @@ public class AchievementManager {
 
     private Achievement getAchievement(String id) {
         for (Achievement a : achievements) {
-            if (a.getId().equals(id)) return a;
+            if (a.getId().equals(id))
+                return a;
         }
         return null;
     }
 
     // === Tracking counters (stored per player) ===
     public int getPlayerStat(UUID playerId, String stat) {
-        return dataConfig.getInt("stats." + playerId.toString() + "." + stat, 0);
+        Map<String, Integer> stats = playerStats.get(playerId);
+        if (stats == null)
+            return 0;
+        return stats.getOrDefault(stat, 0);
     }
 
     public void incrementStat(UUID playerId, String stat) {
         int val = getPlayerStat(playerId, stat) + 1;
-        dataConfig.set("stats." + playerId.toString() + "." + stat, val);
+        playerStats.computeIfAbsent(playerId, k -> new HashMap<>()).put(stat, val);
     }
 
     public void setPlayerStat(UUID playerId, String stat, int value) {
-        dataConfig.set("stats." + playerId.toString() + "." + stat, value);
+        playerStats.computeIfAbsent(playerId, k -> new HashMap<>()).put(stat, value);
     }
 
     // === Static inner class ===
@@ -218,8 +339,16 @@ public class AchievementManager {
             this.description = description;
         }
 
-        public String getId() { return id; }
-        public String getTitle() { return title; }
-        public String getDescription() { return description; }
+        public String getId() {
+            return id;
+        }
+
+        public String getTitle() {
+            return title;
+        }
+
+        public String getDescription() {
+            return description;
+        }
     }
 }
