@@ -7,6 +7,7 @@ import com.moonlight.coreprotect.gui.ShopGUI;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -363,26 +364,52 @@ public class CoreCommand implements CommandExecutor, TabCompleter {
         Location coreLoc = region.getCoreLocation();
         if (coreLoc == null) return;
         int halfSize = region.getEffectiveSize() / 2;
+        World world = coreLoc.getWorld();
 
         // Calcular dirección desde core hacia el jugador
         org.bukkit.util.Vector dir = target.getLocation().toVector()
                 .subtract(coreLoc.toVector());
         dir.setY(0);
-        if (dir.lengthSquared() < 0.01) {
+        double playerDist = dir.length();
+        if (playerDist < 0.01) {
             dir = new org.bukkit.util.Vector(1, 0, 0);
+            playerDist = 1;
         }
         dir = dir.normalize();
 
-        // Punto en el borde + 2 bloques fuera
-        double edgeX = coreLoc.getX() + dir.getX() * (halfSize + 2);
-        double edgeZ = coreLoc.getZ() + dir.getZ() * (halfSize + 2);
-        Location edgeLoc = new Location(coreLoc.getWorld(), edgeX, target.getLocation().getY(), edgeZ,
-                target.getLocation().getYaw(), target.getLocation().getPitch());
+        // Empezar desde el borde en dirección al jugador (o desde el jugador si está fuera)
+        int startDist = (int) Math.max(halfSize + 1, Math.ceil(playerDist));
 
-        // Asegurar que el bloque destino sea seguro (buscar suelo)
-        edgeLoc.setY(coreLoc.getWorld().getHighestBlockYAt((int) edgeX, (int) edgeZ) + 1);
+        // Expandir hacia afuera hasta encontrar zona segura fuera de la región
+        for (int distance = startDist; distance <= startDist + 50; distance++) {
+            double testX = coreLoc.getX() + dir.getX() * distance;
+            double testZ = coreLoc.getZ() + dir.getZ() * distance;
 
-        target.teleport(edgeLoc);
+            // Encontrar Y seguro primero
+            int blockX = (int) testX;
+            int blockZ = (int) testZ;
+            int groundY = world.getHighestBlockYAt(blockX, blockZ);
+            if (groundY < coreLoc.getY() - 5) groundY = (int) coreLoc.getY();
+            Location testLoc = new Location(world, testX, groundY + 1, testZ);
+
+            // Verificar que esté fuera de la región
+            if (!region.contains(testLoc)) {
+                // Verificar que el suelo sea sólido y el espacio de pies esté libre
+                if (testLoc.clone().subtract(0, 1, 0).getBlock().getType().isSolid()
+                        && !testLoc.getBlock().getType().isSolid()) {
+                    target.teleport(testLoc);
+                    target.setFallDistance(0);
+                    return;
+                }
+            }
+        }
+
+        // Fallback: dirección X positiva simple
+        double fallbackX = coreLoc.getX() + halfSize + 3;
+        double fallbackZ = coreLoc.getZ();
+        int fallbackY = world.getHighestBlockYAt((int) fallbackX, (int) fallbackZ);
+        Location fallbackLoc = new Location(world, fallbackX, fallbackY + 1, fallbackZ);
+        target.teleport(fallbackLoc);
         target.setFallDistance(0);
     }
 
