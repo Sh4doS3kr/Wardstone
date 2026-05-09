@@ -27,10 +27,10 @@ public class YesNoGame extends MiniGame {
     private static final String API_KEY = "YOUR_GEMINI_API_KEY_HERE";
     private static final String API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemma-3-27b-it:generateContent";
 
-    private static final int ARENA_SIZE = 15;
-    private static final int ARENA_HEIGHT = 12;
+    private static final int ARENA_SIZE = 20;
+    private static final int ARENA_HEIGHT = 14;
     private static final int CENTER_Y = 100;
-    private static final int FLOOR_Y = CENTER_Y - ARENA_HEIGHT / 2; // 94
+    private static final int FLOOR_Y = CENTER_Y - ARENA_HEIGHT / 2; // 93
 
     private int currentQuestion = 0;
     private String currentQuestionText = "";
@@ -53,58 +53,107 @@ public class YesNoGame extends MiniGame {
 
     @Override
     public void buildArena(World world) {
-        // Paredes negras
+        int ceilingY = CENTER_Y + ARENA_HEIGHT / 2;
+
+        // Paredes de deepslate con bordes de cuarzo
         for (int x = -ARENA_SIZE; x <= ARENA_SIZE; x++) {
             for (int z = -ARENA_SIZE; z <= ARENA_SIZE; z++) {
-                for (int y = FLOOR_Y; y <= CENTER_Y + ARENA_HEIGHT / 2; y++) {
+                for (int y = FLOOR_Y; y <= ceilingY; y++) {
                     if (Math.abs(x) == ARENA_SIZE || Math.abs(z) == ARENA_SIZE) {
-                        world.getBlockAt(x, y, z).setType(Material.BLACK_CONCRETE);
+                        boolean isEdge = (Math.abs(x) == ARENA_SIZE && Math.abs(z) == ARENA_SIZE)
+                                || y == FLOOR_Y || y == ceilingY;
+                        world.getBlockAt(x, y, z).setType(isEdge ? Material.QUARTZ_BLOCK : Material.POLISHED_DEEPSLATE);
                     }
                 }
             }
         }
 
-        // Suelo: primero todo negro base
+        // Suelo base: blackstone pulida
+        for (int x = -ARENA_SIZE + 1; x < ARENA_SIZE; x++) {
+            for (int z = -ARENA_SIZE + 1; z < ARENA_SIZE; z++) {
+                world.getBlockAt(x, FLOOR_Y, z).setType(Material.POLISHED_BLACKSTONE);
+            }
+        }
+
+        // Lado verde (SÍ) - derecha (x >= 5)
+        for (int x = 5; x < ARENA_SIZE; x++) {
+            for (int z = -ARENA_SIZE + 1; z < ARENA_SIZE; z++) {
+                Material mat = (x + z) % 2 == 0 ? Material.GREEN_CONCRETE : Material.LIME_CONCRETE;
+                world.getBlockAt(x, FLOOR_Y, z).setType(mat);
+            }
+        }
+
+        // Lado rojo (NO) - izquierda (x <= -5)
+        for (int x = -ARENA_SIZE + 1; x <= -5; x++) {
+            for (int z = -ARENA_SIZE + 1; z < ARENA_SIZE; z++) {
+                Material mat = (x + z) % 2 == 0 ? Material.RED_CONCRETE : Material.ORANGE_CONCRETE;
+                world.getBlockAt(x, FLOOR_Y, z).setType(mat);
+            }
+        }
+
+        // Zona blanca central amplia (x = -4 a 4, 9 bloques) con patrón
+        for (int x = -4; x <= 4; x++) {
+            for (int z = -ARENA_SIZE + 1; z < ARENA_SIZE; z++) {
+                Material mat = (x + z) % 2 == 0 ? Material.WHITE_CONCRETE : Material.SMOOTH_QUARTZ;
+                world.getBlockAt(x, FLOOR_Y, z).setType(mat);
+            }
+        }
+
+        // Líneas divisorias de cristal (vidrio tintado) entre zonas
+        for (int z = -ARENA_SIZE + 1; z < ARENA_SIZE; z++) {
+            world.getBlockAt(4, FLOOR_Y + 1, z).setType(Material.GREEN_STAINED_GLASS);
+            world.getBlockAt(-4, FLOOR_Y + 1, z).setType(Material.RED_STAINED_GLASS);
+        }
+
+        // Techo: blackstone con sea lanterns en patrón
         for (int x = -ARENA_SIZE; x <= ARENA_SIZE; x++) {
             for (int z = -ARENA_SIZE; z <= ARENA_SIZE; z++) {
-                world.getBlockAt(x, FLOOR_Y, z).setType(Material.BLACK_CONCRETE);
+                boolean isLight = (x % 4 == 0 && z % 4 == 0);
+                world.getBlockAt(x, ceilingY, z).setType(isLight ? Material.SEA_LANTERN : Material.POLISHED_BLACKSTONE);
             }
         }
 
-        // Lado verde (SÍ) - derecha (x >= 2)
-        for (int x = 2; x < ARENA_SIZE; x++) {
-            for (int z = -ARENA_SIZE + 1; z < ARENA_SIZE; z++) {
-                world.getBlockAt(x, FLOOR_Y, z).setType(Material.GREEN_CONCRETE);
-            }
-        }
-
-        // Lado rojo (NO) - izquierda (x <= -2)
-        for (int x = -ARENA_SIZE + 1; x <= -2; x++) {
-            for (int z = -ARENA_SIZE + 1; z < ARENA_SIZE; z++) {
-                world.getBlockAt(x, FLOOR_Y, z).setType(Material.RED_CONCRETE);
-            }
-        }
-
-        // Línea blanca central (3 de ancho: x = -1, 0, 1) — se pone AL FINAL para no sobreescribirse
-        for (int x = -1; x <= 1; x++) {
-            for (int z = -ARENA_SIZE + 1; z < ARENA_SIZE; z++) {
-                world.getBlockAt(x, FLOOR_Y, z).setType(Material.WHITE_CONCRETE);
-            }
-        }
-
-        // Techo completamente de glowstone
-        int ceilingY = CENTER_Y + ARENA_HEIGHT / 2;
-        for (int x = -ARENA_SIZE; x <= ARENA_SIZE; x++) {
-            for (int z = -ARENA_SIZE; z <= ARENA_SIZE; z++) {
-                world.getBlockAt(x, ceilingY, z).setType(Material.GLOWSTONE);
-            }
-        }
-
-        // Carteles visuales en las paredes: SÍ (verde) y NO (rojo)
-        for (int y = FLOOR_Y + 2; y <= FLOOR_Y + 5; y++) {
-            for (int z = -3; z <= 3; z++) {
+        // Pared derecha: indicador verde grande SÍ
+        for (int y = FLOOR_Y + 2; y <= FLOOR_Y + 7; y++) {
+            for (int z = -5; z <= 5; z++) {
                 world.getBlockAt(ARENA_SIZE - 1, y, z).setType(Material.GREEN_CONCRETE);
+            }
+        }
+        // Borde del cartel verde con glowstone
+        for (int z = -5; z <= 5; z++) {
+            world.getBlockAt(ARENA_SIZE - 1, FLOOR_Y + 1, z).setType(Material.LIME_CONCRETE);
+            world.getBlockAt(ARENA_SIZE - 1, FLOOR_Y + 8, z).setType(Material.LIME_CONCRETE);
+        }
+        for (int y = FLOOR_Y + 1; y <= FLOOR_Y + 8; y++) {
+            world.getBlockAt(ARENA_SIZE - 1, y, -5).setType(Material.LIME_CONCRETE);
+            world.getBlockAt(ARENA_SIZE - 1, y, 5).setType(Material.LIME_CONCRETE);
+        }
+
+        // Pared izquierda: indicador rojo grande NO
+        for (int y = FLOOR_Y + 2; y <= FLOOR_Y + 7; y++) {
+            for (int z = -5; z <= 5; z++) {
                 world.getBlockAt(-ARENA_SIZE + 1, y, z).setType(Material.RED_CONCRETE);
+            }
+        }
+        // Borde del cartel rojo con glowstone
+        for (int z = -5; z <= 5; z++) {
+            world.getBlockAt(-ARENA_SIZE + 1, FLOOR_Y + 1, z).setType(Material.ORANGE_CONCRETE);
+            world.getBlockAt(-ARENA_SIZE + 1, FLOOR_Y + 8, z).setType(Material.ORANGE_CONCRETE);
+        }
+        for (int y = FLOOR_Y + 1; y <= FLOOR_Y + 8; y++) {
+            world.getBlockAt(-ARENA_SIZE + 1, y, -5).setType(Material.ORANGE_CONCRETE);
+            world.getBlockAt(-ARENA_SIZE + 1, y, 5).setType(Material.ORANGE_CONCRETE);
+        }
+
+        // Sea lanterns en las paredes laterales para iluminación
+        for (int y = FLOOR_Y + 3; y <= ceilingY - 2; y += 3) {
+            for (int z = -ARENA_SIZE + 3; z < ARENA_SIZE; z += 6) {
+                world.getBlockAt(ARENA_SIZE, y, z).setType(Material.SEA_LANTERN);
+                world.getBlockAt(-ARENA_SIZE, y, z).setType(Material.SEA_LANTERN);
+            }
+            for (int x = -ARENA_SIZE + 3; x < ARENA_SIZE; x += 6) {
+                world.getBlockAt(x, y, ARENA_SIZE).setType(Material.SEA_LANTERN);
+                world.getBlockAt(x, y, -ARENA_SIZE).setType(Material.SEA_LANTERN);
             }
         }
     }
@@ -246,7 +295,7 @@ public class YesNoGame extends MiniGame {
                     feet.getBlockX(), FLOOR_Y, feet.getBlockZ());
             Material mat = blockUnder.getType();
 
-            if (mat == Material.GREEN_CONCRETE) {
+            if (mat == Material.GREEN_CONCRETE || mat == Material.LIME_CONCRETE) {
                 // Eligió SÍ
                 answeredPlayers.add(uuid);
                 greenSide.add(uuid);
@@ -254,7 +303,7 @@ public class YesNoGame extends MiniGame {
                 p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, 2.0f);
                 ActionBarUtil.send(p, "§a§l✔ ELEGISTE: SÍ §7(no puedes cambiar)");
                 checkAllAnswered();
-            } else if (mat == Material.RED_CONCRETE) {
+            } else if (mat == Material.RED_CONCRETE || mat == Material.ORANGE_CONCRETE) {
                 // Eligió NO
                 answeredPlayers.add(uuid);
                 redSide.add(uuid);
