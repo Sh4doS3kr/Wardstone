@@ -12,6 +12,8 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerItemDamageEvent;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -21,6 +23,16 @@ import java.util.UUID;
 public class DemonDurabilityPenaltyListener implements Listener {
 
     private final CoreProtectPlugin plugin;
+    private final Map<UUID, Long> lastWarning = new HashMap<>();
+    private static final long WARNING_COOLDOWN_MS = 30_000L;
+
+    private boolean canWarn(Player player) {
+        long now = System.currentTimeMillis();
+        Long last = lastWarning.get(player.getUniqueId());
+        if (last != null && now - last < WARNING_COOLDOWN_MS) return false;
+        lastWarning.put(player.getUniqueId(), now);
+        return true;
+    }
 
     public DemonDurabilityPenaltyListener(CoreProtectPlugin plugin) {
         this.plugin = plugin;
@@ -68,8 +80,8 @@ public class DemonDurabilityPenaltyListener implements Listener {
                     org.bukkit.Sound.ENTITY_ITEM_BREAK, 0.3f, 0.8f);
             }
             
-            // Mensaje de advertencia ocasional
-            if (Math.random() < 0.1) { // 10% de chance
+            // Mensaje de advertencia (con cooldown para no spamear)
+            if (canWarn(player)) {
                 player.sendMessage("§c§l⚠ §7Este item Demoníaco no te pertenece. §cSe desgasta 3x más rápido.");
             }
             
@@ -113,8 +125,8 @@ public class DemonDurabilityPenaltyListener implements Listener {
                     player.getLocation().add(0, 1, 0), 3, 0.1, 0.1, 0.1, 0.02);
             }
             
-            // Mensaje de advertencia
-            if (Math.random() < 0.05) { // 5% de chance
+            // Mensaje de advertencia (con cooldown para no spamear)
+            if (canWarn(player)) {
                 player.sendMessage("§c§l⚠ §7El arma Demoníaca ajena es §c50% menos efectiva §7y se desgasta rápido.");
             }
         }
@@ -148,8 +160,8 @@ public class DemonDurabilityPenaltyListener implements Listener {
                     event.getBlock().getLocation().add(0.5, 0.5, 0.5), 2, 0.1, 0.1, 0.1, 0.01);
             }
             
-            // Mensaje de advertencia
-            if (Math.random() < 0.05) { // 5% de chance
+            // Mensaje de advertencia (con cooldown para no spamear)
+            if (canWarn(player)) {
                 player.sendMessage("§c§l⚠ §7La herramienta Demoníaca ajena es §cmenos eficiente §7y se desgasta rápido.");
             }
         }
