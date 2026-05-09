@@ -285,7 +285,7 @@ public class CoreCommand implements CommandExecutor, TabCompleter {
             plugin.getMessageManager().send(player, "protection.no-protection");
             return;
         }
-        if (!region.getOwner().equals(player.getUniqueId()) && !player.hasPermission("coreprotect.admin")) {
+        if (!region.getOwner().equals(player.getUniqueId())) {
             plugin.getMessageManager().send(player, "protection.not-owner");
             return;
         }
@@ -307,12 +307,10 @@ public class CoreCommand implements CommandExecutor, TabCompleter {
         player.sendMessage(SmallCaps.convert("§a§l✔ §f" + targetName + " §7ha sido §cbaneado §7de esta protección."));
         SoundManager.playMemberRemoved(player.getLocation());
 
-        // Si está online y dentro de la zona, lanzarlo
+        // Si está online y dentro de la zona, expulsarlo al borde
         Player onlineTarget = target.getPlayer();
         if (onlineTarget != null && onlineTarget.isOnline() && region.contains(onlineTarget.getLocation())) {
-            org.bukkit.util.Vector knockback = onlineTarget.getLocation().toVector()
-                    .subtract(region.getCoreLocation().toVector()).normalize().multiply(3.0).setY(1.2);
-            onlineTarget.setVelocity(knockback);
+            teleportToRegionEdge(onlineTarget, region);
             onlineTarget.sendMessage(SmallCaps.convert("§c§l⚠ §cHas sido baneado de esta protección. ¡No puedes entrar!"));
             onlineTarget.playSound(onlineTarget.getLocation(), org.bukkit.Sound.ENTITY_ENDER_DRAGON_GROWL, 0.7f, 1.5f);
         }
@@ -324,7 +322,7 @@ public class CoreCommand implements CommandExecutor, TabCompleter {
             plugin.getMessageManager().send(player, "protection.no-protection");
             return;
         }
-        if (!region.getOwner().equals(player.getUniqueId()) && !player.hasPermission("coreprotect.admin")) {
+        if (!region.getOwner().equals(player.getUniqueId())) {
             plugin.getMessageManager().send(player, "protection.not-owner");
             return;
         }
@@ -345,8 +343,7 @@ public class CoreCommand implements CommandExecutor, TabCompleter {
             plugin.getMessageManager().send(player, "protection.no-protection");
             return;
         }
-        if (!region.getOwner().equals(player.getUniqueId()) && !region.isMember(player.getUniqueId())
-                && !player.hasPermission("coreprotect.admin")) {
+        if (!region.getOwner().equals(player.getUniqueId())) {
             plugin.getMessageManager().send(player, "protection.not-owner");
             return;
         }
@@ -360,6 +357,33 @@ public class CoreCommand implements CommandExecutor, TabCompleter {
             String name = Bukkit.getOfflinePlayer(uuid).getName();
             player.sendMessage(SmallCaps.convert("§8 - §c" + (name != null ? name : uuid.toString())));
         }
+    }
+
+    private void teleportToRegionEdge(Player target, ProtectedRegion region) {
+        Location coreLoc = region.getCoreLocation();
+        if (coreLoc == null) return;
+        int halfSize = region.getEffectiveSize() / 2;
+
+        // Calcular dirección desde core hacia el jugador
+        org.bukkit.util.Vector dir = target.getLocation().toVector()
+                .subtract(coreLoc.toVector());
+        dir.setY(0);
+        if (dir.lengthSquared() < 0.01) {
+            dir = new org.bukkit.util.Vector(1, 0, 0);
+        }
+        dir = dir.normalize();
+
+        // Punto en el borde + 2 bloques fuera
+        double edgeX = coreLoc.getX() + dir.getX() * (halfSize + 2);
+        double edgeZ = coreLoc.getZ() + dir.getZ() * (halfSize + 2);
+        Location edgeLoc = new Location(coreLoc.getWorld(), edgeX, target.getLocation().getY(), edgeZ,
+                target.getLocation().getYaw(), target.getLocation().getPitch());
+
+        // Asegurar que el bloque destino sea seguro (buscar suelo)
+        edgeLoc.setY(coreLoc.getWorld().getHighestBlockYAt((int) edgeX, (int) edgeZ) + 1);
+
+        target.teleport(edgeLoc);
+        target.setFallDistance(0);
     }
 
     private void teleportToCores(Player player, String[] args) {

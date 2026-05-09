@@ -1323,23 +1323,15 @@ public class ProtectionListener implements Listener {
         }
 
         Player player = event.getPlayer();
-        if (player.hasPermission("coreprotect.admin")) return;
 
         Location to = event.getTo();
         ProtectedRegion region = plugin.getProtectionManager().getRegionAt(to);
         if (region == null) return;
         if (!region.isBanned(player.getUniqueId())) return;
 
-        // Cancelar el movimiento
+        // Cancelar el movimiento y teleportar al borde
         event.setCancelled(true);
-
-        // Aplicar knockback alejándolo del centro del core
-        Location coreLoc = region.getCoreLocation();
-        if (coreLoc != null) {
-            org.bukkit.util.Vector knockback = player.getLocation().toVector()
-                    .subtract(coreLoc.toVector()).normalize().multiply(2.5).setY(0.8);
-            player.setVelocity(knockback);
-        }
+        teleportToRegionEdge(player, region);
 
         // Mensaje con cooldown (cada 3 segundos)
         long now = System.currentTimeMillis();
@@ -1350,5 +1342,32 @@ public class ProtectionListener implements Listener {
             player.sendMessage(SmallCaps.convert("§c§l⚠ §cEstás baneado de la protección de §f" + (ownerName != null ? ownerName : "???") + "§c. ¡No puedes entrar!"));
             player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_ENDERMAN_TELEPORT, 0.8f, 0.5f);
         }
+    }
+
+    private void teleportToRegionEdge(Player target, ProtectedRegion region) {
+        Location coreLoc = region.getCoreLocation();
+        if (coreLoc == null) return;
+        int halfSize = region.getEffectiveSize() / 2;
+
+        // Dirección desde core hacia el jugador
+        org.bukkit.util.Vector dir = target.getLocation().toVector()
+                .subtract(coreLoc.toVector());
+        dir.setY(0);
+        if (dir.lengthSquared() < 0.01) {
+            dir = new org.bukkit.util.Vector(1, 0, 0);
+        }
+        dir = dir.normalize();
+
+        // Punto en el borde + 2 bloques fuera
+        double edgeX = coreLoc.getX() + dir.getX() * (halfSize + 2);
+        double edgeZ = coreLoc.getZ() + dir.getZ() * (halfSize + 2);
+        Location edgeLoc = new Location(coreLoc.getWorld(), edgeX, target.getLocation().getY(), edgeZ,
+                target.getLocation().getYaw(), target.getLocation().getPitch());
+
+        // Buscar suelo seguro
+        edgeLoc.setY(coreLoc.getWorld().getHighestBlockYAt((int) edgeX, (int) edgeZ) + 1);
+
+        target.teleport(edgeLoc);
+        target.setFallDistance(0);
     }
 }
