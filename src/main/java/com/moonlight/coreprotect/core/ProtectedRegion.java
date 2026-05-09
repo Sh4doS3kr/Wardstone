@@ -21,6 +21,7 @@ public class ProtectedRegion {
     private int level;
     private int size;
     private final List<UUID> members;
+    private final List<UUID> bannedPlayers;
     private final long createdAt;
 
     // Tracks which boolean upgrades have been purchased (even if currently disabled)
@@ -55,6 +56,7 @@ public class ProtectedRegion {
         this.level = level;
         this.size = size;
         this.members = new ArrayList<>();
+        this.bannedPlayers = new ArrayList<>();
         this.createdAt = System.currentTimeMillis();
         this.noExplosion = false;
         this.noPvP = false;
@@ -87,6 +89,7 @@ public class ProtectedRegion {
         this.level = level;
         this.size = size;
         this.members = members;
+        this.bannedPlayers = new ArrayList<>();
         this.createdAt = createdAt;
         this.noExplosion = noExplosion;
         this.noPvP = noPvP;
@@ -124,6 +127,30 @@ public class ProtectedRegion {
 
     public boolean canAccess(UUID player) {
         return owner.equals(player) || members.contains(player);
+    }
+
+    public boolean isBanned(UUID player) {
+        return bannedPlayers.contains(player);
+    }
+
+    public void banPlayer(UUID player) {
+        if (!bannedPlayers.contains(player)) {
+            bannedPlayers.add(player);
+        }
+        members.remove(player);
+    }
+
+    public void unbanPlayer(UUID player) {
+        bannedPlayers.remove(player);
+    }
+
+    public List<UUID> getBannedPlayers() {
+        return new ArrayList<>(bannedPlayers);
+    }
+
+    public void setBannedPlayers(List<UUID> banned) {
+        bannedPlayers.clear();
+        bannedPlayers.addAll(banned);
     }
 
     public void addMember(UUID player) {

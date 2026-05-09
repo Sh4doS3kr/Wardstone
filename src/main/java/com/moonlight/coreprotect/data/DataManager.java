@@ -100,6 +100,14 @@ public class DataManager {
                 int prestige = regionSection.getInt("prestige", 0);
                 region.setPrestige(prestige);
 
+                // Load banned players
+                List<String> bannedStrings = regionSection.getStringList("bannedPlayers");
+                List<UUID> banned = new ArrayList<>();
+                for (String bStr : bannedStrings) {
+                    try { banned.add(UUID.fromString(bStr)); } catch (IllegalArgumentException ignored) {}
+                }
+                region.setBannedPlayers(banned);
+
                 // Load unlocked upgrades set
                 List<String> unlockedList = regionSection.getStringList("upgrades.unlocked");
                 if (!unlockedList.isEmpty()) {
@@ -185,6 +193,13 @@ public class DataManager {
 
             // Save prestige
             dataConfig.set(path + ".prestige", region.getPrestige());
+
+            // Save banned players
+            List<String> bannedStrings = new ArrayList<>();
+            for (UUID banned : region.getBannedPlayers()) {
+                bannedStrings.add(banned.toString());
+            }
+            dataConfig.set(path + ".bannedPlayers", bannedStrings);
         }
 
         // Save homes

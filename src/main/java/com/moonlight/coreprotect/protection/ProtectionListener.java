@@ -38,6 +38,7 @@ public class ProtectionListener implements Listener {
     private final CoreProtectPlugin plugin;
     private final java.util.Map<UUID, Long> pvpZoneMessageCooldown = new java.util.HashMap<>();
     private final java.util.Map<UUID, Long> newPlayerPvpZoneCooldown = new java.util.HashMap<>();
+    private final java.util.Map<UUID, Long> banKnockbackCooldown = new java.util.HashMap<>();
 
     public ProtectionListener(CoreProtectPlugin plugin) {
         this.plugin = plugin;
@@ -1310,5 +1311,44 @@ public class ProtectionListener implements Listener {
         event.setCancelled(true);
         player.sendMessage("§c§l⚠ §cNecesitas tener un Core colocado para editar carteles.");
         SoundManager.playProtectionDenied(player.getLocation());
+    }
+
+    // === EXPULSAR JUGADORES BANEADOS DE PROTECCIONES ===
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onBannedPlayerEnterRegion(PlayerMoveEvent event) {
+        if (event.getFrom().getBlockX() == event.getTo().getBlockX()
+                && event.getFrom().getBlockY() == event.getTo().getBlockY()
+                && event.getFrom().getBlockZ() == event.getTo().getBlockZ()) {
+            return;
+        }
+
+        Player player = event.getPlayer();
+        if (player.hasPermission("coreprotect.admin")) return;
+
+        Location to = event.getTo();
+        ProtectedRegion region = plugin.getProtectionManager().getRegionAt(to);
+        if (region == null) return;
+        if (!region.isBanned(player.getUniqueId())) return;
+
+        // Cancelar el movimiento
+        event.setCancelled(true);
+
+        // Aplicar knockback alejándolo del centro del core
+        Location coreLoc = region.getCoreLocation();
+        if (coreLoc != null) {
+            org.bukkit.util.Vector knockback = player.getLocation().toVector()
+                    .subtract(coreLoc.toVector()).normalize().multiply(2.5).setY(0.8);
+            player.setVelocity(knockback);
+        }
+
+        // Mensaje con cooldown (cada 3 segundos)
+        long now = System.currentTimeMillis();
+        Long lastMsg = banKnockbackCooldown.get(player.getUniqueId());
+        if (lastMsg == null || now - lastMsg > 3000) {
+            banKnockbackCooldown.put(player.getUniqueId(), now);
+            String ownerName = org.bukkit.Bukkit.getOfflinePlayer(region.getOwner()).getName();
+            player.sendMessage(SmallCaps.convert("§c§l⚠ §cEstás baneado de la protección de §f" + (ownerName != null ? ownerName : "???") + "§c. ¡No puedes entrar!"));
+            player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_ENDERMAN_TELEPORT, 0.8f, 0.5f);
+        }
     }
 }

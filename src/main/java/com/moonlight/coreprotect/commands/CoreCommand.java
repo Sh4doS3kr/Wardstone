@@ -16,6 +16,7 @@ import org.bukkit.entity.Player;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import com.moonlight.coreprotect.util.SmallCaps;
 
@@ -81,6 +82,25 @@ public class CoreCommand implements CommandExecutor, TabCompleter {
             case "tp":
             case "teleport":
                 teleportToCores(player, args);
+                break;
+            case "ban":
+            case "banear":
+                if (args.length < 2) {
+                    player.sendMessage(SmallCaps.convert("§c§l✖ §cUsa: /cores ban <jugador>"));
+                    return true;
+                }
+                banFromRegion(player, args[1]);
+                break;
+            case "unban":
+            case "desbanear":
+                if (args.length < 2) {
+                    player.sendMessage(SmallCaps.convert("§c§l✖ §cUsa: /cores unban <jugador>"));
+                    return true;
+                }
+                unbanFromRegion(player, args[1]);
+                break;
+            case "banlist":
+                showBanList(player);
                 break;
             case "help":
             case "ayuda":
@@ -259,6 +279,89 @@ public class CoreCommand implements CommandExecutor, TabCompleter {
         plugin.getAchievementListener().onSetHome(player);
     }
 
+    private void banFromRegion(Player player, String targetName) {
+        ProtectedRegion region = plugin.getProtectionManager().getRegionAt(player.getLocation());
+        if (region == null) {
+            plugin.getMessageManager().send(player, "protection.no-protection");
+            return;
+        }
+        if (!region.getOwner().equals(player.getUniqueId()) && !player.hasPermission("coreprotect.admin")) {
+            plugin.getMessageManager().send(player, "protection.not-owner");
+            return;
+        }
+        OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
+        if (!target.hasPlayedBefore() && !target.isOnline()) {
+            plugin.getMessageManager().send(player, "members.player-not-found");
+            return;
+        }
+        if (target.getUniqueId().equals(region.getOwner())) {
+            player.sendMessage(SmallCaps.convert("§c§l✖ §cNo puedes banearte a ti mismo de tu propia protección."));
+            return;
+        }
+        if (region.isBanned(target.getUniqueId())) {
+            player.sendMessage(SmallCaps.convert("§c§l✖ §c" + targetName + " ya está baneado de esta protección."));
+            return;
+        }
+        region.banPlayer(target.getUniqueId());
+        plugin.getDataManager().saveData();
+        player.sendMessage(SmallCaps.convert("§a§l✔ §f" + targetName + " §7ha sido §cbaneado §7de esta protección."));
+        SoundManager.playMemberRemoved(player.getLocation());
+
+        // Si está online y dentro de la zona, lanzarlo
+        Player onlineTarget = target.getPlayer();
+        if (onlineTarget != null && onlineTarget.isOnline() && region.contains(onlineTarget.getLocation())) {
+            org.bukkit.util.Vector knockback = onlineTarget.getLocation().toVector()
+                    .subtract(region.getCoreLocation().toVector()).normalize().multiply(3.0).setY(1.2);
+            onlineTarget.setVelocity(knockback);
+            onlineTarget.sendMessage(SmallCaps.convert("§c§l⚠ §cHas sido baneado de esta protección. ¡No puedes entrar!"));
+            onlineTarget.playSound(onlineTarget.getLocation(), org.bukkit.Sound.ENTITY_ENDER_DRAGON_GROWL, 0.7f, 1.5f);
+        }
+    }
+
+    private void unbanFromRegion(Player player, String targetName) {
+        ProtectedRegion region = plugin.getProtectionManager().getRegionAt(player.getLocation());
+        if (region == null) {
+            plugin.getMessageManager().send(player, "protection.no-protection");
+            return;
+        }
+        if (!region.getOwner().equals(player.getUniqueId()) && !player.hasPermission("coreprotect.admin")) {
+            plugin.getMessageManager().send(player, "protection.not-owner");
+            return;
+        }
+        OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
+        if (!region.isBanned(target.getUniqueId())) {
+            player.sendMessage(SmallCaps.convert("§c§l✖ §c" + targetName + " no está baneado de esta protección."));
+            return;
+        }
+        region.unbanPlayer(target.getUniqueId());
+        plugin.getDataManager().saveData();
+        player.sendMessage(SmallCaps.convert("§a§l✔ §f" + targetName + " §7ha sido §adesbaneado §7de esta protección."));
+        SoundManager.playMemberAdded(player.getLocation());
+    }
+
+    private void showBanList(Player player) {
+        ProtectedRegion region = plugin.getProtectionManager().getRegionAt(player.getLocation());
+        if (region == null) {
+            plugin.getMessageManager().send(player, "protection.no-protection");
+            return;
+        }
+        if (!region.getOwner().equals(player.getUniqueId()) && !region.isMember(player.getUniqueId())
+                && !player.hasPermission("coreprotect.admin")) {
+            plugin.getMessageManager().send(player, "protection.not-owner");
+            return;
+        }
+        java.util.List<UUID> banned = region.getBannedPlayers();
+        if (banned.isEmpty()) {
+            player.sendMessage(SmallCaps.convert("§a§l✔ §7No hay jugadores baneados en esta protección."));
+            return;
+        }
+        player.sendMessage(SmallCaps.convert("§c§l☠ §fJugadores baneados §7(" + banned.size() + "):"));
+        for (UUID uuid : banned) {
+            String name = Bukkit.getOfflinePlayer(uuid).getName();
+            player.sendMessage(SmallCaps.convert("§8 - §c" + (name != null ? name : uuid.toString())));
+        }
+    }
+
     private void teleportToCores(Player player, String[] args) {
         List<ProtectedRegion> regions = plugin.getProtectionManager().getRegionsByOwner(player.getUniqueId());
         List<ProtectedRegion> tpRegions = new ArrayList<>();
@@ -307,13 +410,14 @@ public class CoreCommand implements CommandExecutor, TabCompleter {
         }
 
         if (args.length == 1) {
-            List<String> completions = Arrays.asList("tienda", "info", "remove", "add", "kick", "home", "sethome", "tp", "help");
+            List<String> completions = Arrays.asList("tienda", "info", "remove", "add", "kick", "ban", "unban", "banlist", "home", "sethome", "tp", "help");
             return completions.stream()
                     .filter(s -> s.toLowerCase().startsWith(args[0].toLowerCase()))
                     .collect(Collectors.toList());
         }
 
-        if (args.length == 2 && (args[0].equalsIgnoreCase("add") || args[0].equalsIgnoreCase("kick"))) {
+        if (args.length == 2 && (args[0].equalsIgnoreCase("add") || args[0].equalsIgnoreCase("kick")
+                || args[0].equalsIgnoreCase("ban") || args[0].equalsIgnoreCase("unban"))) {
             return Bukkit.getOnlinePlayers().stream()
                     .map(Player::getName)
                     .filter(name -> name.toLowerCase().startsWith(args[1].toLowerCase()))
