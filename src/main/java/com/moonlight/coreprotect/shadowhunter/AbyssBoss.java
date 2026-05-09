@@ -187,11 +187,11 @@ public class AbyssBoss {
 
         bossEntity.setCustomName(SmallCaps.convert("§4§l§kaa§r §c§lTitán del Abismo §4§l§kaa"));
         bossEntity.setCustomNameVisible(true);
-        bossEntity.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).setBaseValue(bossMaxHealth);
+        bossEntity.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(bossMaxHealth);
         bossEntity.setHealth(bossMaxHealth);
-        bossEntity.getAttribute(org.bukkit.attribute.Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(10);
-        bossEntity.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.28);
-        bossEntity.getAttribute(org.bukkit.attribute.Attribute.GENERIC_KNOCKBACK_RESISTANCE).setBaseValue(0.9);
+        bossEntity.getAttribute(org.bukkit.attribute.Attribute.ATTACK_DAMAGE).setBaseValue(10);
+        bossEntity.getAttribute(org.bukkit.attribute.Attribute.MOVEMENT_SPEED).setBaseValue(0.28);
+        bossEntity.getAttribute(org.bukkit.attribute.Attribute.KNOCKBACK_RESISTANCE).setBaseValue(0.9);
         bossEntity.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, 99999, 0, false, false));
         bossEntity.addPotionEffect(new PotionEffect(PotionEffectType.WATER_BREATHING, 99999, 0, false, false));
 
@@ -360,8 +360,8 @@ public class AbyssBoss {
         bossBar.setColor(BarColor.PURPLE);
 
         bossEntity.setCustomName(SmallCaps.convert("§5§l§kaa§r §4§lTitán Oscuro §5§l§kaa"));
-        bossEntity.getAttribute(org.bukkit.attribute.Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(14);
-        bossEntity.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.32);
+        bossEntity.getAttribute(org.bukkit.attribute.Attribute.ATTACK_DAMAGE).setBaseValue(14);
+        bossEntity.getAttribute(org.bukkit.attribute.Attribute.MOVEMENT_SPEED).setBaseValue(0.32);
 
         world.strikeLightningEffect(bLoc);
         world.spawnParticle(Particle.SOUL, bLoc.add(0, 1, 0), 80, 3, 2, 3, 0.1);
@@ -385,8 +385,8 @@ public class AbyssBoss {
         bossBar.setColor(BarColor.WHITE);
 
         bossEntity.setCustomName(SmallCaps.convert("§4§l§kaa§r §c§lTITÁN FURIOSO §4§l§kaa"));
-        bossEntity.getAttribute(org.bukkit.attribute.Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(18);
-        bossEntity.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.38);
+        bossEntity.getAttribute(org.bukkit.attribute.Attribute.ATTACK_DAMAGE).setBaseValue(18);
+        bossEntity.getAttribute(org.bukkit.attribute.Attribute.MOVEMENT_SPEED).setBaseValue(0.38);
         bossEntity.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 99999, 2, false, false));
 
         world.strikeLightningEffect(bLoc);
@@ -586,9 +586,9 @@ public class AbyssBoss {
                 Zombie shadow = (Zombie) world.spawnEntity(loc, EntityType.ZOMBIE);
                 shadow.setCustomName(SmallCaps.convert("§8§lSombra del Abismo"));
                 shadow.setCustomNameVisible(true);
-                shadow.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).setBaseValue(25);
+                shadow.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(25);
                 shadow.setHealth(25);
-                shadow.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.35);
+                shadow.getAttribute(org.bukkit.attribute.Attribute.MOVEMENT_SPEED).setBaseValue(0.35);
                 shadow.setBaby(false);
                 shadow.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, 99999, 0, false, false));
                 shadow.addPotionEffect(new PotionEffect(PotionEffectType.WATER_BREATHING, 99999, 0, false, false));

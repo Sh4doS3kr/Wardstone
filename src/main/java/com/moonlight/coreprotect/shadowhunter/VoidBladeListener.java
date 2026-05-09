@@ -347,7 +347,7 @@ public class VoidBladeListener implements Listener {
             return;
 
         // Curar 4 HP (2 corazones)
-        double maxHealth = killer.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).getValue();
+        double maxHealth = killer.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getValue();
         killer.setHealth(Math.min(killer.getHealth() + 4, maxHealth));
 
         // Speed I por 3 segundos

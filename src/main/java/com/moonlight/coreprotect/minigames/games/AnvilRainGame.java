@@ -94,8 +94,8 @@ public class AnvilRainGame extends MiniGame {
             }
             world.getBlockAt(px, BASE_Y + 9, pz).setType(Material.SOUL_LANTERN);
             // Cadenas colgando
-            world.getBlockAt(px, BASE_Y + 7, pz).setType(Material.CHAIN);
-            world.getBlockAt(px, BASE_Y + 8, pz).setType(Material.CHAIN);
+            world.getBlockAt(px, BASE_Y + 7, pz).setType(Material.IRON_BARS);
+            world.getBlockAt(px, BASE_Y + 8, pz).setType(Material.IRON_BARS);
         }
 
         // Lava debajo para muerte

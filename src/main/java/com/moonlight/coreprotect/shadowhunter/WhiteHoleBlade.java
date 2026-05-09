@@ -136,10 +136,10 @@ public class WhiteHoleBlade {
 
         meta.getPersistentDataContainer().set(getKey(plugin), PersistentDataType.BYTE, (byte) 1);
 
-        meta.addAttributeModifier(org.bukkit.attribute.Attribute.GENERIC_ATTACK_DAMAGE,
+        meta.addAttributeModifier(org.bukkit.attribute.Attribute.ATTACK_DAMAGE,
                 new AttributeModifier(UUID.randomUUID(), "white_hole_damage", 9,
                         AttributeModifier.Operation.ADD_NUMBER, EquipmentSlot.HAND));
-        meta.addAttributeModifier(org.bukkit.attribute.Attribute.GENERIC_ATTACK_SPEED,
+        meta.addAttributeModifier(org.bukkit.attribute.Attribute.ATTACK_SPEED,
                 new AttributeModifier(UUID.randomUUID(), "white_hole_speed", -2.4,
                         AttributeModifier.Operation.ADD_NUMBER, EquipmentSlot.HAND));
 

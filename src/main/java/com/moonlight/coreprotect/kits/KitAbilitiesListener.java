@@ -157,7 +157,7 @@ public class KitAbilitiesListener implements Listener {
         Location loc = player.getLocation();
         World world = loc.getWorld();
 
-        double maxHp = player.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).getValue();
+        double maxHp = player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getValue();
         player.setHealth(Math.min(maxHp, player.getHealth() + 8));
 
         player.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, 160, 1, false, false, true));

@@ -136,7 +136,7 @@ public class ApocalypseTypeABoss implements Boss {
         bossUuid = bossEntity.getUniqueId();
 
         // Aumentar vida
-        org.bukkit.attribute.AttributeInstance maxHpAttr = bossEntity.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH);
+        org.bukkit.attribute.AttributeInstance maxHpAttr = bossEntity.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
         if (maxHpAttr != null) {
             double currentMax = maxHpAttr.getBaseValue();
             if (currentMax < 10000) {
@@ -148,7 +148,7 @@ public class ApocalypseTypeABoss implements Boss {
         maxHealth = bossEntity.getMaxHealth();
 
         // Aumentar daño de ataque masivamente
-        org.bukkit.attribute.AttributeInstance atkAttr = bossEntity.getAttribute(org.bukkit.attribute.Attribute.GENERIC_ATTACK_DAMAGE);
+        org.bukkit.attribute.AttributeInstance atkAttr = bossEntity.getAttribute(org.bukkit.attribute.Attribute.ATTACK_DAMAGE);
         if (atkAttr != null) {
             atkAttr.setBaseValue(60.0); // 30 corazones por golpe base
         }
@@ -695,7 +695,7 @@ public class ApocalypseTypeABoss implements Boss {
                     // Cadenas cada ~15 grados
                     if (angInt % 15 < 2) {
                         for (int y = WALL_HEIGHT - 1; y >= WALL_HEIGHT - 4; y--) {
-                            w.getBlockAt(cx + x, baseY + y, cz + z).setType(Material.CHAIN);
+                            w.getBlockAt(cx + x, baseY + y, cz + z).setType(Material.IRON_BARS);
                         }
                         w.getBlockAt(cx + x, baseY + WALL_HEIGHT - 5, cz + z).setType(Material.SOUL_LANTERN);
                     }

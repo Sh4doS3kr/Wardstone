@@ -149,12 +149,12 @@ public class FrostBoss {
             z.addScoreboardTag("wardstone_mission_mob");
             z.addScoreboardTag("frost_boss");
 
-            z.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(2000);
+            z.getAttribute(Attribute.MAX_HEALTH).setBaseValue(2000);
             z.setHealth(2000);
-            z.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(18);
-            z.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.32);
-            z.getAttribute(Attribute.GENERIC_KNOCKBACK_RESISTANCE).setBaseValue(0.95);
-            z.getAttribute(Attribute.GENERIC_ARMOR).setBaseValue(20);
+            z.getAttribute(Attribute.ATTACK_DAMAGE).setBaseValue(18);
+            z.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(0.32);
+            z.getAttribute(Attribute.KNOCKBACK_RESISTANCE).setBaseValue(0.95);
+            z.getAttribute(Attribute.ARMOR).setBaseValue(20);
 
             z.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, 99999, 0, false, false));
 
@@ -222,7 +222,7 @@ public class FrostBoss {
 
                 // Update boss bar
                 double hp = bossEntity.getHealth();
-                double maxHp = bossEntity.getAttribute(Attribute.GENERIC_MAX_HEALTH).getBaseValue();
+                double maxHp = bossEntity.getAttribute(Attribute.MAX_HEALTH).getBaseValue();
                 bossBar.setProgress(Math.max(0, Math.min(1, hp / maxHp)));
 
                 // Phase transitions
@@ -701,9 +701,9 @@ public class FrostBoss {
                 s.addScoreboardTag("wardstone_mission_mob");
                 s.addScoreboardTag("frost_minion");
 
-                s.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(phase == 3 ? 40 : 25);
+                s.getAttribute(Attribute.MAX_HEALTH).setBaseValue(phase == 3 ? 40 : 25);
                 s.setHealth(phase == 3 ? 40 : 25);
-                s.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(phase == 3 ? 6 : 4);
+                s.getAttribute(Attribute.ATTACK_DAMAGE).setBaseValue(phase == 3 ? 6 : 4);
 
                 s.setTarget(player);
             });
@@ -931,7 +931,7 @@ public class FrostBoss {
                 double drainDmg = phase == 3 ? 8 : phase == 2 ? 6 : 4;
                 player.damage(drainDmg, bossEntity);
 
-                double maxHp = bossEntity.getAttribute(Attribute.GENERIC_MAX_HEALTH).getBaseValue();
+                double maxHp = bossEntity.getAttribute(Attribute.MAX_HEALTH).getBaseValue();
                 double newHp = Math.min(maxHp, bossEntity.getHealth() + drainDmg * 2);
                 bossEntity.setHealth(newHp);
 
@@ -989,8 +989,8 @@ public class FrostBoss {
         world.playSound(loc, Sound.BLOCK_GLASS_BREAK, 1.0f, 0.3f);
 
         // Speed up boss
-        bossEntity.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.36);
-        bossEntity.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(22);
+        bossEntity.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(0.36);
+        bossEntity.getAttribute(Attribute.ATTACK_DAMAGE).setBaseValue(22);
 
         player.sendMessage(SmallCaps.convert("§3§l❄ §7El Heraldo se enfurece. La temperatura baja aún más..."));
     }
@@ -1010,9 +1010,9 @@ public class FrostBoss {
         world.playSound(loc, Sound.ENTITY_ENDER_DRAGON_GROWL, 1.0f, 1.5f);
 
         // Boss becomes extremely fast and strong
-        bossEntity.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.42);
-        bossEntity.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(28);
-        bossEntity.getAttribute(Attribute.GENERIC_ARMOR).setBaseValue(25);
+        bossEntity.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(0.42);
+        bossEntity.getAttribute(Attribute.ATTACK_DAMAGE).setBaseValue(28);
+        bossEntity.getAttribute(Attribute.ARMOR).setBaseValue(25);
         bossEntity.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 99999, 2, false, false));
         bossEntity.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 99999, 1, false, false));
 

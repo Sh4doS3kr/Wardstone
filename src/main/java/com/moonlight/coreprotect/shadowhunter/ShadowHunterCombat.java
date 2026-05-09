@@ -130,9 +130,9 @@ public class ShadowHunterCombat {
                 Zombie zombie = (Zombie) loc.getWorld().spawnEntity(loc, EntityType.ZOMBIE);
                 zombie.setCustomName(SmallCaps.convert("§4§lSombra del Abismo"));
                 zombie.setCustomNameVisible(true);
-                zombie.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).setBaseValue(30);
+                zombie.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(30);
                 zombie.setHealth(30);
-                zombie.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.35);
+                zombie.getAttribute(org.bukkit.attribute.Attribute.MOVEMENT_SPEED).setBaseValue(0.35);
                 zombie.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 99999, 1, false, false));
                 zombie.setBaby(false);
                 zombie.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, 99999, 0, false, false));
@@ -159,7 +159,7 @@ public class ShadowHunterCombat {
                 Skeleton skeleton = (Skeleton) loc.getWorld().spawnEntity(loc, EntityType.SKELETON);
                 skeleton.setCustomName(SmallCaps.convert("§5§lArquero Espectral"));
                 skeleton.setCustomNameVisible(true);
-                skeleton.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).setBaseValue(40);
+                skeleton.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(40);
                 skeleton.setHealth(40);
 
                 // Arco potente
@@ -193,10 +193,10 @@ public class ShadowHunterCombat {
             WitherSkeleton boss = (WitherSkeleton) world.spawnEntity(loc, EntityType.WITHER_SKELETON);
             boss.setCustomName(SmallCaps.convert("§0§l§kaa§r §4§lEl Heraldo del Vacío §0§l§kaa"));
             boss.setCustomNameVisible(true);
-            boss.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).setBaseValue(100);
+            boss.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(100);
             boss.setHealth(100);
-            boss.getAttribute(org.bukkit.attribute.Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(10);
-            boss.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.30);
+            boss.getAttribute(org.bukkit.attribute.Attribute.ATTACK_DAMAGE).setBaseValue(10);
+            boss.getAttribute(org.bukkit.attribute.Attribute.MOVEMENT_SPEED).setBaseValue(0.30);
             boss.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 99999, 1, false, false));
             boss.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, 99999, 0, false, false));
             boss.addPotionEffect(new PotionEffect(PotionEffectType.WATER_BREATHING, 99999, 0, false, false));
@@ -303,7 +303,7 @@ public class ShadowHunterCombat {
             // Curar al jugador parcialmente entre oleadas
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
                 if (player.isOnline()) {
-                    double maxHealth = player.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).getValue();
+                    double maxHealth = player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getValue();
                     player.setHealth(Math.min(player.getHealth() + maxHealth * 0.3, maxHealth));
                     player.sendMessage(SmallCaps.convert("§a§l❤ §fRecuperaste algo de vida."));
                 }

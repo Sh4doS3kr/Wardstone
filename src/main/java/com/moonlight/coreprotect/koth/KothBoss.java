@@ -152,12 +152,12 @@ public class KothBoss {
 
         // Configurar atributos del boss
         try {
-            boss.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(150.0);
+            boss.getAttribute(Attribute.MAX_HEALTH).setBaseValue(150.0);
             boss.setHealth(150.0);
-            boss.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(10.0);
-            boss.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.35);
-            boss.getAttribute(Attribute.GENERIC_KNOCKBACK_RESISTANCE).setBaseValue(0.8);
-            boss.getAttribute(Attribute.GENERIC_ARMOR).setBaseValue(6.0);
+            boss.getAttribute(Attribute.ATTACK_DAMAGE).setBaseValue(10.0);
+            boss.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(0.35);
+            boss.getAttribute(Attribute.KNOCKBACK_RESISTANCE).setBaseValue(0.8);
+            boss.getAttribute(Attribute.ARMOR).setBaseValue(6.0);
         } catch (Exception e) {
             boss.setHealth(150.0);
         }
@@ -230,7 +230,7 @@ public class KothBoss {
 
                 tickCount++;
                 double maxHp = 150.0;
-                try { maxHp = bossEntity.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue(); } catch (Exception ignored) {}
+                try { maxHp = bossEntity.getAttribute(Attribute.MAX_HEALTH).getValue(); } catch (Exception ignored) {}
                 double hpPercent = bossEntity.getHealth() / maxHp;
 
                 // Actualizar BossBar
@@ -290,7 +290,7 @@ public class KothBoss {
         }
 
         double maxHp = 150.0;
-        try { maxHp = bossEntity.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue(); } catch (Exception ignored) {}
+        try { maxHp = bossEntity.getAttribute(Attribute.MAX_HEALTH).getValue(); } catch (Exception ignored) {}
         int hpDisplay = (int) bossEntity.getHealth();
         int maxDisplay = (int) maxHp;
 
@@ -308,8 +308,8 @@ public class KothBoss {
         if (phase == 2) {
             // FASE 2: ENFURECIDO
             try {
-                bossEntity.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.45);
-                bossEntity.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(16.0);
+                bossEntity.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(0.45);
+                bossEntity.getAttribute(Attribute.ATTACK_DAMAGE).setBaseValue(16.0);
             } catch (Exception ignored) {}
             bossEntity.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 999999, 2, false, false));
             bossEntity.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 999999, 1, false, false));
@@ -324,8 +324,8 @@ public class KothBoss {
         } else if (phase == 3) {
             // FASE 3: AGONIZANDO
             try {
-                bossEntity.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(20.0);
-                bossEntity.getAttribute(Attribute.GENERIC_KNOCKBACK_RESISTANCE).setBaseValue(1.0);
+                bossEntity.getAttribute(Attribute.ATTACK_DAMAGE).setBaseValue(20.0);
+                bossEntity.getAttribute(Attribute.KNOCKBACK_RESISTANCE).setBaseValue(1.0);
             } catch (Exception ignored) {}
             bossEntity.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 999999, 3, false, false));
 
@@ -393,9 +393,9 @@ public class KothBoss {
                 minion.setCustomNameVisible(true);
                 minion.setMetadata("koth_minion", new org.bukkit.metadata.FixedMetadataValue(plugin, true));
                 try {
-                    minion.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(30.0 + phase * 10);
-                    minion.setHealth(minion.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue());
-                    minion.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(5.0 + phase * 2);
+                    minion.getAttribute(Attribute.MAX_HEALTH).setBaseValue(30.0 + phase * 10);
+                    minion.setHealth(minion.getAttribute(Attribute.MAX_HEALTH).getValue());
+                    minion.getAttribute(Attribute.ATTACK_DAMAGE).setBaseValue(5.0 + phase * 2);
                 } catch (Exception ignored) {}
                 minion.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 999999, 1, false, false));
                 minion.setRemoveWhenFarAway(false);
@@ -423,9 +423,9 @@ public class KothBoss {
                 elite.setGlowing(true);
                 elite.setMetadata("koth_minion", new org.bukkit.metadata.FixedMetadataValue(plugin, true));
                 try {
-                    elite.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(80.0);
+                    elite.getAttribute(Attribute.MAX_HEALTH).setBaseValue(80.0);
                     elite.setHealth(80.0);
-                    elite.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(10.0);
+                    elite.getAttribute(Attribute.ATTACK_DAMAGE).setBaseValue(10.0);
                 } catch (Exception ignored) {}
                 elite.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 999999, 1, false, false));
                 elite.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 999999, 0, false, false));

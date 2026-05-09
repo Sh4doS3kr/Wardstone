@@ -129,7 +129,7 @@ public class LabyrinthBoss {
             bossEntity.setRemoveWhenFarAway(false);
 
             // Set health
-            bossEntity.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(MAX_HEALTH);
+            bossEntity.getAttribute(Attribute.MAX_HEALTH).setBaseValue(MAX_HEALTH);
             bossEntity.setHealth(MAX_HEALTH);
 
             // Buffs
@@ -155,7 +155,7 @@ public class LabyrinthBoss {
         fallback.setCustomNameVisible(true);
         fallback.setSilent(false);
         fallback.setRemoveWhenFarAway(false);
-        fallback.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(MAX_HEALTH);
+        fallback.getAttribute(Attribute.MAX_HEALTH).setBaseValue(MAX_HEALTH);
         fallback.setHealth(MAX_HEALTH);
         fallback.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, 999999, 0, false, false, false));
         fallback.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, 999999, 1, false, false, false));
@@ -334,7 +334,7 @@ public class LabyrinthBoss {
                 minion.setBaby(false);
                 minion.getEquipment().clear();
                 minion.setSilent(true);
-                minion.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(30);
+                minion.getAttribute(Attribute.MAX_HEALTH).setBaseValue(30);
                 minion.setHealth(30);
                 minion.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 999999, 1, false, false, false));
                 minion.setTarget(player);

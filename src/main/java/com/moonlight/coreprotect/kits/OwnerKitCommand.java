@@ -114,7 +114,7 @@ public class OwnerKitCommand implements CommandExecutor {
         player.getInventory().setItemInOffHand(new ItemStack(Material.TOTEM_OF_UNDYING));
 
         // Heal + feed
-        player.setHealth(player.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue());
+        player.setHealth(player.getAttribute(Attribute.MAX_HEALTH).getValue());
         player.setFoodLevel(20);
         player.setSaturation(20f);
 

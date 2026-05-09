@@ -295,7 +295,7 @@ public class StructureManager implements Listener {
 
         // Hanging chains and lanterns
         for (int[] c : corners) {
-            setBlock(w, bx + c[0], by + 6, bz + c[1], Material.CHAIN);
+            setBlock(w, bx + c[0], by + 6, bz + c[1], Material.IRON_BARS);
             setBlock(w, bx + c[0], by + 5, bz + c[1], Material.LANTERN);
         }
 

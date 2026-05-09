@@ -135,9 +135,9 @@ public class AbyssCombat {
                 Zombie z = (Zombie) loc.getWorld().spawnEntity(loc, EntityType.ZOMBIE);
                 z.setCustomName(SmallCaps.convert("§4§lSombra Abismal"));
                 z.setCustomNameVisible(true);
-                z.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).setBaseValue(35);
+                z.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(35);
                 z.setHealth(35);
-                z.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.35);
+                z.getAttribute(org.bukkit.attribute.Attribute.MOVEMENT_SPEED).setBaseValue(0.35);
                 z.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 99999, 1, false, false));
                 z.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, 99999, 0, false, false));
                 z.addPotionEffect(new PotionEffect(PotionEffectType.WATER_BREATHING, 99999, 0, false, false));
@@ -160,7 +160,7 @@ public class AbyssCombat {
                 Skeleton s = (Skeleton) loc.getWorld().spawnEntity(loc, EntityType.SKELETON);
                 s.setCustomName(SmallCaps.convert("§5§lArquero del Vacío"));
                 s.setCustomNameVisible(true);
-                s.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).setBaseValue(45);
+                s.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(45);
                 s.setHealth(45);
                 s.getEquipment().setItemInMainHand(new ItemStack(Material.BOW));
                 s.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, 99999, 0, false, false));
@@ -185,10 +185,10 @@ public class AbyssCombat {
                 Zombie z = (Zombie) loc.getWorld().spawnEntity(loc, EntityType.ZOMBIE);
                 z.setCustomName(SmallCaps.convert("§0§lEnderman Corrupto"));
                 z.setCustomNameVisible(true);
-                z.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).setBaseValue(50);
+                z.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(50);
                 z.setHealth(50);
-                z.getAttribute(org.bukkit.attribute.Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(8);
-                z.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.38);
+                z.getAttribute(org.bukkit.attribute.Attribute.ATTACK_DAMAGE).setBaseValue(8);
+                z.getAttribute(org.bukkit.attribute.Attribute.MOVEMENT_SPEED).setBaseValue(0.38);
                 z.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 99999, 2, false, false));
                 z.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, 99999, 0, false, false));
                 z.addPotionEffect(new PotionEffect(PotionEffectType.WATER_BREATHING, 99999, 0, false, false));
@@ -208,7 +208,7 @@ public class AbyssCombat {
                 CaveSpider spider = (CaveSpider) loc.getWorld().spawnEntity(loc, EntityType.CAVE_SPIDER);
                 spider.setCustomName(SmallCaps.convert("§8§lAraña del Abismo"));
                 spider.setCustomNameVisible(true);
-                spider.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).setBaseValue(30);
+                spider.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(30);
                 spider.setHealth(30);
                 spider.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 99999, 2, false, false));
                 spider.addPotionEffect(new PotionEffect(PotionEffectType.WATER_BREATHING, 99999, 0, false, false));
@@ -230,9 +230,9 @@ public class AbyssCombat {
                 Vindicator v = (Vindicator) loc.getWorld().spawnEntity(loc, EntityType.VINDICATOR);
                 v.setCustomName(SmallCaps.convert("§6§lVindicador del Caos"));
                 v.setCustomNameVisible(true);
-                v.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).setBaseValue(55);
+                v.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(55);
                 v.setHealth(55);
-                v.getAttribute(org.bukkit.attribute.Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(10);
+                v.getAttribute(org.bukkit.attribute.Attribute.ATTACK_DAMAGE).setBaseValue(10);
                 v.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, 99999, 0, false, false));
                 v.addPotionEffect(new PotionEffect(PotionEffectType.WATER_BREATHING, 99999, 0, false, false));
                 v.setRemoveWhenFarAway(false);
@@ -277,10 +277,10 @@ public class AbyssCombat {
             Ravager r = (Ravager) world.spawnEntity(loc, EntityType.RAVAGER);
             r.setCustomName(SmallCaps.convert("§c§l§kaa§r §4§lCentinela del Abismo §c§l§kaa"));
             r.setCustomNameVisible(true);
-            r.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).setBaseValue(200);
+            r.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(200);
             r.setHealth(200);
-            r.getAttribute(org.bukkit.attribute.Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(12);
-            r.getAttribute(org.bukkit.attribute.Attribute.GENERIC_KNOCKBACK_RESISTANCE).setBaseValue(0.9);
+            r.getAttribute(org.bukkit.attribute.Attribute.ATTACK_DAMAGE).setBaseValue(12);
+            r.getAttribute(org.bukkit.attribute.Attribute.KNOCKBACK_RESISTANCE).setBaseValue(0.9);
             r.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, 99999, 0, false, false));
             r.addPotionEffect(new PotionEffect(PotionEffectType.WATER_BREATHING, 99999, 0, false, false));
             r.setRemoveWhenFarAway(false);
@@ -322,7 +322,7 @@ public class AbyssCombat {
             // Curación parcial
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
                 if (player.isOnline()) {
-                    double maxHealth = player.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).getValue();
+                    double maxHealth = player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getValue();
                     player.setHealth(Math.min(player.getHealth() + maxHealth * 0.25, maxHealth));
                     player.sendMessage(SmallCaps.convert("§a§l❤ §fRecuperaste algo de vida."));
                 }

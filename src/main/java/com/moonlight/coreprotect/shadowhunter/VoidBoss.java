@@ -202,9 +202,9 @@ public class VoidBoss {
             Zombie shadow = center.getWorld().spawn(
                     center.clone().add((Math.random() - 0.5) * 12, 1, (Math.random() - 0.5) * 12), Zombie.class, z -> {
                         z.setBaby(true);
-                        z.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).setBaseValue(1);
+                        z.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(1);
                         z.setHealth(1);
-                        z.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.40);
+                        z.getAttribute(org.bukkit.attribute.Attribute.MOVEMENT_SPEED).setBaseValue(0.40);
                         z.getEquipment().setHelmet(new ItemStack(Material.WITHER_SKELETON_SKULL));
                         z.setInvisible(true);
                         z.setSilent(true);
@@ -257,11 +257,11 @@ public class VoidBoss {
         bossEntity = player.getWorld().spawn(spawnLoc, Zombie.class, z -> {
             z.setCustomName(SmallCaps.convert("§0§l✦ El Arquitecto §0§l✦"));
             z.setCustomNameVisible(true);
-            z.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).setBaseValue(500);
+            z.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(500);
             z.setHealth(500);
-            z.getAttribute(org.bukkit.attribute.Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(10);
-            z.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.32);
-            z.getAttribute(org.bukkit.attribute.Attribute.GENERIC_ARMOR).setBaseValue(14);
+            z.getAttribute(org.bukkit.attribute.Attribute.ATTACK_DAMAGE).setBaseValue(10);
+            z.getAttribute(org.bukkit.attribute.Attribute.MOVEMENT_SPEED).setBaseValue(0.32);
+            z.getAttribute(org.bukkit.attribute.Attribute.ARMOR).setBaseValue(14);
             z.setBaby(false);
             z.setTarget(player);
             z.setRemoveWhenFarAway(false);
@@ -308,7 +308,7 @@ public class VoidBoss {
                 tickCount++;
 
                 if (bossBar != null) {
-                    double hp = bossEntity.getHealth() / bossEntity.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).getBaseValue();
+                    double hp = bossEntity.getHealth() / bossEntity.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getBaseValue();
                     bossBar.setProgress(Math.max(0.0, Math.min(1.0, hp)));
                 }
 
@@ -346,7 +346,7 @@ public class VoidBoss {
 
                 // === CLON FALSO (duplicación) a 75% y 50% vida ===
                 double healthPercent = bossEntity.getHealth()
-                        / bossEntity.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).getBaseValue();
+                        / bossEntity.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getBaseValue();
                 if ((healthPercent <= 0.75 && tickCount == (int) (300 * 0.75 / healthPercent))
                         || tickCount == 800 || tickCount == 1400) {
                     if (tickCount == 800 || tickCount == 1400) {
@@ -475,10 +475,10 @@ public class VoidBoss {
         Zombie clone = player.getWorld().spawn(spawnLoc, Zombie.class, z -> {
             z.setCustomName(SmallCaps.convert("§c§l" + player.getName() + " §7(impostor)"));
             z.setCustomNameVisible(true);
-            z.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).setBaseValue(100);
+            z.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(100);
             z.setHealth(100);
-            z.getAttribute(org.bukkit.attribute.Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(8);
-            z.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.33);
+            z.getAttribute(org.bukkit.attribute.Attribute.ATTACK_DAMAGE).setBaseValue(8);
+            z.getAttribute(org.bukkit.attribute.Attribute.MOVEMENT_SPEED).setBaseValue(0.33);
             z.setBaby(false);
             z.setTarget(player);
             z.setRemoveWhenFarAway(false);

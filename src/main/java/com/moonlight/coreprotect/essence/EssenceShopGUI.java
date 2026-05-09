@@ -596,7 +596,7 @@ public class EssenceShopGUI implements Listener {
             new ItemStack(Material.BRICKS, 64), new ItemStack(Material.QUARTZ_BLOCK, 64),
             new ItemStack(Material.GLASS, 64), new ItemStack(Material.SMOOTH_STONE, 64),
             new ItemStack(Material.DARK_OAK_PLANKS, 64), new ItemStack(Material.POLISHED_DEEPSLATE, 64),
-            new ItemStack(Material.CHAIN, 32), new ItemStack(Material.LANTERN, 32),
+            new ItemStack(Material.IRON_BARS, 32), new ItemStack(Material.LANTERN, 32),
             new ItemStack(Material.COPPER_BLOCK, 32), new ItemStack(Material.MUD_BRICKS, 64)
         );
         player.sendMessage(sc("§3§l✦ §e¡Kit Constructor recibido!"));
@@ -675,7 +675,7 @@ public class EssenceShopGUI implements Listener {
                 new ItemStack(Material.BRICKS, 64), new ItemStack(Material.QUARTZ_BLOCK, 64),
                 new ItemStack(Material.GLASS, 64), new ItemStack(Material.SMOOTH_STONE, 64),
                 new ItemStack(Material.DARK_OAK_PLANKS, 64), new ItemStack(Material.POLISHED_DEEPSLATE, 64),
-                new ItemStack(Material.CHAIN, 32), new ItemStack(Material.LANTERN, 32),
+                new ItemStack(Material.IRON_BARS, 32), new ItemStack(Material.LANTERN, 32),
                 new ItemStack(Material.COPPER_BLOCK, 32), new ItemStack(Material.MUD_BRICKS, 64)
             )); break;
         }

@@ -129,12 +129,12 @@ public class LyraBoss {
         bossEntity.setRemoveWhenFarAway(false);
         bossEntity.setSilent(true);
 
-        try { bossEntity.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(MAX_HEALTH); bossEntity.setHealth(MAX_HEALTH); } catch (Exception e) {}
-        try { bossEntity.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(14); } catch (Exception e) {}
-        try { bossEntity.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.28); } catch (Exception e) {}
-        try { bossEntity.getAttribute(Attribute.GENERIC_ARMOR).setBaseValue(6); } catch (Exception e) {}
-        try { bossEntity.getAttribute(Attribute.GENERIC_ARMOR_TOUGHNESS).setBaseValue(0.0); } catch (Exception e) {}
-        try { bossEntity.getAttribute(Attribute.GENERIC_KNOCKBACK_RESISTANCE).setBaseValue(0.0); } catch (Exception e) {}
+        try { bossEntity.getAttribute(Attribute.MAX_HEALTH).setBaseValue(MAX_HEALTH); bossEntity.setHealth(MAX_HEALTH); } catch (Exception e) {}
+        try { bossEntity.getAttribute(Attribute.ATTACK_DAMAGE).setBaseValue(14); } catch (Exception e) {}
+        try { bossEntity.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(0.28); } catch (Exception e) {}
+        try { bossEntity.getAttribute(Attribute.ARMOR).setBaseValue(6); } catch (Exception e) {}
+        try { bossEntity.getAttribute(Attribute.ARMOR_TOUGHNESS).setBaseValue(0.0); } catch (Exception e) {}
+        try { bossEntity.getAttribute(Attribute.KNOCKBACK_RESISTANCE).setBaseValue(0.0); } catch (Exception e) {}
 
         bossEntity.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, 999999, 0, false, false));
         bossEntity.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, 999999, 0, false, false));
@@ -254,8 +254,8 @@ public class LyraBoss {
         bossBar.setColor(BarColor.WHITE);
         bossEntity.setCustomName(SmallCaps.convert("§0§l☠ La Culpa §8— §4Desesperación Infinita §0§l☠"));
 
-        try { bossEntity.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(20); } catch (Exception e) {}
-        try { bossEntity.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.34); } catch (Exception e) {}
+        try { bossEntity.getAttribute(Attribute.ATTACK_DAMAGE).setBaseValue(20); } catch (Exception e) {}
+        try { bossEntity.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(0.34); } catch (Exception e) {}
         bossEntity.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 999999, 1, false, false));
 
         // EPIC Phase 2 transition particles

@@ -191,7 +191,7 @@ public class WhiteHoleBladeListener implements Listener {
         }
 
         // Curar al lanzador
-        double maxHealth = player.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).getValue();
+        double maxHealth = player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getValue();
         player.setHealth(Math.min(player.getHealth() + 8.0, maxHealth));
         player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 0.5f, 2.0f);
     }

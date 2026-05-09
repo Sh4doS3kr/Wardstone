@@ -176,7 +176,7 @@ public class AbyssBladeListener implements Listener {
                         target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 60, 4));
 
                         // Curar al jugador
-                        double maxHealth = player.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).getValue();
+                        double maxHealth = player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getValue();
                         player.setHealth(Math.min(player.getHealth() + 8.0, maxHealth));
                         player.playSound(player.getLocation(), Sound.ENTITY_WITCH_DRINK, 0.5f, 1.5f);
                         return;

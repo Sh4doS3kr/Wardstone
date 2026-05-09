@@ -158,13 +158,13 @@ public class VoidChestplate {
         meta.getPersistentDataContainer().set(getKey(plugin), PersistentDataType.BYTE, (byte) 1);
 
         // Armor attribute
-        meta.addAttributeModifier(org.bukkit.attribute.Attribute.GENERIC_ARMOR,
+        meta.addAttributeModifier(org.bukkit.attribute.Attribute.ARMOR,
                 new AttributeModifier(UUID.randomUUID(), "void_chestplate_armor", 10,
                         AttributeModifier.Operation.ADD_NUMBER, EquipmentSlot.CHEST));
-        meta.addAttributeModifier(org.bukkit.attribute.Attribute.GENERIC_ARMOR_TOUGHNESS,
+        meta.addAttributeModifier(org.bukkit.attribute.Attribute.ARMOR_TOUGHNESS,
                 new AttributeModifier(UUID.randomUUID(), "void_chestplate_toughness", 4,
                         AttributeModifier.Operation.ADD_NUMBER, EquipmentSlot.CHEST));
-        meta.addAttributeModifier(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH,
+        meta.addAttributeModifier(org.bukkit.attribute.Attribute.MAX_HEALTH,
                 new AttributeModifier(UUID.randomUUID(), "void_chestplate_health", 4,
                         AttributeModifier.Operation.ADD_NUMBER, EquipmentSlot.CHEST));
 

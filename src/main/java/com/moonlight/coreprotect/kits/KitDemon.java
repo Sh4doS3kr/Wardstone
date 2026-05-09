@@ -117,7 +117,6 @@ public class KitDemon implements Listener {
         hMeta.setLore(getSetLore());
         hMeta.addEnchant(Enchantment.PROTECTION, 7, true);
         hMeta.addEnchant(Enchantment.UNBREAKING, 4, true);
-        hMeta.addEnchant(Enchantment.MENDING, 1, true);
         hMeta.addEnchant(Enchantment.RESPIRATION, 4, true);
         hMeta.addEnchant(Enchantment.AQUA_AFFINITY, 4, true);
         hMeta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
@@ -133,7 +132,6 @@ public class KitDemon implements Listener {
         cMeta.setLore(getSetLore());
         cMeta.addEnchant(Enchantment.PROTECTION, 7, true);
         cMeta.addEnchant(Enchantment.UNBREAKING, 4, true);
-        cMeta.addEnchant(Enchantment.MENDING, 1, true);
         cMeta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
         cMeta.getPersistentDataContainer().set(getDemonKey(plugin), PersistentDataType.BYTE, (byte) 1);
         cMeta.getPersistentDataContainer().set(getDemonOwnerKey(plugin), PersistentDataType.STRING, player.getUniqueId().toString());
@@ -147,7 +145,6 @@ public class KitDemon implements Listener {
         lMeta.setLore(getSetLore());
         lMeta.addEnchant(Enchantment.PROTECTION, 7, true);
         lMeta.addEnchant(Enchantment.UNBREAKING, 4, true);
-        lMeta.addEnchant(Enchantment.MENDING, 1, true);
         lMeta.addEnchant(Enchantment.SWIFT_SNEAK, 4, true);
         lMeta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
         lMeta.getPersistentDataContainer().set(getDemonKey(plugin), PersistentDataType.BYTE, (byte) 1);
@@ -162,7 +159,6 @@ public class KitDemon implements Listener {
         bMeta.setLore(getSetLore());
         bMeta.addEnchant(Enchantment.PROTECTION, 7, true);
         bMeta.addEnchant(Enchantment.UNBREAKING, 4, true);
-        bMeta.addEnchant(Enchantment.MENDING, 1, true);
         bMeta.addEnchant(Enchantment.FEATHER_FALLING, 5, true);
         bMeta.addEnchant(Enchantment.DEPTH_STRIDER, 4, true);
         bMeta.addEnchant(Enchantment.SOUL_SPEED, 4, true);
@@ -177,7 +173,7 @@ public class KitDemon implements Listener {
                 "§4§k|§r §c§lColmillo Demoníaco §4§k|",
                 new Object[]{Enchantment.SHARPNESS, 7, Enchantment.FIRE_ASPECT, 4,
                         Enchantment.LOOTING, 4,
-                        Enchantment.UNBREAKING, 4, Enchantment.MENDING, 1}, player);
+                        Enchantment.UNBREAKING, 4}, player);
 
         ItemMeta swordMeta = sword.getItemMeta();
         List<String> swordLore = swordMeta.getLore();
@@ -191,19 +187,19 @@ public class KitDemon implements Listener {
 
         ItemStack pickaxe = createTool(Material.NETHERITE_PICKAXE, "§4§lPico Demoníaco",
                 new Object[]{Enchantment.EFFICIENCY, 7, Enchantment.FORTUNE, 4,
-                        Enchantment.UNBREAKING, 4, Enchantment.MENDING, 1}, player);
+                        Enchantment.UNBREAKING, 4}, player);
 
         ItemStack axe = createTool(Material.NETHERITE_AXE, "§4§lHacha Demoníaca",
                 new Object[]{Enchantment.EFFICIENCY, 7, Enchantment.FORTUNE, 4,
-                        Enchantment.UNBREAKING, 4, Enchantment.MENDING, 1}, player);
+                        Enchantment.UNBREAKING, 4}, player);
 
         ItemStack shovel = createTool(Material.NETHERITE_SHOVEL, "§4§lPala Demoníaca",
                 new Object[]{Enchantment.EFFICIENCY, 7, Enchantment.SILK_TOUCH, 1,
-                        Enchantment.UNBREAKING, 4, Enchantment.MENDING, 1}, player);
+                        Enchantment.UNBREAKING, 4}, player);
 
         ItemStack hoe = createTool(Material.NETHERITE_HOE, "§4§lAzada Demoníaca",
                 new Object[]{Enchantment.EFFICIENCY, 7, Enchantment.FORTUNE, 4,
-                        Enchantment.UNBREAKING, 4, Enchantment.MENDING, 1}, player);
+                        Enchantment.UNBREAKING, 4}, player);
 
         // === ITEMS EXTRA ===
         // Dar todos los items

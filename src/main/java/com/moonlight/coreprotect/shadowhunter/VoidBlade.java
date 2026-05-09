@@ -138,9 +138,9 @@ public class VoidBlade {
         meta.getPersistentDataContainer().set(getKey(plugin), PersistentDataType.BYTE, (byte) 1);
 
         // Atributos custom
-        meta.addAttributeModifier(org.bukkit.attribute.Attribute.GENERIC_ATTACK_DAMAGE,
+        meta.addAttributeModifier(org.bukkit.attribute.Attribute.ATTACK_DAMAGE,
             new AttributeModifier(UUID.randomUUID(), "void_blade_damage", 8, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlot.HAND));
-        meta.addAttributeModifier(org.bukkit.attribute.Attribute.GENERIC_ATTACK_SPEED,
+        meta.addAttributeModifier(org.bukkit.attribute.Attribute.ATTACK_SPEED,
             new AttributeModifier(UUID.randomUUID(), "void_blade_speed", -2.4, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlot.HAND));
 
         blade.setItemMeta(meta);

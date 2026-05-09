@@ -169,9 +169,9 @@ public class KothNPC {
             // Más vida para capturadores - son el objetivo principal
             try {
                 double extraHP = 10 + difficulty * 5;
-                npc.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).setBaseValue(
-                        npc.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).getValue() + extraHP);
-                npc.setHealth(npc.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).getValue());
+                npc.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(
+                        npc.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getValue() + extraHP);
+                npc.setHealth(npc.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getValue());
             } catch (Exception ignored) {
             }
             return npc;
@@ -270,9 +270,9 @@ public class KothNPC {
 
         // Atributos
         try {
-            npc.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).setBaseValue(20 + difficulty * 10);
-            npc.setHealth(npc.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).getValue());
-            npc.getAttribute(org.bukkit.attribute.Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(4 + difficulty * 2);
+            npc.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(20 + difficulty * 10);
+            npc.setHealth(npc.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getValue());
+            npc.getAttribute(org.bukkit.attribute.Attribute.ATTACK_DAMAGE).setBaseValue(4 + difficulty * 2);
         } catch (Exception ignored) {
         }
 

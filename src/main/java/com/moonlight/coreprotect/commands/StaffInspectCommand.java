@@ -210,7 +210,7 @@ public class StaffInspectCommand implements CommandExecutor, TabCompleter, Liste
         final int     sY        = on ? online.getLocation().getBlockY() : 0;
         final int     sZ        = on ? online.getLocation().getBlockZ() : 0;
         final double  sHp       = on ? online.getHealth() : 0;
-        final double  sMaxHp    = on ? online.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).getValue() : 0;
+        final double  sMaxHp    = on ? online.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getValue() : 0;
         final int     sFood     = on ? online.getFoodLevel() : 0;
         final int     sLevel    = on ? online.getLevel() : 0;
         final String  sGm       = on ? online.getGameMode().name() : null;
@@ -219,6 +219,11 @@ public class StaffInspectCommand implements CommandExecutor, TabCompleter, Liste
         final int     sMobKills = on ? online.getStatistic(org.bukkit.Statistic.MOB_KILLS) : 0;
         final long    sPlayTick = on ? online.getStatistic(org.bukkit.Statistic.PLAY_ONE_MINUTE) : 0;
         final int     sWalkCm   = on ? online.getStatistic(org.bukkit.Statistic.WALK_ONE_CM) : 0;
+        final int     sSprintCm = on ? online.getStatistic(org.bukkit.Statistic.SPRINT_ONE_CM) : 0;
+        final int     sSwimCm   = on ? online.getStatistic(org.bukkit.Statistic.SWIM_ONE_CM) : 0;
+        final int     sFallCm   = on ? online.getStatistic(org.bukkit.Statistic.FALL_ONE_CM) : 0;
+        final int     sFlyCm    = on ? online.getStatistic(org.bukkit.Statistic.FLY_ONE_CM) : 0;
+        final int     sDemonPcs = on ? com.moonlight.coreprotect.kits.KitDemon.getDemonPieceCount(online, plugin) : -1;
         final int     sMaxVault = plugin.getPrivateVaultManager() == null ? 0 :
                 on ? plugin.getPrivateVaultManager().getMaxVaults(online)
                    : 1 + plugin.getPrivateVaultManager().getPurchasedSlots(uid);
@@ -277,7 +282,6 @@ public class StaffInspectCommand implements CommandExecutor, TabCompleter, Liste
                     pvpLore.add(SmallCaps.convert("§fKDA: §e" + kda));
                     pvpLore.add(SmallCaps.convert("§fKills mobs: §a" + sMobKills));
                     pvpLore.add(SmallCaps.convert("§fTiempo jugado: §9" + fmtTime(sPlayTick / 20)));
-                    pvpLore.add(SmallCaps.convert("§fDistancia caminada: §7" + fmtNum(sWalkCm / 100.0) + " m"));
                 } else {
                     pvpLore.add(SmallCaps.convert("§7Stats de Bukkit requieren"));
                     pvpLore.add(SmallCaps.convert("§7que el jugador esté online."));
@@ -286,12 +290,61 @@ public class StaffInspectCommand implements CommandExecutor, TabCompleter, Liste
                     pvpLore.add(SmallCaps.convert("§c§l⚔ EN COMBATE AHORA"));
                 pvpLore.add("");
 
+                // ── Movimiento & Distancias ──
+                List<String> movLore = new ArrayList<>();
+                movLore.add("");
+                if (on) {
+                    long totalCm = (long) sWalkCm + sSprintCm + sSwimCm + sFallCm + sFlyCm;
+                    long totalBlocks = totalCm / 100;
+                    movLore.add(SmallCaps.convert("§f§lBloques totales recorridos:"));
+                    movLore.add(SmallCaps.convert("§b  " + fmtNum(totalBlocks) + " bloques"));
+                    movLore.add("");
+                    movLore.add(SmallCaps.convert("§f  Caminando: §7" + fmtNum(sWalkCm / 100.0) + " bloques"));
+                    movLore.add(SmallCaps.convert("§f  Corriendo: §7" + fmtNum(sSprintCm / 100.0) + " bloques"));
+                    movLore.add(SmallCaps.convert("§f  Nadando: §7" + fmtNum(sSwimCm / 100.0) + " bloques"));
+                    movLore.add(SmallCaps.convert("§f  Volando: §7" + fmtNum(sFlyCm / 100.0) + " bloques"));
+                    movLore.add(SmallCaps.convert("§f  Cayendo: §7" + fmtNum(sFallCm / 100.0) + " bloques"));
+                } else {
+                    movLore.add(SmallCaps.convert("§7Requiere que el jugador esté online."));
+                }
+                movLore.add("");
+
+                // ── Kit Demon ──
+                List<String> demonLore = new ArrayList<>();
+                demonLore.add("");
+                if (on) {
+                    demonLore.add(SmallCaps.convert("§f§lPiezas del Kit Demon equipadas:"));
+                    demonLore.add(SmallCaps.convert("§4  " + sDemonPcs + "§7/§f4 piezas"));
+                    demonLore.add("");
+                    if (sDemonPcs == 0) {
+                        demonLore.add(SmallCaps.convert("§7No tiene el Kit Demon equipado."));
+                    } else if (sDemonPcs < 4) {
+                        demonLore.add(SmallCaps.convert("§e⚠ Set incompleto (" + sDemonPcs + "/4)"));
+                    } else {
+                        demonLore.add(SmallCaps.convert("§a§l✔ Set Demon COMPLETO"));
+                        demonLore.add(SmallCaps.convert("§7  Todas las habilidades activas."));
+                    }
+                } else {
+                    demonLore.add(SmallCaps.convert("§7Requiere que el jugador esté online."));
+                }
+                demonLore.add("");
+
                 // ── Quests ──
                 List<String> qLore = new ArrayList<>();
                 qLore.add("");
                 if (plugin.getShadowHunterManager() != null) {
                     ShadowHunterManager shm = plugin.getShadowHunterManager();
+                    int questsDone = 0;
+                    if (shm.hasCompleted(uid)) questsDone++;
+                    if (shm.hasCompletedQuest2(uid)) questsDone++;
+                    if (shm.hasCompletedQuest3(uid)) questsDone++;
+                    if (shm.hasCompletedQuest4(uid)) questsDone++;
+                    if (shm.hasCompletedQuest5(uid)) questsDone++;
+                    if (shm.hasCompletedQuest6(uid)) questsDone++;
+                    if (shm.hasCompletedQuest7(uid)) questsDone++;
+                    if (shm.hasCompletedQuest8(uid)) questsDone++;
                     qLore.add(SmallCaps.convert("§fEstado: " + questDisplay(shm.getState(uid))));
+                    qLore.add(SmallCaps.convert("§fMisiones completadas: §a" + questsDone + "§7/§f8"));
                     qLore.add("");
                     qLore.add(SmallCaps.convert((shm.hasCompleted(uid)       ? "§a✔" : "§c✖") + " §fM1: Espada del Vacío"));
                     qLore.add(SmallCaps.convert((shm.hasCompletedQuest2(uid) ? "§a✔" : "§c✖") + " §fM2: Hoja del Abismo"));
@@ -364,6 +417,8 @@ public class StaffInspectCommand implements CommandExecutor, TabCompleter, Liste
                 final List<String>   fEcoLore  = ecoLoreFinal;
                 final List<String>   fPLore    = pLore;
                 final List<String>   fPvp      = pvpLore;
+                final List<String>   fMovLore  = movLore;
+                final List<String>   fDemonLore = demonLore;
                 final List<String>   fQLore    = qLore;
                 final List<String>   fStLore   = stLore;
                 final List<String>   fBLore    = bLore;
@@ -396,6 +451,10 @@ public class StaffInspectCommand implements CommandExecutor, TabCompleter, Liste
                     inv.setItem(14, itemLore(Material.SUNFLOWER,     "§e§l★ Racha Diaria",         fStLore));
                     inv.setItem(15, itemLore(Material.SKELETON_SKULL,"§c§l☠ Bounties",             fBLore));
                     inv.setItem(16, itemLore(Material.BOOK,          "§6§l📖 Logros",               fAchLore));
+
+                    // Second row: Movement & Kit info
+                    inv.setItem(19, itemLore(Material.DIAMOND_BOOTS, "§b§l🏃 Movimiento & Distancias", fMovLore));
+                    inv.setItem(20, itemLore(Material.NETHERITE_CHESTPLATE, "§4§l⚔ Kit Demon",     fDemonLore));
 
                     // PV row
                     inv.setItem(27, glass(Material.CYAN_STAINED_GLASS_PANE, "§b§lCofres Privados (PVs)"));

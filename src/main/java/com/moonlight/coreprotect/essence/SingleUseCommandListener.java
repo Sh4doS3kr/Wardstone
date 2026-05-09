@@ -43,7 +43,7 @@ public class SingleUseCommandListener implements Listener {
             int remaining = charges - 1;
             player.getPersistentDataContainer().set(healKey, PersistentDataType.INTEGER, remaining);
 
-            player.setHealth(player.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).getValue());
+            player.setHealth(player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getValue());
             player.setFireTicks(0);
             
             player.sendMessage(SmallCaps.convert("§3§l✦ §c¡Vida restaurada! §7(Usos restantes: " + remaining + ")"));

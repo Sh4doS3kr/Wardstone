@@ -805,7 +805,7 @@ public class ArenaBuilder {
             int px = centerX + (int)((radius + 1) * Math.cos(rad));
             int pz = centerZ + (int)((radius + 1) * Math.sin(rad));
             for (int y = baseY; y <= baseY + 5; y++) {
-                w.getBlockAt(px, y, pz).setType(Material.CHAIN);
+                w.getBlockAt(px, y, pz).setType(Material.IRON_BARS);
             }
             w.getBlockAt(px, baseY + 6, pz).setType(Material.LANTERN);
         }
@@ -1356,7 +1356,7 @@ public class ArenaBuilder {
         }
         // Candelabros
         for (int x = 10; x <= 35; x += 8) {
-            w.getBlockAt(x, f1 + ceilingH, -22).setType(Material.CHAIN);
+            w.getBlockAt(x, f1 + ceilingH, -22).setType(Material.IRON_BARS);
             w.getBlockAt(x, f1 + ceilingH - 1, -22).setType(Material.LANTERN);
         }
 
@@ -1413,7 +1413,7 @@ public class ArenaBuilder {
         }
         // Candelabros sobre mesa
         for (int x = -33; x <= -12; x += 7) {
-            w.getBlockAt(x, f1 + ceilingH, 22).setType(Material.CHAIN);
+            w.getBlockAt(x, f1 + ceilingH, 22).setType(Material.IRON_BARS);
             w.getBlockAt(x, f1 + ceilingH - 1, 22).setType(Material.LANTERN);
         }
         // Vitrina con platos
@@ -1549,7 +1549,7 @@ public class ArenaBuilder {
                 for (int z = cz - halfL + 4; z <= cz + halfL - 4; z += 6) {
                     if (w.getBlockAt(x, floor + 1, z).getType() == Material.AIR) {
                         if (RANDOM.nextInt(3) == 0) {
-                            w.getBlockAt(x, floor + ceilingH, z).setType(Material.CHAIN);
+                            w.getBlockAt(x, floor + ceilingH, z).setType(Material.IRON_BARS);
                             w.getBlockAt(x, floor + ceilingH - 1, z).setType(
                                 RANDOM.nextBoolean() ? Material.LANTERN : Material.SOUL_LANTERN);
                         }

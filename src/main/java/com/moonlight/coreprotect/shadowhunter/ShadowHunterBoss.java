@@ -263,11 +263,11 @@ public class ShadowHunterBoss {
 
         bossEntity.setCustomName(SmallCaps.convert("§4§l§kaa§r §c§lDevorador de Sombras §4§l§kaa"));
         bossEntity.setCustomNameVisible(true);
-        bossEntity.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).setBaseValue(bossMaxHealth);
+        bossEntity.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(bossMaxHealth);
         bossEntity.setHealth(bossMaxHealth);
-        bossEntity.getAttribute(org.bukkit.attribute.Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(8);
-        bossEntity.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.28);
-        bossEntity.getAttribute(org.bukkit.attribute.Attribute.GENERIC_KNOCKBACK_RESISTANCE).setBaseValue(0.8);
+        bossEntity.getAttribute(org.bukkit.attribute.Attribute.ATTACK_DAMAGE).setBaseValue(8);
+        bossEntity.getAttribute(org.bukkit.attribute.Attribute.MOVEMENT_SPEED).setBaseValue(0.28);
+        bossEntity.getAttribute(org.bukkit.attribute.Attribute.KNOCKBACK_RESISTANCE).setBaseValue(0.8);
         bossEntity.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, 99999, 0, false, false));
         bossEntity.addPotionEffect(new PotionEffect(PotionEffectType.WATER_BREATHING, 99999, 0, false, false));
 
@@ -652,9 +652,9 @@ public class ShadowHunterBoss {
                 Zombie shadow = (Zombie) world.spawnEntity(loc, EntityType.ZOMBIE);
                 shadow.setCustomName(SmallCaps.convert("§8§lSombra Menor"));
                 shadow.setCustomNameVisible(true);
-                shadow.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).setBaseValue(20);
+                shadow.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(20);
                 shadow.setHealth(20);
-                shadow.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.32);
+                shadow.getAttribute(org.bukkit.attribute.Attribute.MOVEMENT_SPEED).setBaseValue(0.32);
                 shadow.setBaby(false);
                 shadow.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, 99999, 0, false, false));
                 shadow.addPotionEffect(new PotionEffect(PotionEffectType.WATER_BREATHING, 99999, 0, false, false));
@@ -739,8 +739,8 @@ public class ShadowHunterBoss {
         bossBar.setColor(BarColor.WHITE);
 
         bossEntity.setCustomName(SmallCaps.convert("§4§l§kaa§r §4§lDEVORADOR FURIOSO §4§l§kaa"));
-        bossEntity.getAttribute(org.bukkit.attribute.Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(12);
-        bossEntity.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.35);
+        bossEntity.getAttribute(org.bukkit.attribute.Attribute.ATTACK_DAMAGE).setBaseValue(12);
+        bossEntity.getAttribute(org.bukkit.attribute.Attribute.MOVEMENT_SPEED).setBaseValue(0.35);
         bossEntity.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 99999, 1, false, false));
 
         // Animación de rabia

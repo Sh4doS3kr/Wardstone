@@ -148,12 +148,12 @@ public class ElegyBoss {
         bossEntity = player.getWorld().spawn(spawnLoc, Zombie.class, z -> {
             z.setCustomName(SmallCaps.convert("§5§l✦ La Última Memoria §5§l✦"));
             z.setCustomNameVisible(true);
-            z.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).setBaseValue(500);
+            z.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(500);
             z.setHealth(500);
-            z.getAttribute(org.bukkit.attribute.Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(6);
-            z.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.30);
-            z.getAttribute(org.bukkit.attribute.Attribute.GENERIC_ARMOR).setBaseValue(8);
-            z.getAttribute(org.bukkit.attribute.Attribute.GENERIC_KNOCKBACK_RESISTANCE).setBaseValue(0.4);
+            z.getAttribute(org.bukkit.attribute.Attribute.ATTACK_DAMAGE).setBaseValue(6);
+            z.getAttribute(org.bukkit.attribute.Attribute.MOVEMENT_SPEED).setBaseValue(0.30);
+            z.getAttribute(org.bukkit.attribute.Attribute.ARMOR).setBaseValue(8);
+            z.getAttribute(org.bukkit.attribute.Attribute.KNOCKBACK_RESISTANCE).setBaseValue(0.4);
             z.setBaby(false);
             z.setTarget(player);
             z.setRemoveWhenFarAway(false);
@@ -186,7 +186,7 @@ public class ElegyBoss {
             z.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_FALLING, 99999, 0, false, false));
             // Prevent fall damage
             try {
-                z.getAttribute(Attribute.GENERIC_SAFE_FALL_DISTANCE).setBaseValue(999);
+                z.getAttribute(Attribute.SAFE_FALL_DISTANCE).setBaseValue(999);
             } catch (Exception ignored) {}
         });
     }
@@ -221,7 +221,7 @@ public class ElegyBoss {
 
                 // Update boss bar
                 if (bossBar != null) {
-                    double hp = bossEntity.getHealth() / bossEntity.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).getBaseValue();
+                    double hp = bossEntity.getHealth() / bossEntity.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getBaseValue();
                     bossBar.setProgress(Math.max(0, Math.min(1, hp)));
                 }
 
@@ -238,7 +238,7 @@ public class ElegyBoss {
                 }
 
                 // Phase transitions
-                double healthPercent = bossEntity.getHealth() / bossEntity.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).getBaseValue();
+                double healthPercent = bossEntity.getHealth() / bossEntity.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getBaseValue();
                 if (healthPercent <= 0.30 && phase < 3) {
                     enterPhase3();
                 } else if (healthPercent <= 0.60 && phase < 2) {
@@ -817,10 +817,10 @@ public class ElegyBoss {
             Zombie clone = world.spawn(spawnLoc, Zombie.class, z -> {
                 z.setCustomName(SmallCaps.convert("§8§lFragmento Olvidado"));
                 z.setCustomNameVisible(true);
-                z.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).setBaseValue(40);
+                z.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(40);
                 z.setHealth(40);
-                z.getAttribute(org.bukkit.attribute.Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(5);
-                z.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.30);
+                z.getAttribute(org.bukkit.attribute.Attribute.ATTACK_DAMAGE).setBaseValue(5);
+                z.getAttribute(org.bukkit.attribute.Attribute.MOVEMENT_SPEED).setBaseValue(0.30);
                 z.setBaby(false);
                 z.setTarget(player);
                 z.setRemoveWhenFarAway(false);
@@ -1560,9 +1560,9 @@ public class ElegyBoss {
             finalSceneActive = false;
             bossEntity.setInvulnerable(false);
             player.setInvulnerable(false);
-            bossEntity.getAttribute(org.bukkit.attribute.Attribute.GENERIC_ARMOR).setBaseValue(0);
-            bossEntity.getAttribute(org.bukkit.attribute.Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(0);
-            bossEntity.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0);
+            bossEntity.getAttribute(org.bukkit.attribute.Attribute.ARMOR).setBaseValue(0);
+            bossEntity.getAttribute(org.bukkit.attribute.Attribute.ATTACK_DAMAGE).setBaseValue(0);
+            bossEntity.getAttribute(org.bukkit.attribute.Attribute.MOVEMENT_SPEED).setBaseValue(0);
             bossEntity.setCustomName(SmallCaps.convert("§5§l✦ La Última Memoria §d§l[LIBERACIÓN] §5§l✦"));
 
             if (npc != null && npc.getVillager() != null && !npc.getVillager().isDead()) {
@@ -1589,8 +1589,8 @@ public class ElegyBoss {
         }
 
         // Boost stats (menos daño, más habilidades)
-        bossEntity.getAttribute(org.bukkit.attribute.Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(12);
-        bossEntity.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.32);
+        bossEntity.getAttribute(org.bukkit.attribute.Attribute.ATTACK_DAMAGE).setBaseValue(12);
+        bossEntity.getAttribute(org.bukkit.attribute.Attribute.MOVEMENT_SPEED).setBaseValue(0.32);
 
         // Shockwave effect
         Location loc = bossEntity.getLocation();
@@ -1613,8 +1613,8 @@ public class ElegyBoss {
         }
 
         // Max stats (menos daño, más velocidad y habilidades)
-        bossEntity.getAttribute(org.bukkit.attribute.Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(14);
-        bossEntity.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.34);
+        bossEntity.getAttribute(org.bukkit.attribute.Attribute.ATTACK_DAMAGE).setBaseValue(14);
+        bossEntity.getAttribute(org.bukkit.attribute.Attribute.MOVEMENT_SPEED).setBaseValue(0.34);
         bossEntity.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 99999, 0, false, false));
 
         // Mega shockwave

@@ -186,10 +186,10 @@ public class VoidMace {
 
         meta.getPersistentDataContainer().set(getKey(plugin), PersistentDataType.BYTE, (byte) 1);
 
-        meta.addAttributeModifier(Attribute.GENERIC_ATTACK_DAMAGE,
+        meta.addAttributeModifier(Attribute.ATTACK_DAMAGE,
                 new AttributeModifier(UUID.randomUUID(), "void_mace_damage", 12,
                         AttributeModifier.Operation.ADD_NUMBER, EquipmentSlot.HAND));
-        meta.addAttributeModifier(Attribute.GENERIC_ATTACK_SPEED,
+        meta.addAttributeModifier(Attribute.ATTACK_SPEED,
                 new AttributeModifier(UUID.randomUUID(), "void_mace_speed", -2.8,
                         AttributeModifier.Operation.ADD_NUMBER, EquipmentSlot.HAND));
 

@@ -146,7 +146,7 @@ public class CubossSlimeBoss implements Boss {
         bossUuid = bossEntity.getUniqueId();
 
         // Aumentar vida del boss
-        org.bukkit.attribute.AttributeInstance maxHpAttr = bossEntity.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH);
+        org.bukkit.attribute.AttributeInstance maxHpAttr = bossEntity.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
         if (maxHpAttr != null) {
             double currentMax = maxHpAttr.getBaseValue();
             if (currentMax < 2000) {
@@ -158,7 +158,7 @@ public class CubossSlimeBoss implements Boss {
         maxHealth = bossEntity.getMaxHealth();
 
         // Aumentar daño de ataque masivamente
-        org.bukkit.attribute.AttributeInstance atkAttr = bossEntity.getAttribute(org.bukkit.attribute.Attribute.GENERIC_ATTACK_DAMAGE);
+        org.bukkit.attribute.AttributeInstance atkAttr = bossEntity.getAttribute(org.bukkit.attribute.Attribute.ATTACK_DAMAGE);
         if (atkAttr != null) {
             atkAttr.setBaseValue(50.0); // 25 corazones por golpe base
         }

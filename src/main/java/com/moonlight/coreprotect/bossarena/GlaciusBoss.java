@@ -189,7 +189,7 @@ public class GlaciusBoss implements Boss {
 
                     // Atributos con manejo de errores mejorado
                     try {
-                        org.bukkit.attribute.AttributeInstance maxHealth = golem.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH);
+                        org.bukkit.attribute.AttributeInstance maxHealth = golem.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
                         if (maxHealth != null) {
                             maxHealth.setBaseValue(MAX_HEALTH);
                             golem.setHealth(MAX_HEALTH);
@@ -205,42 +205,42 @@ public class GlaciusBoss implements Boss {
                     }
                     
                     try { 
-                        org.bukkit.attribute.AttributeInstance attackDamage = golem.getAttribute(org.bukkit.attribute.Attribute.GENERIC_ATTACK_DAMAGE);
+                        org.bukkit.attribute.AttributeInstance attackDamage = golem.getAttribute(org.bukkit.attribute.Attribute.ATTACK_DAMAGE);
                         if (attackDamage != null) attackDamage.setBaseValue(22);
                     } catch (Exception e) {
                         plugin.getLogger().warning("[Glacius] ATTACK_DAMAGE falló: " + e.getMessage());
                     }
                     
                     try { 
-                        org.bukkit.attribute.AttributeInstance movementSpeed = golem.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MOVEMENT_SPEED);
+                        org.bukkit.attribute.AttributeInstance movementSpeed = golem.getAttribute(org.bukkit.attribute.Attribute.MOVEMENT_SPEED);
                         if (movementSpeed != null) movementSpeed.setBaseValue(0.30);
                     } catch (Exception e) {
                         plugin.getLogger().warning("[Glacius] MOVEMENT_SPEED falló: " + e.getMessage());
                     }
                     
                     try { 
-                        org.bukkit.attribute.AttributeInstance armor = golem.getAttribute(org.bukkit.attribute.Attribute.GENERIC_ARMOR);
+                        org.bukkit.attribute.AttributeInstance armor = golem.getAttribute(org.bukkit.attribute.Attribute.ARMOR);
                         if (armor != null) armor.setBaseValue(10);
                     } catch (Exception e) {
                         plugin.getLogger().warning("[Glacius] ARMOR falló: " + e.getMessage());
                     }
                     
                     try { 
-                        org.bukkit.attribute.AttributeInstance armorToughness = golem.getAttribute(org.bukkit.attribute.Attribute.GENERIC_ARMOR_TOUGHNESS);
+                        org.bukkit.attribute.AttributeInstance armorToughness = golem.getAttribute(org.bukkit.attribute.Attribute.ARMOR_TOUGHNESS);
                         if (armorToughness != null) armorToughness.setBaseValue(2.0);
                     } catch (Exception e) {
                         plugin.getLogger().warning("[Glacius] ARMOR_TOUGHNESS falló: " + e.getMessage());
                     }
                     
                     try { 
-                        org.bukkit.attribute.AttributeInstance knockbackResistance = golem.getAttribute(org.bukkit.attribute.Attribute.GENERIC_KNOCKBACK_RESISTANCE);
+                        org.bukkit.attribute.AttributeInstance knockbackResistance = golem.getAttribute(org.bukkit.attribute.Attribute.KNOCKBACK_RESISTANCE);
                         if (knockbackResistance != null) knockbackResistance.setBaseValue(0.0);
                     } catch (Exception e) {
                         plugin.getLogger().warning("[Glacius] KNOCKBACK_RESISTANCE falló: " + e.getMessage());
                     }
                     
                     try {
-                        org.bukkit.attribute.AttributeInstance scale = golem.getAttribute(org.bukkit.attribute.Attribute.GENERIC_SCALE);
+                        org.bukkit.attribute.AttributeInstance scale = golem.getAttribute(org.bukkit.attribute.Attribute.SCALE);
                         if (scale != null) scale.setBaseValue(1.5); // Tamaño 1.5x desde el inicio
                     } catch (Exception e) {
                         plugin.getLogger().warning("[Glacius] SCALE falló: " + e.getMessage());
@@ -425,8 +425,8 @@ public class GlaciusBoss implements Boss {
             case 2:
                 bossBar.setTitle(SmallCaps.convert("§b§l❄ Glacius §8- §9Fase 2: Ventisca Eterna"));
                 bossBar.setColor(BarColor.WHITE);
-                bossEntity.getAttribute(org.bukkit.attribute.Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(26);
-                bossEntity.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.30);
+                bossEntity.getAttribute(org.bukkit.attribute.Attribute.ATTACK_DAMAGE).setBaseValue(26);
+                bossEntity.getAttribute(org.bukkit.attribute.Attribute.MOVEMENT_SPEED).setBaseValue(0.30);
 
                 world.spawnParticle(Particle.DUST, loc.clone().add(0, 2, 0), 60, 3, 2, 3, 0,
                         new Particle.DustOptions(Color.fromRGB(200, 230, 255), 2.5f));
@@ -442,9 +442,9 @@ public class GlaciusBoss implements Boss {
             case 3:
                 bossBar.setTitle(SmallCaps.convert("§b§l❄ Glacius §8- §f§lFase 3: Corazón del Glaciar"));
                 bossBar.setColor(BarColor.WHITE);
-                bossEntity.getAttribute(org.bukkit.attribute.Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(32);
-                bossEntity.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.34);
-                bossEntity.getAttribute(org.bukkit.attribute.Attribute.GENERIC_KNOCKBACK_RESISTANCE).setBaseValue(1.0);
+                bossEntity.getAttribute(org.bukkit.attribute.Attribute.ATTACK_DAMAGE).setBaseValue(32);
+                bossEntity.getAttribute(org.bukkit.attribute.Attribute.MOVEMENT_SPEED).setBaseValue(0.34);
+                bossEntity.getAttribute(org.bukkit.attribute.Attribute.KNOCKBACK_RESISTANCE).setBaseValue(1.0);
                 bossEntity.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 999999, 1, false, false));
 
                 world.spawnParticle(Particle.DUST, loc.clone().add(0, 2, 0), 100, 4, 3, 4, 0,
@@ -754,9 +754,9 @@ public class GlaciusBoss implements Boss {
             Stray minion = world.spawn(safeLoc, Stray.class, s -> {
                 s.setCustomName(SmallCaps.convert("§b❄ §3Espectro de Hielo §b❄"));
                 s.setCustomNameVisible(true);
-                s.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).setBaseValue(40 + phase * 10);
+                s.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(40 + phase * 10);
                 s.setHealth(40 + phase * 10);
-                s.getAttribute(org.bukkit.attribute.Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(5 + phase * 2);
+                s.getAttribute(org.bukkit.attribute.Attribute.ATTACK_DAMAGE).setBaseValue(5 + phase * 2);
                 s.setRemoveWhenFarAway(false);
                 s.setPersistent(true);
                 s.getEquipment().setItemInMainHand(new ItemStack(Material.IRON_SWORD));
@@ -1047,9 +1047,9 @@ public class GlaciusBoss implements Boss {
         Stray clone = world.spawn(bossLoc.clone().add(3, 0, 3), Stray.class, s -> {
             s.setCustomName(SmallCaps.convert("§b❄ §f§lClon de Hielo §b❄"));
             s.setCustomNameVisible(true);
-            s.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).setBaseValue(1);
+            s.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(1);
             s.setHealth(1);
-            s.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.35);
+            s.getAttribute(org.bukkit.attribute.Attribute.MOVEMENT_SPEED).setBaseValue(0.35);
             s.setRemoveWhenFarAway(false);
             s.setPersistent(true);
             s.setTarget(target);

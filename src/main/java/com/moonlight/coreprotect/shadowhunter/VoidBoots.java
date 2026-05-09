@@ -190,19 +190,19 @@ public class VoidBoots {
         meta.getPersistentDataContainer().set(getKey(plugin), PersistentDataType.BYTE, (byte) 1);
 
         // Armor attributes
-        meta.addAttributeModifier(Attribute.GENERIC_ARMOR,
+        meta.addAttributeModifier(Attribute.ARMOR,
                 new AttributeModifier(UUID.randomUUID(), "void_boots_armor", 5,
                         AttributeModifier.Operation.ADD_NUMBER, EquipmentSlot.FEET));
-        meta.addAttributeModifier(Attribute.GENERIC_ARMOR_TOUGHNESS,
+        meta.addAttributeModifier(Attribute.ARMOR_TOUGHNESS,
                 new AttributeModifier(UUID.randomUUID(), "void_boots_toughness", 4,
                         AttributeModifier.Operation.ADD_NUMBER, EquipmentSlot.FEET));
-        meta.addAttributeModifier(Attribute.GENERIC_MAX_HEALTH,
+        meta.addAttributeModifier(Attribute.MAX_HEALTH,
                 new AttributeModifier(UUID.randomUUID(), "void_boots_health", 4,
                         AttributeModifier.Operation.ADD_NUMBER, EquipmentSlot.FEET));
-        meta.addAttributeModifier(Attribute.GENERIC_MOVEMENT_SPEED,
+        meta.addAttributeModifier(Attribute.MOVEMENT_SPEED,
                 new AttributeModifier(UUID.randomUUID(), "void_boots_speed", 0.015,
                         AttributeModifier.Operation.ADD_NUMBER, EquipmentSlot.FEET));
-        meta.addAttributeModifier(Attribute.GENERIC_KNOCKBACK_RESISTANCE,
+        meta.addAttributeModifier(Attribute.KNOCKBACK_RESISTANCE,
                 new AttributeModifier(UUID.randomUUID(), "void_boots_kb", 1.0,
                         AttributeModifier.Operation.ADD_NUMBER, EquipmentSlot.FEET));
 

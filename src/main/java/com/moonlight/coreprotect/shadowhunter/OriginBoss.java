@@ -146,12 +146,12 @@ public class OriginBoss {
             z.addScoreboardTag("wardstone_mission_mob");
             z.addScoreboardTag("origin_boss");
 
-            z.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(2048);
+            z.getAttribute(Attribute.MAX_HEALTH).setBaseValue(2048);
             z.setHealth(2048);
-            z.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(16);
-            z.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.30);
-            z.getAttribute(Attribute.GENERIC_KNOCKBACK_RESISTANCE).setBaseValue(0.95);
-            z.getAttribute(Attribute.GENERIC_ARMOR).setBaseValue(18);
+            z.getAttribute(Attribute.ATTACK_DAMAGE).setBaseValue(16);
+            z.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(0.30);
+            z.getAttribute(Attribute.KNOCKBACK_RESISTANCE).setBaseValue(0.95);
+            z.getAttribute(Attribute.ARMOR).setBaseValue(18);
 
             z.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, 99999, 0, false, false));
 
@@ -211,7 +211,7 @@ public class OriginBoss {
                 lastDamageTime = System.currentTimeMillis();
 
                 double hp = bossEntity.getHealth();
-                double maxHp = bossEntity.getAttribute(Attribute.GENERIC_MAX_HEALTH).getBaseValue();
+                double maxHp = bossEntity.getAttribute(Attribute.MAX_HEALTH).getBaseValue();
                 bossBar.setProgress(Math.max(0, Math.min(1, hp / maxHp)));
 
                 // Phase transitions
@@ -478,9 +478,9 @@ public class OriginBoss {
             Skeleton minion = world.spawn(spawnLoc, Skeleton.class, s -> {
                 s.setCustomName(SmallCaps.convert("§e☆ Centinela Menor"));
                 s.setCustomNameVisible(true);
-                s.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(60);
+                s.getAttribute(Attribute.MAX_HEALTH).setBaseValue(60);
                 s.setHealth(60);
-                s.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(8);
+                s.getAttribute(Attribute.ATTACK_DAMAGE).setBaseValue(8);
                 s.setRemoveWhenFarAway(false);
                 s.setPersistent(true);
                 s.addScoreboardTag("wardstone_mission_mob");
@@ -680,9 +680,9 @@ public class OriginBoss {
         world.spawnParticle(Particle.TOTEM_OF_UNDYING, loc.clone().add(0, 2, 0), 5, 0, 0, 0, 0);
         world.spawnParticle(Particle.END_ROD, loc.clone().add(0, 2, 0), 100, 5, 5, 5, 0.3);
 
-        bossEntity.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(20);
-        bossEntity.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.34);
-        bossEntity.getAttribute(Attribute.GENERIC_ARMOR).setBaseValue(22);
+        bossEntity.getAttribute(Attribute.ATTACK_DAMAGE).setBaseValue(20);
+        bossEntity.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(0.34);
+        bossEntity.getAttribute(Attribute.ARMOR).setBaseValue(22);
         bossEntity.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 99999, 1, false, false));
 
         player.sendMessage(SmallCaps.convert("§6§l☆ §c¡El Centinela arde con la fuerza de una supernova!"));
@@ -700,9 +700,9 @@ public class OriginBoss {
         world.spawnParticle(Particle.TOTEM_OF_UNDYING, loc.clone().add(0, 2, 0), 200, 5, 5, 5, 1.0);
         world.spawnParticle(Particle.END_ROD, loc.clone().add(0, 2, 0), 150, 5, 5, 5, 0.5);
 
-        bossEntity.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(24);
-        bossEntity.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.38);
-        bossEntity.getAttribute(Attribute.GENERIC_ARMOR).setBaseValue(25);
+        bossEntity.getAttribute(Attribute.ATTACK_DAMAGE).setBaseValue(24);
+        bossEntity.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(0.38);
+        bossEntity.getAttribute(Attribute.ARMOR).setBaseValue(25);
         bossEntity.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 99999, 2, false, false));
         bossEntity.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 99999, 1, false, false));
 

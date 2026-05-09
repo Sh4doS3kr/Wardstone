@@ -227,7 +227,7 @@ public class KitDemonListener implements Listener {
         // === SED DE SANGRE: lifesteal 20% ===
         double damage = event.getFinalDamage();
         double heal = damage * 0.20;
-        double maxHealth = attacker.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).getValue();
+        double maxHealth = attacker.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getValue();
         attacker.setHealth(Math.min(maxHealth, attacker.getHealth() + heal));
 
         Location victimLoc = target.getLocation().add(0, 1, 0);
@@ -374,7 +374,7 @@ public class KitDemonListener implements Listener {
         // Disable during end event
         if (KothCommand.isEndEventActive()) return;
 
-        double maxHealth = player.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).getValue();
+        double maxHealth = player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getValue();
         double healthAfter = player.getHealth() - event.getFinalDamage();
 
         // Activar cuando baja de 20% HP
@@ -474,16 +474,17 @@ public class KitDemonListener implements Listener {
             int pieces = KitDemon.getDemonPieceCount(player, plugin);
             if (pieces < 1) continue;
 
-            // Disable all abilities in KOTH
-            if (isInKothZone(player)) continue;
+            // Disable all abilities in KOTH — remove effects actively to prevent flickering
+            if (isInKothZone(player)) {
+                player.removePotionEffect(PotionEffectType.SPEED);
+                player.removePotionEffect(PotionEffectType.STRENGTH);
+                continue;
+            }
 
             // Quitar fuego siempre
             if (player.getFireTicks() > 0) {
                 player.setFireTicks(0);
             }
-
-            // Proteger items Demoníacos de perder durabilidad
-            protectDemonItems(player);
 
             // Partículas sutiles según piezas
             Location loc = player.getLocation().add(0, 0.5, 0);
@@ -650,34 +651,4 @@ public class KitDemonListener implements Listener {
         }.runTaskTimer(plugin, 1L, 1L);
     }
 
-    // ==================== PROTECCIÓN DE ITEMS DEMONÍACOS ====================
-
-    private void protectDemonItems(Player player) {
-        // Proteger todas las piezas del set Demon
-        ItemStack[] armor = player.getInventory().getArmorContents();
-        for (ItemStack piece : armor) {
-            if (piece != null && KitDemon.isDemonPiece(piece, plugin)) {
-                // Restaurar durabilidad al máximo si está dañada
-                if (piece.getDurability() > 0) {
-                    piece.setDurability((short) 0);
-                }
-            }
-        }
-
-        // Proteger el item en mano principal
-        ItemStack mainHand = player.getInventory().getItemInMainHand();
-        if (mainHand != null && KitDemon.isDemonPiece(mainHand, plugin)) {
-            if (mainHand.getDurability() > 0) {
-                mainHand.setDurability((short) 0);
-            }
-        }
-
-        // Proteger el item en mano secundaria
-        ItemStack offHand = player.getInventory().getItemInOffHand();
-        if (offHand != null && KitDemon.isDemonPiece(offHand, plugin)) {
-            if (offHand.getDurability() > 0) {
-                offHand.setDurability((short) 0);
-            }
-        }
-    }
 }

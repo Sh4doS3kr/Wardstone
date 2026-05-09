@@ -89,7 +89,7 @@ public class AbyssalWardenBoss implements Boss {
         maxHealth = bossEntity.getMaxHealth();
 
         // Aumentar daño de ataque
-        org.bukkit.attribute.AttributeInstance atkAttr = bossEntity.getAttribute(org.bukkit.attribute.Attribute.GENERIC_ATTACK_DAMAGE);
+        org.bukkit.attribute.AttributeInstance atkAttr = bossEntity.getAttribute(org.bukkit.attribute.Attribute.ATTACK_DAMAGE);
         if (atkAttr != null) {
             atkAttr.setBaseValue(25.0);
         }

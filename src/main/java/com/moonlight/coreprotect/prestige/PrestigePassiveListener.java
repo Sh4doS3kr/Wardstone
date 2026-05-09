@@ -163,11 +163,11 @@ public class PrestigePassiveListener implements Listener {
 
         // ❤ Health: +2 HP per 10 levels
         double healthBonus = mgr.getHealthBonus(uuid);
-        applyModifier(player, Attribute.GENERIC_MAX_HEALTH, "prestige_health", HEALTH_UUID, healthBonus);
+        applyModifier(player, Attribute.MAX_HEALTH, "prestige_health", HEALTH_UUID, healthBonus);
 
         // 🍀 Luck: direct luck attribute bonus
         double luckBonus = mgr.getLuckBonus(uuid) * 0.01; // scale to attribute range (0-1 ish)
-        applyModifier(player, Attribute.GENERIC_LUCK, "prestige_luck", LUCK_UUID, luckBonus);
+        applyModifier(player, Attribute.LUCK, "prestige_luck", LUCK_UUID, luckBonus);
     }
 
     public void applyHealthBonus(Player player) {
@@ -190,8 +190,8 @@ public class PrestigePassiveListener implements Listener {
     }
 
     public void resetAllStats(Player player) {
-        removeModifier(player, Attribute.GENERIC_MAX_HEALTH, "prestige_health");
-        removeModifier(player, Attribute.GENERIC_LUCK, "prestige_luck");
+        removeModifier(player, Attribute.MAX_HEALTH, "prestige_health");
+        removeModifier(player, Attribute.LUCK, "prestige_luck");
     }
 
     public void resetHealthBonus(Player player) {

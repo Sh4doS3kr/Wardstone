@@ -380,7 +380,7 @@ public class LabyrinthManager {
             rusher.setCanPickupItems(false);
             rusher.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 200, 8, false, false, false)); // Speed IX = INSANE
             rusher.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, 200, 0, false, false, false));
-            rusher.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(1);
+            rusher.getAttribute(Attribute.MAX_HEALTH).setBaseValue(1);
             rusher.setHealth(1);
             rusher.setInvulnerable(true);
             rusher.setTarget(player);
@@ -605,7 +605,7 @@ public class LabyrinthManager {
                     rusher.getEquipment().clear();
                     rusher.setCanPickupItems(false);
                     rusher.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 100, 10, false, false, false));
-                    rusher.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(1);
+                    rusher.getAttribute(Attribute.MAX_HEALTH).setBaseValue(1);
                     rusher.setHealth(1);
                     rusher.setInvulnerable(true);
                     rusher.setTarget(player);
@@ -842,7 +842,7 @@ public class LabyrinthManager {
             shadow.getEquipment().setHelmet(new ItemStack(Material.CARVED_PUMPKIN));
             shadow.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 999999, 2, false, false, false)); // Speed III
             shadow.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, 999999, 0, false, false, false));
-            shadow.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(40);
+            shadow.getAttribute(Attribute.MAX_HEALTH).setBaseValue(40);
             shadow.setHealth(40);
             shadow.setTarget(player);
             shadow.setRemoveWhenFarAway(false);
@@ -1039,7 +1039,7 @@ public class LabyrinthManager {
             if (Math.abs(x) < arenaSize - 2 && Math.abs(z) < arenaSize - 2) {
                 for (int y = ceilingY - 1; y > floorY + 3; y -= 2) {
                     Location chainLoc = arenaCenter.clone().add(x, y - arenaCenter.getY(), z);
-                    chainLoc.getBlock().setType(Material.CHAIN);
+                    chainLoc.getBlock().setType(Material.IRON_BARS);
                 }
             }
         }

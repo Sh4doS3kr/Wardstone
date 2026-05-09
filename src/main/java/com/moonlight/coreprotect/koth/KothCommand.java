@@ -2518,7 +2518,7 @@ public class KothCommand implements CommandExecutor, TabCompleter {
         }
 
         // 6. Resetear atributos de salud
-        org.bukkit.attribute.AttributeInstance maxHp = target.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH);
+        org.bukkit.attribute.AttributeInstance maxHp = target.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
         if (maxHp != null) {
             // Limpiar modificadores que puedan estar alterando la vida
             for (org.bukkit.attribute.AttributeModifier mod : maxHp.getModifiers()) {
@@ -2529,19 +2529,19 @@ public class KothCommand implements CommandExecutor, TabCompleter {
         target.setHealth(Math.min(target.getHealth(), 20.0));
 
         // 7. Resetear atributos de armadura/knockback resistance
-        org.bukkit.attribute.AttributeInstance armor = target.getAttribute(org.bukkit.attribute.Attribute.GENERIC_ARMOR);
+        org.bukkit.attribute.AttributeInstance armor = target.getAttribute(org.bukkit.attribute.Attribute.ARMOR);
         if (armor != null) {
             for (org.bukkit.attribute.AttributeModifier mod : armor.getModifiers()) {
                 armor.removeModifier(mod);
             }
         }
-        org.bukkit.attribute.AttributeInstance armorT = target.getAttribute(org.bukkit.attribute.Attribute.GENERIC_ARMOR_TOUGHNESS);
+        org.bukkit.attribute.AttributeInstance armorT = target.getAttribute(org.bukkit.attribute.Attribute.ARMOR_TOUGHNESS);
         if (armorT != null) {
             for (org.bukkit.attribute.AttributeModifier mod : armorT.getModifiers()) {
                 armorT.removeModifier(mod);
             }
         }
-        org.bukkit.attribute.AttributeInstance knockback = target.getAttribute(org.bukkit.attribute.Attribute.GENERIC_KNOCKBACK_RESISTANCE);
+        org.bukkit.attribute.AttributeInstance knockback = target.getAttribute(org.bukkit.attribute.Attribute.KNOCKBACK_RESISTANCE);
         if (knockback != null) {
             for (org.bukkit.attribute.AttributeModifier mod : knockback.getModifiers()) {
                 knockback.removeModifier(mod);

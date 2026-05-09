@@ -661,9 +661,9 @@ public class SkyParkour {
         Skeleton boss = w.spawn(bossLoc, Skeleton.class);
         boss.setCustomName(SmallCaps.convert("§d§lGuardián del Jardín"));
         boss.setCustomNameVisible(true);
-        boss.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).setBaseValue(200); // Vida aumentada de 150 a 200
+        boss.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(200); // Vida aumentada de 150 a 200
         boss.setHealth(200);
-        boss.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.40); // Más rápido
+        boss.getAttribute(org.bukkit.attribute.Attribute.MOVEMENT_SPEED).setBaseValue(0.40); // Más rápido
         boss.getEquipment().setHelmet(new ItemStack(Material.DIAMOND_HELMET));
         boss.getEquipment().setChestplate(new ItemStack(Material.DIAMOND_CHESTPLATE));
         boss.getEquipment().setBoots(new ItemStack(Material.DIAMOND_BOOTS));

@@ -227,12 +227,12 @@ public class FinalBoss {
             z.addScoreboardTag("wardstone_mission_mob");
             z.addScoreboardTag("final_boss");
 
-            z.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(MAX_HP);
+            z.getAttribute(Attribute.MAX_HEALTH).setBaseValue(MAX_HP);
             z.setHealth(MAX_HP);
-            z.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(14);
-            z.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.28);
-            z.getAttribute(Attribute.GENERIC_KNOCKBACK_RESISTANCE).setBaseValue(0.95);
-            z.getAttribute(Attribute.GENERIC_ARMOR).setBaseValue(16);
+            z.getAttribute(Attribute.ATTACK_DAMAGE).setBaseValue(14);
+            z.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(0.28);
+            z.getAttribute(Attribute.KNOCKBACK_RESISTANCE).setBaseValue(0.95);
+            z.getAttribute(Attribute.ARMOR).setBaseValue(16);
 
             z.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, 99999, 0, false, false));
             z.setVisualFire(false);
@@ -315,7 +315,7 @@ public class FinalBoss {
 
                 // ===== BOSSBAR =====
                 double hp = bossEntity.getHealth();
-                double maxHp = bossEntity.getAttribute(Attribute.GENERIC_MAX_HEALTH).getBaseValue();
+                double maxHp = bossEntity.getAttribute(Attribute.MAX_HEALTH).getBaseValue();
                 bossBar.setProgress(Math.max(0, Math.min(1, hp / maxHp)));
 
                 // ===== PHASE TRANSITIONS =====
@@ -397,12 +397,12 @@ public class FinalBoss {
             z.setPersistent(true);
             z.addScoreboardTag("wardstone_mission_mob");
             z.addScoreboardTag("final_boss");
-            z.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(MAX_HP);
+            z.getAttribute(Attribute.MAX_HEALTH).setBaseValue(MAX_HP);
             z.setHealth(Math.max(PHASE_4_MIN, MAX_HP * 0.5));
-            z.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(14 + (phase * 2));
-            z.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.28 + (phase * 0.02));
-            z.getAttribute(Attribute.GENERIC_KNOCKBACK_RESISTANCE).setBaseValue(0.95);
-            z.getAttribute(Attribute.GENERIC_ARMOR).setBaseValue(16);
+            z.getAttribute(Attribute.ATTACK_DAMAGE).setBaseValue(14 + (phase * 2));
+            z.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(0.28 + (phase * 0.02));
+            z.getAttribute(Attribute.KNOCKBACK_RESISTANCE).setBaseValue(0.95);
+            z.getAttribute(Attribute.ARMOR).setBaseValue(16);
             z.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, 99999, 0, false, false));
             equipBoss(z, phase);
         });
@@ -431,8 +431,8 @@ public class FinalBoss {
         bossBar.setColor(BarColor.PINK);
 
         equipBoss(bossEntity, 2);
-        bossEntity.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(18);
-        bossEntity.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.32);
+        bossEntity.getAttribute(Attribute.ATTACK_DAMAGE).setBaseValue(18);
+        bossEntity.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(0.32);
 
         player.sendTitle("", SmallCaps.convert("§d§oFASE 2 — Los Recuerdos"), 10, 60, 20);
         player.sendMessage(SmallCaps.convert("§d§l✦ §7Los ojos del Errante se llenan de lágrimas..."));
@@ -458,8 +458,8 @@ public class FinalBoss {
         bossBar.setColor(BarColor.RED);
 
         equipBoss(bossEntity, 3);
-        bossEntity.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(22);
-        bossEntity.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.36);
+        bossEntity.getAttribute(Attribute.ATTACK_DAMAGE).setBaseValue(22);
+        bossEntity.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(0.36);
         bossEntity.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 99999, 1, false, false));
         bossEntity.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 99999, 1, false, false));
 
@@ -489,9 +489,9 @@ public class FinalBoss {
 
         equipBoss(bossEntity, 4);
         // Se debilita enormemente
-        bossEntity.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(6);
-        bossEntity.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.18);
-        bossEntity.getAttribute(Attribute.GENERIC_ARMOR).setBaseValue(4);
+        bossEntity.getAttribute(Attribute.ATTACK_DAMAGE).setBaseValue(6);
+        bossEntity.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(0.18);
+        bossEntity.getAttribute(Attribute.ARMOR).setBaseValue(4);
         // Quitar buffs
         bossEntity.removePotionEffect(PotionEffectType.SPEED);
         bossEntity.removePotionEffect(PotionEffectType.STRENGTH);

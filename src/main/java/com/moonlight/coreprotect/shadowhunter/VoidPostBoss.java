@@ -445,7 +445,7 @@ public class VoidPostBoss {
             EntityType type = i % 3 == 0 ? EntityType.SKELETON : (i % 3 == 1 ? EntityType.ZOMBIE : EntityType.SPIDER);
             LivingEntity mob = (LivingEntity) fc.getWorld().spawnEntity(sl, type);
             mob.setCustomName(SmallCaps.convert("§8Guardián del Vacío"));
-            mob.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).setBaseValue(40);
+            mob.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(40);
             mob.setHealth(40);
             if (mob instanceof Mob)
                 ((Mob) mob).setTarget(player);
@@ -575,7 +575,7 @@ public class VoidPostBoss {
                     Zombie z = pLoc.getWorld().spawn(sentinelSpawn, Zombie.class, m -> {
                         m.setCustomName(SmallCaps.convert("§a§lCentinela"));
                         m.setCustomNameVisible(true);
-                        m.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).setBaseValue(150);
+                        m.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(150);
                         m.setHealth(150);
                         m.setTarget(player);
                         m.setBaby(false);
@@ -963,7 +963,7 @@ public class VoidPostBoss {
                                 sl.add(0, 1, 0);
                             Zombie z = sl.getWorld().spawn(sl, Zombie.class, m -> {
                                 m.setCustomName(SmallCaps.convert("§5Corrupción"));
-                                m.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).setBaseValue(30);
+                                m.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(30);
                                 m.setHealth(30);
                                 m.setTarget(player);
                                 m.getEquipment().setHelmet(new ItemStack(Material.PURPLE_STAINED_GLASS));
@@ -1019,11 +1019,11 @@ public class VoidPostBoss {
             finalBoss = player.getWorld().spawn(fc.clone().add(3, 1, 0), Zombie.class, z -> {
                 z.setCustomName(SmallCaps.convert("§4§l✦ Arquitecto Renacido §4§l✦"));
                 z.setCustomNameVisible(true);
-                z.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).setBaseValue(300);
+                z.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(300);
                 z.setHealth(300);
-                z.getAttribute(org.bukkit.attribute.Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(8);
-                z.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.34);
-                z.getAttribute(org.bukkit.attribute.Attribute.GENERIC_ARMOR).setBaseValue(8);
+                z.getAttribute(org.bukkit.attribute.Attribute.ATTACK_DAMAGE).setBaseValue(8);
+                z.getAttribute(org.bukkit.attribute.Attribute.MOVEMENT_SPEED).setBaseValue(0.34);
+                z.getAttribute(org.bukkit.attribute.Attribute.ARMOR).setBaseValue(8);
                 z.setBaby(false);
                 z.setTarget(player);
                 z.setRemoveWhenFarAway(false);
@@ -1062,7 +1062,7 @@ public class VoidPostBoss {
                 }
                 t++;
                 finalBoss.setTarget(player);
-                double hp = finalBoss.getHealth() / finalBoss.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).getBaseValue();
+                double hp = finalBoss.getHealth() / finalBoss.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getBaseValue();
                 if (phaseBar != null)
                     phaseBar.setProgress(Math.max(0, Math.min(1, hp)));
                 if (System.currentTimeMillis() - lastFinalDamage > 15000) {

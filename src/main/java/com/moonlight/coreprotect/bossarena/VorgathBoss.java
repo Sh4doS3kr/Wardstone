@@ -120,14 +120,14 @@ public class VorgathBoss implements Boss {
             bossEntity = world.spawn(safeLoc, Zombie.class, z -> {
                 z.setCustomName(SmallCaps.convert("§4§l⚔ Vorgath §8- §cSeñor del Bosque Carmesí §4§l⚔"));
                 z.setCustomNameVisible(true);
-                z.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).setBaseValue(MAX_HEALTH);
+                z.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(MAX_HEALTH);
                 z.setHealth(MAX_HEALTH);
-                z.getAttribute(org.bukkit.attribute.Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(16);
-                z.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.26);
-                z.getAttribute(org.bukkit.attribute.Attribute.GENERIC_ARMOR).setBaseValue(8);
-                z.getAttribute(org.bukkit.attribute.Attribute.GENERIC_ARMOR_TOUGHNESS).setBaseValue(2.0);
-                z.getAttribute(org.bukkit.attribute.Attribute.GENERIC_KNOCKBACK_RESISTANCE).setBaseValue(0.0);
-                z.getAttribute(org.bukkit.attribute.Attribute.GENERIC_SCALE).setBaseValue(2.0); // Tamaño doble desde el inicio
+                z.getAttribute(org.bukkit.attribute.Attribute.ATTACK_DAMAGE).setBaseValue(16);
+                z.getAttribute(org.bukkit.attribute.Attribute.MOVEMENT_SPEED).setBaseValue(0.26);
+                z.getAttribute(org.bukkit.attribute.Attribute.ARMOR).setBaseValue(8);
+                z.getAttribute(org.bukkit.attribute.Attribute.ARMOR_TOUGHNESS).setBaseValue(2.0);
+                z.getAttribute(org.bukkit.attribute.Attribute.KNOCKBACK_RESISTANCE).setBaseValue(0.0);
+                z.getAttribute(org.bukkit.attribute.Attribute.SCALE).setBaseValue(2.0); // Tamaño doble desde el inicio
                 z.setBaby(false);
                 z.setRemoveWhenFarAway(false);
                 z.setPersistent(true);
@@ -362,8 +362,8 @@ public class VorgathBoss implements Boss {
             case 2:
                 bossBar.setTitle(SmallCaps.convert("§4§l⚔ Vorgath §8- §5Fase 2: Tormenta de Esporas"));
                 bossBar.setColor(BarColor.PURPLE);
-                bossEntity.getAttribute(org.bukkit.attribute.Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(22);
-                bossEntity.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.28);
+                bossEntity.getAttribute(org.bukkit.attribute.Attribute.ATTACK_DAMAGE).setBaseValue(22);
+                bossEntity.getAttribute(org.bukkit.attribute.Attribute.MOVEMENT_SPEED).setBaseValue(0.28);
 
                 // Efecto de transición
                 world.spawnParticle(Particle.DUST, loc.clone().add(0, 2, 0), 60, 3, 2, 3, 0,
@@ -380,9 +380,9 @@ public class VorgathBoss implements Boss {
             case 3:
                 bossBar.setTitle(SmallCaps.convert("§4§l⚔ Vorgath §8- §0Fase 3: Ira del Vacío"));
                 bossBar.setColor(BarColor.WHITE);
-                bossEntity.getAttribute(org.bukkit.attribute.Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(28);
-                bossEntity.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.32);
-                bossEntity.getAttribute(org.bukkit.attribute.Attribute.GENERIC_KNOCKBACK_RESISTANCE).setBaseValue(0.0);
+                bossEntity.getAttribute(org.bukkit.attribute.Attribute.ATTACK_DAMAGE).setBaseValue(28);
+                bossEntity.getAttribute(org.bukkit.attribute.Attribute.MOVEMENT_SPEED).setBaseValue(0.32);
+                bossEntity.getAttribute(org.bukkit.attribute.Attribute.KNOCKBACK_RESISTANCE).setBaseValue(0.0);
                 bossEntity.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 999999, 1, false, false));
 
                 // Efecto de transición épica
@@ -656,10 +656,10 @@ public class VorgathBoss implements Boss {
             Zombie minion = world.spawn(spawnLoc, Zombie.class, z -> {
                 z.setCustomName(SmallCaps.convert("§c§lEspectro Carmesí"));
                 z.setCustomNameVisible(true);
-                z.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).setBaseValue(60);
+                z.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(60);
                 z.setHealth(60);
-                z.getAttribute(org.bukkit.attribute.Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(6);
-                z.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.28);
+                z.getAttribute(org.bukkit.attribute.Attribute.ATTACK_DAMAGE).setBaseValue(6);
+                z.getAttribute(org.bukkit.attribute.Attribute.MOVEMENT_SPEED).setBaseValue(0.28);
                 z.setBaby(false);
                 z.setRemoveWhenFarAway(false);
                 z.setPersistent(true);
@@ -906,11 +906,11 @@ public class VorgathBoss implements Boss {
         Zombie elite = world.spawn(spawnLoc, Zombie.class, z -> {
             z.setCustomName(SmallCaps.convert("§4§l✦ Bruto Carmesí ✦"));
             z.setCustomNameVisible(true);
-            z.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).setBaseValue(150);
+            z.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(150);
             z.setHealth(150);
-            z.getAttribute(org.bukkit.attribute.Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(10);
-            z.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.24);
-            z.getAttribute(org.bukkit.attribute.Attribute.GENERIC_KNOCKBACK_RESISTANCE).setBaseValue(0.6);
+            z.getAttribute(org.bukkit.attribute.Attribute.ATTACK_DAMAGE).setBaseValue(10);
+            z.getAttribute(org.bukkit.attribute.Attribute.MOVEMENT_SPEED).setBaseValue(0.24);
+            z.getAttribute(org.bukkit.attribute.Attribute.KNOCKBACK_RESISTANCE).setBaseValue(0.6);
             z.setBaby(false);
             z.setRemoveWhenFarAway(false);
             z.setPersistent(true);

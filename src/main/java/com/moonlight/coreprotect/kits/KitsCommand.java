@@ -688,7 +688,6 @@ public class KitsCommand implements CommandExecutor, Listener {
         hMeta.setLore(getDemonSetLore());
         hMeta.addEnchant(Enchantment.PROTECTION, 7, true);
         hMeta.addEnchant(Enchantment.UNBREAKING, 4, true);
-        hMeta.addEnchant(Enchantment.MENDING, 1, true);
         hMeta.addEnchant(Enchantment.RESPIRATION, 4, true);
         hMeta.addEnchant(Enchantment.AQUA_AFFINITY, 4, true);
         hMeta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
@@ -704,7 +703,6 @@ public class KitsCommand implements CommandExecutor, Listener {
         cMeta.setLore(getDemonSetLore());
         cMeta.addEnchant(Enchantment.PROTECTION, 7, true);
         cMeta.addEnchant(Enchantment.UNBREAKING, 4, true);
-        cMeta.addEnchant(Enchantment.MENDING, 1, true);
         cMeta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
         cMeta.getPersistentDataContainer().set(com.moonlight.coreprotect.kits.KitDemon.getDemonKey(plugin), org.bukkit.persistence.PersistentDataType.BYTE, (byte) 1);
         chestplate.setItemMeta(cMeta);
@@ -718,7 +716,6 @@ public class KitsCommand implements CommandExecutor, Listener {
         lMeta.setLore(getDemonSetLore());
         lMeta.addEnchant(Enchantment.PROTECTION, 7, true);
         lMeta.addEnchant(Enchantment.UNBREAKING, 4, true);
-        lMeta.addEnchant(Enchantment.MENDING, 1, true);
         lMeta.addEnchant(Enchantment.SWIFT_SNEAK, 4, true);
         lMeta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
         lMeta.getPersistentDataContainer().set(com.moonlight.coreprotect.kits.KitDemon.getDemonKey(plugin), org.bukkit.persistence.PersistentDataType.BYTE, (byte) 1);
@@ -733,7 +730,6 @@ public class KitsCommand implements CommandExecutor, Listener {
         bMeta.setLore(getDemonSetLore());
         bMeta.addEnchant(Enchantment.PROTECTION, 7, true);
         bMeta.addEnchant(Enchantment.UNBREAKING, 4, true);
-        bMeta.addEnchant(Enchantment.MENDING, 1, true);
         bMeta.addEnchant(Enchantment.FEATHER_FALLING, 5, true);
         bMeta.addEnchant(Enchantment.DEPTH_STRIDER, 4, true);
         bMeta.addEnchant(Enchantment.SOUL_SPEED, 4, true);
@@ -752,7 +748,6 @@ public class KitsCommand implements CommandExecutor, Listener {
         swordMeta.addEnchant(Enchantment.FIRE_ASPECT, 4, true);
         swordMeta.addEnchant(Enchantment.LOOTING, 4, true);
         swordMeta.addEnchant(Enchantment.UNBREAKING, 4, true);
-        swordMeta.addEnchant(Enchantment.MENDING, 1, true);
         swordMeta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
         swordMeta.getPersistentDataContainer().set(com.moonlight.coreprotect.kits.KitDemon.getDemonKey(plugin), org.bukkit.persistence.PersistentDataType.BYTE, (byte) 1);
         sword.setItemMeta(swordMeta);
@@ -766,7 +761,6 @@ public class KitsCommand implements CommandExecutor, Listener {
         meta.addEnchant(Enchantment.EFFICIENCY, 7, true);
         meta.addEnchant(Enchantment.FORTUNE, 4, true);
         meta.addEnchant(Enchantment.UNBREAKING, 4, true);
-        meta.addEnchant(Enchantment.MENDING, 1, true);
         meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
         meta.getPersistentDataContainer().set(com.moonlight.coreprotect.kits.KitDemon.getDemonKey(plugin), org.bukkit.persistence.PersistentDataType.BYTE, (byte) 1);
         pickaxe.setItemMeta(meta);
@@ -780,7 +774,6 @@ public class KitsCommand implements CommandExecutor, Listener {
         meta.addEnchant(Enchantment.EFFICIENCY, 7, true);
         meta.addEnchant(Enchantment.FORTUNE, 4, true);
         meta.addEnchant(Enchantment.UNBREAKING, 4, true);
-        meta.addEnchant(Enchantment.MENDING, 1, true);
         meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
         meta.getPersistentDataContainer().set(com.moonlight.coreprotect.kits.KitDemon.getDemonKey(plugin), org.bukkit.persistence.PersistentDataType.BYTE, (byte) 1);
         axe.setItemMeta(meta);
@@ -794,7 +787,6 @@ public class KitsCommand implements CommandExecutor, Listener {
         meta.addEnchant(Enchantment.EFFICIENCY, 7, true);
         meta.addEnchant(Enchantment.SILK_TOUCH, 1, true);
         meta.addEnchant(Enchantment.UNBREAKING, 4, true);
-        meta.addEnchant(Enchantment.MENDING, 1, true);
         meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
         meta.getPersistentDataContainer().set(com.moonlight.coreprotect.kits.KitDemon.getDemonKey(plugin), org.bukkit.persistence.PersistentDataType.BYTE, (byte) 1);
         shovel.setItemMeta(meta);
@@ -808,7 +800,6 @@ public class KitsCommand implements CommandExecutor, Listener {
         meta.addEnchant(Enchantment.EFFICIENCY, 7, true);
         meta.addEnchant(Enchantment.FORTUNE, 4, true);
         meta.addEnchant(Enchantment.UNBREAKING, 4, true);
-        meta.addEnchant(Enchantment.MENDING, 1, true);
         meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
         meta.getPersistentDataContainer().set(com.moonlight.coreprotect.kits.KitDemon.getDemonKey(plugin), org.bukkit.persistence.PersistentDataType.BYTE, (byte) 1);
         hoe.setItemMeta(meta);

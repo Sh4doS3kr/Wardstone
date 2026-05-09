@@ -254,7 +254,7 @@ public class OwnerKitListener implements Listener {
             // === 4 piezas: Regeneración Infinita + Vuelo + Saturación ===
             if (pieces >= 4) {
                 // Curación completa instantánea
-                double maxHealth = player.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue();
+                double maxHealth = player.getAttribute(Attribute.MAX_HEALTH).getValue();
                 if (player.getHealth() < maxHealth) {
                     player.setHealth(maxHealth);
                 }

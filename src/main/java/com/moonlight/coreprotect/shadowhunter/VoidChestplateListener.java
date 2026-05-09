@@ -100,7 +100,7 @@ public class VoidChestplateListener implements Listener {
             player.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, 40, 0, false, false, false));
 
             // Susurro del Errante: Regeneración I cuando HP < 50%
-            double maxHealth = player.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).getValue();
+            double maxHealth = player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getValue();
             if (player.getHealth() < maxHealth * 0.5) {
                 player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 40, 0, false, false, false));
 

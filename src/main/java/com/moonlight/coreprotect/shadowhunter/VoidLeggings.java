@@ -162,13 +162,13 @@ public class VoidLeggings {
         meta.getPersistentDataContainer().set(getKey(plugin), PersistentDataType.BYTE, (byte) 1);
 
         // Armor attributes
-        meta.addAttributeModifier(Attribute.GENERIC_ARMOR,
+        meta.addAttributeModifier(Attribute.ARMOR,
                 new AttributeModifier(UUID.randomUUID(), "void_leggings_armor", 8,
                         AttributeModifier.Operation.ADD_NUMBER, EquipmentSlot.LEGS));
-        meta.addAttributeModifier(Attribute.GENERIC_ARMOR_TOUGHNESS,
+        meta.addAttributeModifier(Attribute.ARMOR_TOUGHNESS,
                 new AttributeModifier(UUID.randomUUID(), "void_leggings_toughness", 4,
                         AttributeModifier.Operation.ADD_NUMBER, EquipmentSlot.LEGS));
-        meta.addAttributeModifier(Attribute.GENERIC_MAX_HEALTH,
+        meta.addAttributeModifier(Attribute.MAX_HEALTH,
                 new AttributeModifier(UUID.randomUUID(), "void_leggings_health", 4,
                         AttributeModifier.Operation.ADD_NUMBER, EquipmentSlot.LEGS));
 
