@@ -359,33 +359,34 @@ public class CoreAnimation {
 
                     // === PHASE 1: LEVITATION (0-80 ticks) ===
                     if (tick < 80) {
-                        phaseOneLevitate(center, stand, tick);
+                        try { phaseOneLevitate(center, stand, tick); } catch (Exception ignored) {}
                     }
                     // === PHASE 2: FAST SPIN + RINGS (80-160 ticks) ===
                     else if (tick < 160) {
-                        phaseTwoSpin(center, stand, tick - 80);
+                        try { phaseTwoSpin(center, stand, tick - 80); } catch (Exception ignored) {}
                     }
                     // === PHASE 3: ENERGY CONVERGENCE (160-240 ticks) ===
                     else if (tick < 240) {
-                        phaseThreeEnergy(center, stand, tick - 160);
+                        try { phaseThreeEnergy(center, stand, tick - 160); } catch (Exception ignored) {}
                     }
                     // === PHASE 4: TRANSFORMATION VORTEX (240-320 ticks) ===
                     else if (tick < 320) {
-                        phaseFourTransform(center, stand, tick - 240, oldMaterial, newMaterial);
+                        try { phaseFourTransform(center, stand, tick - 240, oldMaterial, newMaterial); } catch (Exception ignored) {}
                         if (!materialChanged && tick >= 280) {
                             stand.setHelmet(new org.bukkit.inventory.ItemStack(newMaterial));
                             materialChanged = true;
                             SoundManager.playUpgradeTransform(center);
-                            // Burst of particles on transform
-                            center.getWorld().spawnParticle(Particle.TOTEM_OF_UNDYING,
-                                    stand.getLocation().add(0, 1.5, 0), 80, 0.5, 0.5, 0.5, 0.3);
-                            center.getWorld().spawnParticle(Particle.END_ROD,
-                                    stand.getLocation().add(0, 1.5, 0), 10, 0.3, 0.3, 0.3, 0.1);
+                            try {
+                                center.getWorld().spawnParticle(Particle.TOTEM_OF_UNDYING,
+                                        stand.getLocation().add(0, 1.5, 0), 80, 0.5, 0.5, 0.5, 0.3);
+                                center.getWorld().spawnParticle(Particle.END_ROD,
+                                        stand.getLocation().add(0, 1.5, 0), 10, 0.3, 0.3, 0.3, 0.1);
+                            } catch (Exception ignored) {}
                         }
                     }
                     // === PHASE 5: DESCENT + FIREWORKS (320-400 ticks) ===
                     else {
-                        phaseFiveDescent(center, stand, tick - 320, newMaterial);
+                        try { phaseFiveDescent(center, stand, tick - 320, newMaterial); } catch (Exception ignored) {}
                     }
 
                     // Periodic sounds
@@ -395,8 +396,8 @@ public class CoreAnimation {
 
                     tick++;
                 } catch (Exception e) {
-                    // Safety: if ANY exception occurs, restore the block immediately
-                    plugin.getLogger().warning("Error in upgrade animation, restoring block: " + e.getMessage());
+                    // Critical error (ArmorStand gone, world unloaded, etc.) — restore block
+                    plugin.getLogger().warning("Critical error in upgrade animation, restoring block: " + e.getMessage());
                     if (!stand.isDead()) stand.remove();
                     center.getBlock().setType(newMaterial);
                     if (onComplete != null) onComplete.run();
