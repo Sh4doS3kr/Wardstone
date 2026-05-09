@@ -182,6 +182,59 @@ public class StaffInspectCommand implements CommandExecutor, TabCompleter, Liste
                             "§7Click para filtrar por nombre"));
                 }
 
+                // === STATS GLOBALES (todos los jugadores online sumados) ===
+                long globalWalkCm = 0, globalSprintCm = 0, globalSwimCm = 0, globalFlyCm = 0, globalFallCm = 0;
+                int globalDemonPieces = 0;
+                int playersWithDemon = 0;
+                int playersWithFullDemon = 0;
+                for (Player op3 : Bukkit.getOnlinePlayers()) {
+                    globalWalkCm   += op3.getStatistic(org.bukkit.Statistic.WALK_ONE_CM);
+                    globalSprintCm += op3.getStatistic(org.bukkit.Statistic.SPRINT_ONE_CM);
+                    globalSwimCm   += op3.getStatistic(org.bukkit.Statistic.SWIM_ONE_CM);
+                    globalFlyCm    += op3.getStatistic(org.bukkit.Statistic.FLY_ONE_CM);
+                    globalFallCm   += op3.getStatistic(org.bukkit.Statistic.FALL_ONE_CM);
+                    int dp = com.moonlight.coreprotect.kits.KitDemon.getDemonPieceCount(op3, plugin);
+                    globalDemonPieces += dp;
+                    if (dp > 0) playersWithDemon++;
+                    if (dp >= 4) playersWithFullDemon++;
+                }
+                long globalTotalBlocks = (globalWalkCm + globalSprintCm + globalSwimCm + globalFlyCm + globalFallCm) / 100;
+
+                // Errante missions global
+                int globalQuestsDone = 0;
+                if (plugin.getShadowHunterManager() != null) {
+                    ShadowHunterManager shm2 = plugin.getShadowHunterManager();
+                    for (Player op3 : Bukkit.getOnlinePlayers()) {
+                        UUID u = op3.getUniqueId();
+                        if (shm2.hasCompleted(u)) globalQuestsDone++;
+                        if (shm2.hasCompletedQuest2(u)) globalQuestsDone++;
+                        if (shm2.hasCompletedQuest3(u)) globalQuestsDone++;
+                        if (shm2.hasCompletedQuest4(u)) globalQuestsDone++;
+                        if (shm2.hasCompletedQuest5(u)) globalQuestsDone++;
+                        if (shm2.hasCompletedQuest6(u)) globalQuestsDone++;
+                        if (shm2.hasCompletedQuest7(u)) globalQuestsDone++;
+                        if (shm2.hasCompletedQuest8(u)) globalQuestsDone++;
+                    }
+                }
+
+                int onlineCount = Bukkit.getOnlinePlayers().size();
+                inv.setItem(48, item(Material.DIAMOND_BLOCK, "§a§l📊 Stats Globales §7(online)",
+                        "§7Jugadores online: §f" + onlineCount,
+                        "",
+                        "§b§lDistancias totales:",
+                        "§f  Total: §b" + fmtNum(globalTotalBlocks) + " bloques",
+                        "§f  Caminando: §7" + fmtNum(globalWalkCm / 100) + " bl",
+                        "§f  Corriendo: §7" + fmtNum(globalSprintCm / 100) + " bl",
+                        "§f  Volando: §7" + fmtNum(globalFlyCm / 100) + " bl",
+                        "",
+                        "§4§lKit Demon:",
+                        "§f  Piezas totales equipadas: §4" + globalDemonPieces,
+                        "§f  Jugadores con Demon: §c" + playersWithDemon,
+                        "§f  Sets completos: §a" + playersWithFullDemon,
+                        "",
+                        "§5§lMisiones Errante:",
+                        "§f  Total completadas: §a" + globalQuestsDone + " §7(entre todos)"));
+
                 inv.setItem(49, item(Material.NETHER_STAR, "§b§l✦ Staff Inspect",
                         "§7Total de jugadores: §f" + total,
                         "§7Página actual: §f" + (page + 1) + "§7/§f" + totalPages));
