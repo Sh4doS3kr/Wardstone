@@ -290,32 +290,10 @@ public class GUIListener implements Listener {
             }
             return;
         }
+        // Slot 12: Anti-PvP — siempre activo, no interactuable
         if (slot == 12) {
-            if (shift && region.isNoPvP()) {
-                region.setNoPvP(false);
-                plugin.getDataManager().saveData();
-                player.sendMessage(SmallCaps.convert(ChatColor.YELLOW + "Anti-PvP " + ChatColor.RED + "desactivado."));
-                SoundManager.playGUIClick(player.getLocation());
-                new CoreUpgradesShopGUI(plugin).open(player, region, 1);
-                return;
-            }
-        }
-        if (slot == 12 && !region.isNoPvP()) {
-            if (region.isUnlocked("noPvP")) {
-                region.setNoPvP(true);
-                plugin.getDataManager().saveData();
-                player.sendMessage(SmallCaps.convert(ChatColor.GREEN + "Anti-PvP reactivado."));
-                SoundManager.playUpgradePurchased(player.getLocation());
-                new CoreUpgradesShopGUI(plugin).open(player, region, 1);
-            } else if (tryPurchase(player, CoreUpgradesShopGUI.PRICE_NO_PVP)) {
-                region.setNoPvP(true);
-                region.unlockUpgrade("noPvP");
-                plugin.getDataManager().saveData();
-                plugin.getMessageManager().send(player, "upgrades.purchased", "{upgrade}", "Anti-PvP");
-                SoundManager.playUpgradePurchased(player.getLocation());
-                plugin.getAchievementListener().onUpgradePurchased(player, region, "noPvP", CoreUpgradesShopGUI.PRICE_NO_PVP);
-                new CoreUpgradesShopGUI(plugin).open(player, region);
-            }
+            player.sendMessage(SmallCaps.convert(ChatColor.GREEN + "✔ " + ChatColor.GRAY + "El PvP está siempre desactivado en protecciones."));
+            SoundManager.playGUIClick(player.getLocation());
             return;
         }
         if (slot == 14) {

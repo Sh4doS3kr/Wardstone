@@ -39,7 +39,6 @@ public class ProtectionListener implements Listener {
     private final CoreProtectPlugin plugin;
     private final java.util.Map<UUID, Long> pvpZoneMessageCooldown = new java.util.HashMap<>();
     private final java.util.Map<UUID, Long> newPlayerPvpZoneCooldown = new java.util.HashMap<>();
-    private final java.util.Map<UUID, Long> banKnockbackCooldown = new java.util.HashMap<>();
 
     public ProtectionListener(CoreProtectPlugin plugin) {
         this.plugin = plugin;
@@ -620,55 +619,11 @@ public class ProtectionListener implements Listener {
         ProtectedRegion victimRegion = plugin.getProtectionManager().getRegionAt(victim.getLocation());
         ProtectedRegion attackerRegion = plugin.getProtectionManager().getRegionAt(attacker.getLocation());
 
-        // PRIORIDAD 1: Bloquear PvP si la víctima está en una región con Anti-PvP activado
-        if (victimRegion != null && victimRegion.isNoPvP()) {
+        // PvP SIEMPRE DESACTIVADO en cualquier protección — sin excepciones
+        if (victimRegion != null || attackerRegion != null) {
             event.setCancelled(true);
             plugin.getMessageManager().send(attacker, "upgrades.no-pvp-zone");
             return;
-        }
-
-        // PRIORIDAD 2: Bloquear PvP si el atacante está en una región con Anti-PvP activado
-        if (attackerRegion != null && attackerRegion.isNoPvP()) {
-            event.setCancelled(true);
-            plugin.getMessageManager().send(attacker, "upgrades.no-pvp-zone");
-            return;
-        }
-
-        // PRIORIDAD 3: Verificar si están en combate para permitir PvP en zonas protegidas
-        boolean attackerInCombat = plugin.getCombatTagManager().isInCombat(attacker.getUniqueId());
-        boolean victimInCombat = plugin.getCombatTagManager().isInCombat(victim.getUniqueId());
-
-        if (attackerInCombat && victimInCombat) {
-            // PvP permitido durante combate (si no hay mejora NoPvP)
-            // Aplicar damage boost si corresponde
-            if (attackerRegion != null && attackerRegion.canAccess(attacker.getUniqueId())
-                    && attackerRegion.getDamageBoostLevel() > 0) {
-                double multiplier = attackerRegion.getDamageBoostMultiplier();
-                event.setDamage(event.getDamage() * multiplier);
-            }
-            return;
-        }
-
-        // PRIORIDAD 4: Bloquear PvP si la víctima está en una región protegida donde no tiene acceso
-        // (esto previene que alguien ataque a un jugador en su propia base)
-        if (victimRegion != null && !victimRegion.canAccess(attacker.getUniqueId())) {
-            event.setCancelled(true);
-            plugin.getMessageManager().send(attacker, "protection.cannot-attack-player");
-            return;
-        }
-
-        // PRIORIDAD 5: Bloquear PvP si el atacante está en una región protegida donde no tiene acceso
-        if (attackerRegion != null && !attackerRegion.canAccess(attacker.getUniqueId())) {
-            event.setCancelled(true);
-            plugin.getMessageManager().send(attacker, "protection.cannot-attack-from-here");
-            return;
-        }
-
-        // === DAMAGE BOOST (atacante en su zona con mejora de daño) ===
-        if (attackerRegion != null && attackerRegion.canAccess(attacker.getUniqueId())
-                && attackerRegion.getDamageBoostLevel() > 0) {
-            double multiplier = attackerRegion.getDamageBoostMultiplier();
-            event.setDamage(event.getDamage() * multiplier);
         }
     }
 
@@ -1335,36 +1290,6 @@ public class ProtectionListener implements Listener {
         SoundManager.playProtectionDenied(player.getLocation());
     }
 
-    // === EXPULSAR JUGADORES BANEADOS DE PROTECCIONES ===
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
-    public void onBannedPlayerEnterRegion(PlayerMoveEvent event) {
-        if (event.getFrom().getBlockX() == event.getTo().getBlockX()
-                && event.getFrom().getBlockY() == event.getTo().getBlockY()
-                && event.getFrom().getBlockZ() == event.getTo().getBlockZ()) {
-            return;
-        }
-
-        Player player = event.getPlayer();
-
-        Location to = event.getTo();
-        ProtectedRegion region = plugin.getProtectionManager().getRegionAt(to);
-        if (region == null) return;
-        if (!region.isBanned(player.getUniqueId())) return;
-
-        // Cancelar el movimiento y teleportar al borde
-        event.setCancelled(true);
-        teleportToRegionEdge(player, region);
-
-        // Mensaje con cooldown (cada 3 segundos)
-        long now = System.currentTimeMillis();
-        Long lastMsg = banKnockbackCooldown.get(player.getUniqueId());
-        if (lastMsg == null || now - lastMsg > 3000) {
-            banKnockbackCooldown.put(player.getUniqueId(), now);
-            String ownerName = org.bukkit.Bukkit.getOfflinePlayer(region.getOwner()).getName();
-            player.sendMessage(SmallCaps.convert("§c§l⚠ §cEstás baneado de la protección de §f" + (ownerName != null ? ownerName : "???") + "§c. ¡No puedes entrar!"));
-            player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_ENDERMAN_TELEPORT, 0.8f, 0.5f);
-        }
-    }
 
     private void teleportToRegionEdge(Player target, ProtectedRegion region) {
         Location coreLoc = region.getCoreLocation();

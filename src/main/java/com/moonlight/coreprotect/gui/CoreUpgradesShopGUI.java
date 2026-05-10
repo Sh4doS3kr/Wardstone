@@ -95,15 +95,21 @@ public class CoreUpgradesShopGUI {
                         ChatColor.GRAY + "TNT, Creepers, Bolas de fuego...",
                         ChatColor.GRAY + "Nada puede destruir tu base!")));
 
-        // Slot 12: Anti-PvP
-        inv.setItem(12, createUpgradeItem(Material.IRON_SWORD, "Anti-PvP",
-                region.isNoPvP(), region.isUnlocked("noPvP"), PRICE_NO_PVP,
-                Arrays.asList(
-                        ChatColor.GRAY + "Los jugadores NO pueden",
-                        ChatColor.GRAY + "hacerse daño entre sí",
-                        ChatColor.GRAY + "dentro de tu zona.",
-                        "",
-                        ChatColor.GRAY + "Zona de paz total!")));
+        // Slot 12: Anti-PvP (siempre activo, no comprable)
+        {
+            org.bukkit.inventory.ItemStack pvpItem = new org.bukkit.inventory.ItemStack(Material.IRON_SWORD);
+            org.bukkit.inventory.meta.ItemMeta meta = pvpItem.getItemMeta();
+            meta.setDisplayName(ChatColor.GREEN + "✔ Anti-PvP " + ChatColor.GRAY + "(Siempre activo)");
+            meta.setLore(Arrays.asList(
+                    ChatColor.GRAY + "El PvP está SIEMPRE",
+                    ChatColor.GRAY + "desactivado dentro de",
+                    ChatColor.GRAY + "cualquier protección.",
+                    "",
+                    ChatColor.GREEN + "✔ Incluido gratis"));
+            meta.addItemFlags(org.bukkit.inventory.ItemFlag.HIDE_ATTRIBUTES);
+            pvpItem.setItemMeta(meta);
+            inv.setItem(12, pvpItem);
+        }
 
         // Slot 14: No Mob Spawn
         inv.setItem(14, createUpgradeItem(Material.ZOMBIE_HEAD, "Anti-Mobs",

@@ -86,22 +86,10 @@ public class CoreCommand implements CommandExecutor, TabCompleter {
                 break;
             case "ban":
             case "banear":
-                if (args.length < 2) {
-                    player.sendMessage(SmallCaps.convert("§c§l✖ §cUsa: /cores ban <jugador>"));
-                    return true;
-                }
-                banFromRegion(player, args[1]);
-                break;
             case "unban":
             case "desbanear":
-                if (args.length < 2) {
-                    player.sendMessage(SmallCaps.convert("§c§l✖ §cUsa: /cores unban <jugador>"));
-                    return true;
-                }
-                unbanFromRegion(player, args[1]);
-                break;
             case "banlist":
-                showBanList(player);
+                player.sendMessage(SmallCaps.convert("§c§l✖ §cEl sistema de baneo de protecciones ha sido eliminado."));
                 break;
             case "help":
             case "ayuda":
@@ -461,14 +449,13 @@ public class CoreCommand implements CommandExecutor, TabCompleter {
         }
 
         if (args.length == 1) {
-            List<String> completions = Arrays.asList("tienda", "info", "remove", "add", "kick", "ban", "unban", "banlist", "home", "sethome", "tp", "help");
+            List<String> completions = Arrays.asList("tienda", "info", "remove", "add", "kick", "home", "sethome", "tp", "help");
             return completions.stream()
                     .filter(s -> s.toLowerCase().startsWith(args[0].toLowerCase()))
                     .collect(Collectors.toList());
         }
 
-        if (args.length == 2 && (args[0].equalsIgnoreCase("add") || args[0].equalsIgnoreCase("kick")
-                || args[0].equalsIgnoreCase("ban") || args[0].equalsIgnoreCase("unban"))) {
+        if (args.length == 2 && (args[0].equalsIgnoreCase("add") || args[0].equalsIgnoreCase("kick"))) {
             return Bukkit.getOnlinePlayers().stream()
                     .map(Player::getName)
                     .filter(name -> name.toLowerCase().startsWith(args[1].toLowerCase()))

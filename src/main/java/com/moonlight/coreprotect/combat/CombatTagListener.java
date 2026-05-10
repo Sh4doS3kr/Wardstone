@@ -45,15 +45,14 @@ public class CombatTagListener implements Listener {
         String worldName = victim.getWorld().getName();
         if (worldName.equals("moonkoth") || worldName.equals("koth_world") || worldName.equals("minigames")) return;
 
-        // No tagear si alguno de los dos está en una zona protegida con NoPvP
-        // (Fix para Wind Burst de maza que causa daño indirecto en zonas seguras)
+        // No tagear si alguno de los dos está en una zona protegida (PvP siempre off en protecciones)
         com.moonlight.coreprotect.core.ProtectedRegion victimRegion =
                 plugin.getProtectionManager().getRegionAt(victim.getLocation());
-        if (victimRegion != null && victimRegion.isNoPvP()) return;
+        if (victimRegion != null) return;
 
         com.moonlight.coreprotect.core.ProtectedRegion attackerRegion =
                 plugin.getProtectionManager().getRegionAt(attacker.getLocation());
-        if (attackerRegion != null && attackerRegion.isNoPvP()) return;
+        if (attackerRegion != null) return;
 
         // No tagear en spawn core (zona segura), pero SÍ en el anillo PvP
         if (plugin.getProtectionManager().isSpawnCore(victim.getLocation())) return;
