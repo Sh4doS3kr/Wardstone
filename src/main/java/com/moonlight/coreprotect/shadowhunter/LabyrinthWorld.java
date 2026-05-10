@@ -4,6 +4,7 @@ import com.moonlight.coreprotect.CoreProtectPlugin;
 import com.moonlight.coreprotect.util.GameRuleUtil;
 import org.bukkit.*;
 import org.bukkit.block.Block;
+import org.bukkit.entity.Player;
 import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -79,7 +80,17 @@ public class LabyrinthWorld {
         // Delete if world already exists
         World existing = Bukkit.getWorld(worldName);
         if (existing != null) {
+            // Teleport any remaining players out first
+            for (Player p : existing.getPlayers()) {
+                p.teleport(Bukkit.getWorlds().get(0).getSpawnLocation());
+            }
             Bukkit.unloadWorld(existing, false);
+        }
+        // Delete leftover world folder to avoid corruption
+        File worldFolder = new File(Bukkit.getWorldContainer(), worldName);
+        if (worldFolder.exists()) {
+            deleteDirectory(worldFolder);
+            plugin.getLogger().info("[Labyrinth] Deleted old world folder: " + worldName);
         }
 
         // Create void world
@@ -89,11 +100,20 @@ public class LabyrinthWorld {
         creator.generateStructures(false);
         creator.environment(World.Environment.NORMAL);
 
-        world = creator.createWorld();
+        try {
+            world = creator.createWorld();
+        } catch (Exception e) {
+            plugin.getLogger().severe("[Labyrinth] Exception creating world: " + e.getMessage());
+            e.printStackTrace();
+        }
         if (world == null) {
             plugin.getLogger().severe("[Labyrinth] Failed to create world: " + worldName);
+            if (onComplete != null) {
+                plugin.getLogger().severe("[Labyrinth] Cannot proceed - world creation failed.");
+            }
             return;
         }
+        plugin.getLogger().info("[Labyrinth] World created successfully: " + worldName);
 
         // World settings for horror
         world.setDifficulty(Difficulty.HARD);
@@ -785,40 +805,13 @@ public class LabyrinthWorld {
     // ==================== VOID CHUNK GENERATOR ====================
 
     public static class VoidGenerator extends ChunkGenerator {
-        @Override
-        public ChunkData generateChunkData(World world, Random random, int x, int z, BiomeGrid biome) {
-            return createChunkData(world);
-        }
-
-        @Override
-        public boolean shouldGenerateNoise() {
-            return false;
-        }
-
-        @Override
-        public boolean shouldGenerateSurface() {
-            return false;
-        }
-
-        @Override
-        public boolean shouldGenerateCaves() {
-            return false;
-        }
-
-        @Override
-        public boolean shouldGenerateDecorations() {
-            return false;
-        }
-
-        @Override
-        public boolean shouldGenerateMobs() {
-            return false;
-        }
-
-        @Override
-        public boolean shouldGenerateStructures() {
-            return false;
-        }
+        @Override public boolean shouldGenerateNoise() { return false; }
+        @Override public boolean shouldGenerateSurface() { return false; }
+        @Override public boolean shouldGenerateBedrock() { return false; }
+        @Override public boolean shouldGenerateCaves() { return false; }
+        @Override public boolean shouldGenerateDecorations() { return false; }
+        @Override public boolean shouldGenerateMobs() { return false; }
+        @Override public boolean shouldGenerateStructures() { return false; }
     }
 
     // ==================== GETTERS ====================

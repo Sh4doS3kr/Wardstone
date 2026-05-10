@@ -41,42 +41,35 @@ public class EyeOfStormGame extends MiniGame {
     private static final int ARENA_Y = 70;
     private static final int BLOCKS_PER_TICK = 6000;
 
-    // === EYE ===
-    private static final double EYE_INITIAL_RADIUS = 16.0;
-    private static final double EYE_MIN_RADIUS = 4.0;
-    private static final int EYE_MOVE_INTERVAL = 18; // seconds
-    private static final double EYE_MOVE_MAX_DIST = 70; // max distance the eye can jump
+    // === STORM (Fortnite-style shrinking border) ===
+    private static final double STORM_INITIAL_RADIUS = 150.0; // Empieza MÁS GRANDE que el mapa
+    private static final double STORM_MIN_RADIUS = 5.0;
+    private static final int STORM_START = 30; // Segundos hasta que empieza a cerrar
+    private static final double STORM_DAMAGE_BASE = 1.5;
+    private static final double STORM_DAMAGE_PER_PHASE = 2.0;
 
-    // === STORM DAMAGE ===
-    private static final double STORM_DAMAGE_BASE = 1.0;
-    private static final double STORM_DAMAGE_PER_PHASE = 1.5;
-
-    // === PHASES ===
-    private static final int PHASE_2_TIME = 60;
-    private static final int PHASE_3_TIME = 120;
-    private static final int PHASE_4_TIME = 180;
+    // === PHASES (storm shrinks in stages like Fortnite) ===
+    // Fase 1: 0-30s = loot libre, borde enorme
+    // Fase 2: 30-90s = borde cierra hasta r80
+    // Fase 3: 90-150s = borde cierra hasta r40
+    // Fase 4: 150-210s = borde cierra hasta r15
+    // Fase 5: 210s+ = borde cierra hasta r5
+    private static final int PHASE_2_TIME = 30;
+    private static final int PHASE_3_TIME = 90;
+    private static final int PHASE_4_TIME = 150;
+    private static final int PHASE_5_TIME = 210;
 
     // === STATE ===
     private BossBar stormBar;
     private final Random random = new Random();
     private boolean gameStarted = false;
+    private boolean stormActive = false;
     private int currentPhase = 1;
-
-    // Eye position (center of safe zone)
-    private double eyeX = 0;
-    private double eyeZ = 0;
-    private double eyeRadius = EYE_INITIAL_RADIUS;
-    private double targetEyeX = 0;
-    private double targetEyeZ = 0;
-
-    // Eye movement tracking
-    private int nextEyeMoveAt = EYE_MOVE_INTERVAL;
-    private boolean eyeMoving = false;
-    private int eyeMoveCountdown = 0;
+    private double stormRadius = STORM_INITIAL_RADIUS;
 
     // Tasks
-    private int particleTaskId = -1;
     private int stormEffectTaskId = -1;
+    private int stormSyncTaskId = -1;
 
     public EyeOfStormGame(CoreProtectPlugin plugin, MiniGameManager manager) {
         super(plugin, manager, MiniGameType.EYE_OF_STORM);
@@ -540,11 +533,9 @@ public class EyeOfStormGame extends MiniGame {
     @Override
     public void startGameLogic() {
         gameStarted = true;
+        stormActive = false;
         currentPhase = 1;
-        eyeX = 0;
-        eyeZ = 0;
-        eyeRadius = EYE_INITIAL_RADIUS;
-        nextEyeMoveAt = EYE_MOVE_INTERVAL;
+        stormRadius = STORM_INITIAL_RADIUS;
 
         // BossBar
         stormBar = Bukkit.createBossBar("§8§l⛈ OJO DE LA TORMENTA ⛈", BarColor.PURPLE, BarStyle.SEGMENTED_10);
@@ -558,17 +549,17 @@ public class EyeOfStormGame extends MiniGame {
             if (p != null) stormBar.addPlayer(p);
         }
 
+        // Iniciar WorldBorder amplio (más grande que el mapa)
+        initStormBorder();
+
         // Kit inicial
         giveStartingKit();
 
         // Efectos de tormenta constantes
         startStormEffects();
 
-        // Partículas del ojo
-        startEyeParticles();
-
-        broadcastGame("§8§l⛈ §7La tormenta cubre todo. §eBusca el OJO para sobrevivir.");
-        broadcastGame("§8§l⛈ §7El ojo se mueve cada §f" + EYE_MOVE_INTERVAL + "s§7. ¡Persíguelo!");
+        broadcastGame("§8§l⛈ §7La tormenta rodea la isla. §eLootea rápido antes de que se cierre.");
+        broadcastGame("§8§l⛈ §7La tormenta empezará a cerrarse en §f" + STORM_START + "s§7.");
     }
 
     private void giveStartingKit() {
@@ -593,113 +584,99 @@ public class EyeOfStormGame extends MiniGame {
         gameTime++;
 
         updatePhase();
-        handleEyeMovement();
         applyStormDamage();
         strikeLightningOutside();
         updateBossBar();
-        showEyeDirection();
+        showActionBar();
     }
 
     private void updatePhase() {
         int newPhase = 1;
-        if (gameTime >= PHASE_4_TIME) newPhase = 4;
+        if (gameTime >= PHASE_5_TIME) newPhase = 5;
+        else if (gameTime >= PHASE_4_TIME) newPhase = 4;
         else if (gameTime >= PHASE_3_TIME) newPhase = 3;
         else if (gameTime >= PHASE_2_TIME) newPhase = 2;
 
         if (newPhase != currentPhase) {
             currentPhase = newPhase;
-            // Encoger el ojo
-            double shrinkFactor = 0.75;
-            eyeRadius = Math.max(EYE_MIN_RADIUS, eyeRadius * shrinkFactor);
+
+            // Calcular nuevo radio objetivo y duración del shrink
+            double targetRadius;
+            int shrinkDuration;
+            switch (currentPhase) {
+                case 2: targetRadius = 80; shrinkDuration = 55; break;   // 30-90s → cierra a 80
+                case 3: targetRadius = 40; shrinkDuration = 50; break;   // 90-150s → cierra a 40
+                case 4: targetRadius = 15; shrinkDuration = 45; break;   // 150-210s → cierra a 15
+                case 5: targetRadius = STORM_MIN_RADIUS; shrinkDuration = 40; break; // 210+ → cierra a 5
+                default: targetRadius = STORM_INITIAL_RADIUS; shrinkDuration = 60; break;
+            }
+
+            if (currentPhase >= 2) {
+                stormActive = true;
+                // Usar WorldBorder para el shrink suave
+                World world = Bukkit.getWorld(MiniGameWorld.getWorldName());
+                if (world != null) {
+                    org.bukkit.WorldBorder border = world.getWorldBorder();
+                    border.setSize(targetRadius * 2, shrinkDuration);
+                }
+            }
 
             broadcastGame("§4§l⚠ FASE " + currentPhase + " §8— §cLa tormenta se intensifica.");
-            broadcastGame("§7Ojo: radio §f" + String.format("%.0f", eyeRadius) + " §7bloques. Daño: §c" + String.format("%.1f", getStormDamage()) + "❤");
-            titleAlive("§4§lFASE " + currentPhase, "§c¡La tormenta empeora!");
+            String dmgStr = String.format("%.1f", getStormDamage());
+            if (currentPhase >= 2) {
+                broadcastGame("§7El borde se cierra. §cDaño fuera: §f" + dmgStr + "❤/s");
+            }
+            titleAlive("§4§lFASE " + currentPhase, "§c¡La tormenta se cierra!");
             soundAll(Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 1.0f, 0.5f);
-        }
-    }
 
-    private void handleEyeMovement() {
-        // Countdown warning
-        int timeToMove = nextEyeMoveAt - gameTime;
-
-        if (timeToMove == 5) {
-            broadcastGame("§e§l⚠ §eEl ojo se moverá en §f5 §esegundos...");
-            soundAll(Sound.BLOCK_NOTE_BLOCK_BELL, 1.0f, 1.5f);
-        } else if (timeToMove == 3) {
-            soundAll(Sound.BLOCK_NOTE_BLOCK_BELL, 1.0f, 1.8f);
-        } else if (timeToMove == 1) {
-            soundAll(Sound.BLOCK_NOTE_BLOCK_BELL, 1.0f, 2.0f);
+            // Speed boost al cambiar de fase para que corran al centro
+            if (currentPhase >= 2) {
+                for (UUID uuid : alivePlayers) {
+                    Player p = Bukkit.getPlayer(uuid);
+                    if (p != null) {
+                        p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 100, 1, false, true));
+                    }
+                }
+            }
         }
 
-        if (gameTime >= nextEyeMoveAt) {
-            moveEye();
-
-            // El intervalo se reduce con las fases
-            int interval = EYE_MOVE_INTERVAL;
-            if (currentPhase >= 3) interval = 14;
-            if (currentPhase >= 4) interval = 10;
-            nextEyeMoveAt = gameTime + interval;
-        }
-    }
-
-    private void moveEye() {
-        // Elegir nueva posición (dentro del mapa, no demasiado lejos del centro)
-        double maxRadius = Math.max(30, ARENA_RADIUS - 20 - (currentPhase * 10));
-        double angle = random.nextDouble() * Math.PI * 2;
-        double dist = random.nextDouble() * maxRadius;
-
-        double newX = dist * Math.cos(angle);
-        double newZ = dist * Math.sin(angle);
-
-        // Limitar distancia de salto
-        double jumpDist = Math.sqrt((newX - eyeX) * (newX - eyeX) + (newZ - eyeZ) * (newZ - eyeZ));
-        if (jumpDist > EYE_MOVE_MAX_DIST) {
-            double ratio = EYE_MOVE_MAX_DIST / jumpDist;
-            newX = eyeX + (newX - eyeX) * ratio;
-            newZ = eyeZ + (newZ - eyeZ) * ratio;
-        }
-
-        eyeX = newX;
-        eyeZ = newZ;
-
-        // Encoger un poco cada movimiento
-        eyeRadius = Math.max(EYE_MIN_RADIUS, eyeRadius - 0.5);
-
-        // Anunciar
-        broadcastGame("§d§l⚡ §dEl OJO se ha movido. §7Radio: §f" + String.format("%.0f", eyeRadius));
-        titleAlive("§d§l⚡ OJO MOVIDO", "§7¡Corre al nuevo punto!");
-        soundAll(Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 1.0f, 0.8f);
-
-        // Trueno visual en la nueva posición
-        World world = Bukkit.getWorld(MiniGameWorld.getWorldName());
-        if (world != null) {
-            int groundY = getGroundY(world, (int) eyeX, (int) eyeZ);
-            world.strikeLightningEffect(new Location(world, eyeX, groundY + 1, eyeZ));
-        }
-
-        // Speed boost para que corran al ojo
-        for (UUID uuid : alivePlayers) {
-            Player p = Bukkit.getPlayer(uuid);
-            if (p == null) continue;
-            p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 100, 2, false, true));
+        // Countdown warnings antes de la tormenta
+        if (!stormActive) {
+            int timeToStorm = PHASE_2_TIME - gameTime;
+            if (timeToStorm == 10) {
+                broadcastGame("§c§l⚠ §cLa tormenta empezará a cerrarse en §f10 §csegundos...");
+                soundAll(Sound.BLOCK_NOTE_BLOCK_BELL, 1.0f, 1.0f);
+            } else if (timeToStorm == 5) {
+                broadcastGame("§4§l⚠ §c§l5 SEGUNDOS...");
+                soundAll(Sound.BLOCK_NOTE_BLOCK_BELL, 1.0f, 1.5f);
+            } else if (timeToStorm == 3 || timeToStorm == 2 || timeToStorm == 1) {
+                soundAll(Sound.BLOCK_NOTE_BLOCK_BELL, 1.0f, 2.0f);
+            }
         }
     }
 
     private void applyStormDamage() {
+        if (!stormActive) return;
         double damage = getStormDamage();
+
+        // Sincronizar stormRadius con el WorldBorder real
+        World world = Bukkit.getWorld(MiniGameWorld.getWorldName());
+        if (world != null) {
+            stormRadius = world.getWorldBorder().getSize() / 2.0;
+        }
 
         for (UUID uuid : new ArrayList<>(alivePlayers)) {
             Player p = Bukkit.getPlayer(uuid);
             if (p == null || !p.isOnline()) continue;
 
-            double distToEye = horizontalDist(p.getLocation(), eyeX, eyeZ);
+            double dist = Math.sqrt(p.getLocation().getX() * p.getLocation().getX()
+                    + p.getLocation().getZ() * p.getLocation().getZ());
 
-            if (distToEye > eyeRadius) {
-                // FUERA DEL OJO: daño + efectos
-                double extraDist = distToEye - eyeRadius;
-                double scaledDamage = damage + (extraDist * 0.1); // Más lejos = más daño
-                scaledDamage = Math.min(scaledDamage, 8.0); // Cap
+            if (dist > stormRadius) {
+                // FUERA DE LA ZONA: daño + efectos
+                double extraDist = dist - stormRadius;
+                double scaledDamage = damage + (extraDist * 0.05);
+                scaledDamage = Math.min(scaledDamage, 10.0);
 
                 p.damage(scaledDamage);
                 p.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, 40, 0, false, false));
@@ -709,7 +686,6 @@ public class EyeOfStormGame extends MiniGame {
                     p.playSound(p.getLocation(), Sound.ENTITY_LIGHTNING_BOLT_IMPACT, 0.3f, 0.5f);
                 }
 
-                // Muerte por tormenta
                 if (p.getHealth() <= 0 || p.isDead()) {
                     if (alivePlayers.contains(uuid)) {
                         eliminatePlayer(uuid);
@@ -720,55 +696,65 @@ public class EyeOfStormGame extends MiniGame {
     }
 
     private void strikeLightningOutside() {
-        if (gameTime % 4 != 0) return; // Cada 4 segundos
+        if (!stormActive) return;
+        if (gameTime % 4 != 0) return;
 
         World world = Bukkit.getWorld(MiniGameWorld.getWorldName());
         if (world == null) return;
 
-        // Rayos aleatorios en la zona de tormenta
-        for (int i = 0; i < 2 + currentPhase; i++) {
+        // Rayos aleatorios fuera del borde
+        int numLightning = 2 + currentPhase;
+        for (int i = 0; i < numLightning; i++) {
             double angle = random.nextDouble() * Math.PI * 2;
-            double dist = eyeRadius + 5 + random.nextDouble() * 40;
-            double lx = eyeX + dist * Math.cos(angle);
-            double lz = eyeZ + dist * Math.sin(angle);
-            int ly = getGroundY(world, (int) lx, (int) lz) + 1;
-            world.strikeLightningEffect(new Location(world, lx, ly, lz));
+            double dist = stormRadius + 5 + random.nextDouble() * 40;
+            double lx = dist * Math.cos(angle);
+            double lz = dist * Math.sin(angle);
+            if (Math.abs(lx) <= ARENA_RADIUS && Math.abs(lz) <= ARENA_RADIUS) {
+                int ly = getGroundY(world, (int) lx, (int) lz) + 1;
+                world.strikeLightningEffect(new Location(world, lx, ly, lz));
+            }
         }
 
-        // Rayos dirigidos a jugadores fuera del ojo (fase 3+)
-        if (currentPhase >= 3 && random.nextInt(3) == 0) {
+        // Rayos dirigidos a jugadores fuera del borde (fase 4+)
+        if (currentPhase >= 4 && random.nextInt(3) == 0) {
             for (UUID uuid : alivePlayers) {
                 Player p = Bukkit.getPlayer(uuid);
                 if (p == null) continue;
-                double distToEye = horizontalDist(p.getLocation(), eyeX, eyeZ);
-                if (distToEye > eyeRadius + 10 && random.nextInt(3) == 0) {
+                double dist = Math.sqrt(p.getLocation().getX() * p.getLocation().getX()
+                        + p.getLocation().getZ() * p.getLocation().getZ());
+                if (dist > stormRadius + 10 && random.nextInt(3) == 0) {
                     world.strikeLightning(p.getLocation());
                 }
             }
         }
     }
 
-    private void showEyeDirection() {
+    private void showActionBar() {
         if (gameTime % 2 != 0) return;
 
         for (UUID uuid : alivePlayers) {
             Player p = Bukkit.getPlayer(uuid);
             if (p == null) continue;
 
-            double distToEye = horizontalDist(p.getLocation(), eyeX, eyeZ);
-            boolean inEye = distToEye <= eyeRadius;
+            double dist = Math.sqrt(p.getLocation().getX() * p.getLocation().getX()
+                    + p.getLocation().getZ() * p.getLocation().getZ());
+            boolean safe = dist <= stormRadius;
+            String distStr = String.format("%.0f", dist);
+            String radiusStr = String.format("%.0f", stormRadius);
 
-            int timeToMove = nextEyeMoveAt - gameTime;
-            String distStr = String.format("%.0f", distToEye);
-
-            if (inEye) {
+            if (stormActive) {
+                String safeColor = safe ? "§a" : "§c";
                 com.moonlight.coreprotect.util.ActionBarUtil.send(p,
-                        "§a§l✦ SEGURO §8| §7Ojo: §f" + distStr + "§7/" + String.format("%.0f", eyeRadius) +
-                                " §8| §eMovimiento: §f" + timeToMove + "s");
+                        "§4§l⛈ " + safeColor + (safe ? "SEGURO" : "¡TORMENTA!") +
+                                " §8| §7Tu dist: " + safeColor + distStr +
+                                " §8| §7Radio: §f" + radiusStr +
+                                " §8| §fFase " + currentPhase);
             } else {
+                int timeToStorm = PHASE_2_TIME - gameTime;
                 com.moonlight.coreprotect.util.ActionBarUtil.send(p,
-                        "§c§l⚠ TORMENTA §8| §7Distancia al ojo: §c" + distStr +
-                                " §8| §eMovimiento: §f" + timeToMove + "s");
+                        "§a§l✦ LOOTEA §8| §eTormenta en §f" + timeToStorm + "s" +
+                                " §8| §7Radio actual: §f" + radiusStr +
+                                " §8| §fVivos: §a" + alivePlayers.size());
             }
         }
     }
@@ -778,63 +764,32 @@ public class EyeOfStormGame extends MiniGame {
     }
 
     // ═══════════════════════════════════════════
-    //  VISUAL EFFECTS
+    //  STORM BORDER (WorldBorder nativo del cliente)
     // ═══════════════════════════════════════════
 
-    private void startEyeParticles() {
+    private void initStormBorder() {
         World world = Bukkit.getWorld(MiniGameWorld.getWorldName());
         if (world == null) return;
 
-        particleTaskId = new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (!gameStarted) { cancel(); return; }
-                World w = Bukkit.getWorld(MiniGameWorld.getWorldName());
-                if (w == null) { cancel(); return; }
-
-                int groundY = getGroundY(w, (int) eyeX, (int) eyeZ);
-
-                // Anillo del ojo (borde visible)
-                for (int i = 0; i < 40; i++) {
-                    double angle = (2 * Math.PI / 40) * i;
-                    double px = eyeX + eyeRadius * Math.cos(angle);
-                    double pz = eyeZ + eyeRadius * Math.sin(angle);
-                    w.spawnParticle(Particle.END_ROD, px, groundY + 2, pz, 1, 0, 0.5, 0, 0.01);
-                }
-
-                // Columna de luz en el centro del ojo
-                for (int y = 0; y < 15; y++) {
-                    w.spawnParticle(Particle.END_ROD, eyeX, groundY + y, eyeZ, 2, 0.3, 0, 0.3, 0.01);
-                }
-
-                // Partículas de tormenta fuera del ojo
-                for (int i = 0; i < 30; i++) {
-                    double angle = random.nextDouble() * Math.PI * 2;
-                    double dist = eyeRadius + 5 + random.nextDouble() * 30;
-                    double sx = eyeX + dist * Math.cos(angle);
-                    double sz = eyeZ + dist * Math.sin(angle);
-                    w.spawnParticle(Particle.SMOKE, sx, groundY + 1 + random.nextDouble() * 5, sz, 1, 1, 0.5, 1, 0.02);
-                }
-
-                // Lluvia de partículas grises en la tormenta (ambiente)
-                for (UUID uuid : alivePlayers) {
-                    Player p = Bukkit.getPlayer(uuid);
-                    if (p == null) continue;
-                    double distToEye = horizontalDist(p.getLocation(), eyeX, eyeZ);
-                    if (distToEye > eyeRadius) {
-                        Location loc = p.getLocation();
-                        for (int i = 0; i < 5; i++) {
-                            p.spawnParticle(Particle.SMOKE,
-                                    loc.getX() + random.nextDouble() * 6 - 3,
-                                    loc.getY() + 3 + random.nextDouble() * 3,
-                                    loc.getZ() + random.nextDouble() * 6 - 3,
-                                    1, 0, -0.3, 0, 0.05);
-                        }
-                    }
-                }
-            }
-        }.runTaskTimer(plugin, 0L, 4L).getTaskId();
+        org.bukkit.WorldBorder border = world.getWorldBorder();
+        border.setCenter(0, 0);
+        border.setSize(STORM_INITIAL_RADIUS * 2); // diámetro, empieza MÁS GRANDE que el mapa
+        border.setWarningDistance(10);
+        border.setWarningTime(15);
+        border.setDamageAmount(0); // Daño lo manejamos nosotros
+        border.setDamageBuffer(0);
     }
+
+    private void resetStormBorder() {
+        World world = Bukkit.getWorld(MiniGameWorld.getWorldName());
+        if (world == null) return;
+        org.bukkit.WorldBorder border = world.getWorldBorder();
+        border.reset();
+    }
+
+    // ═══════════════════════════════════════════
+    //  VISUAL EFFECTS
+    // ═══════════════════════════════════════════
 
     private void startStormEffects() {
         World world = Bukkit.getWorld(MiniGameWorld.getWorldName());
@@ -854,7 +809,7 @@ public class EyeOfStormGame extends MiniGame {
                 if (!gameStarted) { cancel(); return; }
                 World w = Bukkit.getWorld(MiniGameWorld.getWorldName());
                 if (w != null) {
-                    w.setTime(18000); // Mantener noche
+                    w.setTime(18000);
                     w.setStorm(true);
                     w.setThundering(true);
                 }
@@ -869,17 +824,23 @@ public class EyeOfStormGame extends MiniGame {
     private void updateBossBar() {
         if (stormBar == null) return;
 
-        int timeToMove = nextEyeMoveAt - gameTime;
-        double progress = Math.max(0, Math.min(1, (double) timeToMove / EYE_MOVE_INTERVAL));
-        stormBar.setProgress(progress);
-
-        BarColor color = timeToMove <= 5 ? BarColor.RED : BarColor.PURPLE;
-        stormBar.setColor(color);
-
-        stormBar.setTitle("§8§l⛈ §7Fase §f" + currentPhase +
-                " §8| §7Ojo: §f" + String.format("%.0f", eyeRadius) + " bloques" +
-                " §8| §eMovimiento: §f" + timeToMove + "s" +
-                " §8| §fVivos: §a" + alivePlayers.size());
+        if (stormActive) {
+            double progress = Math.max(0, (stormRadius - STORM_MIN_RADIUS) / (STORM_INITIAL_RADIUS - STORM_MIN_RADIUS));
+            stormBar.setProgress(Math.min(1.0, progress));
+            stormBar.setColor(stormRadius < 30 ? BarColor.RED : BarColor.PURPLE);
+            stormBar.setTitle("§4§l⛈ TORMENTA §8| §7Radio: §c" + String.format("%.0f", stormRadius) +
+                    " §8| §7Fase §f" + currentPhase +
+                    " §8| §7Daño: §c" + String.format("%.1f", getStormDamage()) + "❤" +
+                    " §8| §fVivos: §a" + alivePlayers.size());
+        } else {
+            int timeToStorm = PHASE_2_TIME - gameTime;
+            double progress = Math.max(0, (double) timeToStorm / PHASE_2_TIME);
+            stormBar.setProgress(progress);
+            stormBar.setColor(BarColor.PURPLE);
+            stormBar.setTitle("§8§l⛈ §7Tormenta en §f" + timeToStorm + "s" +
+                    " §8| §eLootea cofres y prepárate" +
+                    " §8| §fVivos: §a" + alivePlayers.size());
+        }
     }
 
     // ═══════════════════════════════════════════
@@ -889,15 +850,18 @@ public class EyeOfStormGame extends MiniGame {
     @Override
     public void onCleanup() {
         gameStarted = false;
+        stormActive = false;
 
-        if (particleTaskId != -1) {
-            Bukkit.getScheduler().cancelTask(particleTaskId);
-            particleTaskId = -1;
-        }
         if (stormEffectTaskId != -1) {
             Bukkit.getScheduler().cancelTask(stormEffectTaskId);
             stormEffectTaskId = -1;
         }
+        if (stormSyncTaskId != -1) {
+            Bukkit.getScheduler().cancelTask(stormSyncTaskId);
+            stormSyncTaskId = -1;
+        }
+
+        resetStormBorder();
 
         World world = Bukkit.getWorld(MiniGameWorld.getWorldName());
         if (world != null) {
@@ -917,10 +881,10 @@ public class EyeOfStormGame extends MiniGame {
     //  UTILITY
     // ═══════════════════════════════════════════
 
-    private double horizontalDist(Location loc, double tx, double tz) {
-        double dx = loc.getX() - tx;
-        double dz = loc.getZ() - tz;
-        return Math.sqrt(dx * dx + dz * dz);
+    private String formatTime(int secs) {
+        int m = secs / 60;
+        int s = secs % 60;
+        return (m > 0 ? m + "m " : "") + s + "s";
     }
 
     public boolean isPvpGame() { return true; }
