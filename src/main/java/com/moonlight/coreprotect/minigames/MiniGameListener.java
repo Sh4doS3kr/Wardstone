@@ -103,7 +103,8 @@ public class MiniGameListener implements Listener {
 
         MiniGameManager mgr = getManager();
         if (mgr == null || !mgr.isGameActive() || mgr.getCurrentGame() == null) return;
-        if (!(mgr.getCurrentGame() instanceof PillarsOfFortuneGame)) return;
+        if (!(mgr.getCurrentGame() instanceof PillarsOfFortuneGame)
+                && !(mgr.getCurrentGame() instanceof BlackHoleGame)) return;
 
         // Detectar si el daño viene de un jugador (directo o proyectil)
         Player attacker = null;
@@ -117,7 +118,7 @@ public class MiniGameListener implements Listener {
         // FORZAR que el evento NO esté cancelado
         if (event.isCancelled()) {
             event.setCancelled(false);
-            plugin.getLogger().warning("[Pillars PvP] Forzando PvP: " + attacker.getName() + " -> " + victim.getName()
+            plugin.getLogger().warning("[PvP Guarantee] Forzando PvP: " + attacker.getName() + " -> " + victim.getName()
                 + " (damager: " + event.getDamager().getType() + ", wasCancelled: true)");
         }
     }
@@ -225,6 +226,11 @@ public class MiniGameListener implements Listener {
                 return; // daño normal
             }
 
+            // BLACK HOLE: PvP completo permitido
+            if (game instanceof BlackHoleGame) {
+                return; // daño normal
+            }
+
             // TODOS LOS DEMÁS: sin PvP
             event.setCancelled(true);
             return;
@@ -237,6 +243,11 @@ public class MiniGameListener implements Listener {
 
             // PILARES DE LA FORTUNA: todo proyectil permitido
             if (game instanceof PillarsOfFortuneGame) {
+                return;
+            }
+
+            // BLACK HOLE: todo proyectil permitido
+            if (game instanceof BlackHoleGame) {
                 return;
             }
 
@@ -324,6 +335,11 @@ public class MiniGameListener implements Listener {
             }
             // Pilares de la Fortuna: permitir romper bloques
             if (game instanceof PillarsOfFortuneGame) {
+                event.setDropItems(false);
+                return;
+            }
+            // Black Hole: permitir romper bloques
+            if (game instanceof BlackHoleGame) {
                 event.setDropItems(false);
                 return;
             }
@@ -417,7 +433,8 @@ public class MiniGameListener implements Listener {
 
         MiniGameManager mgr = getManager();
         if (mgr == null || !mgr.isGameActive() || mgr.getCurrentGame() == null) return;
-        if (!(mgr.getCurrentGame() instanceof PillarsOfFortuneGame)) return;
+        if (!(mgr.getCurrentGame() instanceof PillarsOfFortuneGame)
+                && !(mgr.getCurrentGame() instanceof BlackHoleGame)) return;
 
         // Snowball y Egg no hacen daño vanilla, aplicar daño custom
         if (proj instanceof Snowball || proj instanceof org.bukkit.entity.Egg) {
@@ -432,9 +449,11 @@ public class MiniGameListener implements Listener {
     @EventHandler
     public void onDrop(PlayerDropItemEvent event) {
         if (isInMinigame(event.getPlayer())) {
-            // Pilares de la Fortuna: permitir dropear items
+            // Pilares de la Fortuna y Black Hole: permitir dropear items
             MiniGameManager mgr = getManager();
-            if (mgr != null && mgr.isGameActive() && mgr.getCurrentGame() instanceof PillarsOfFortuneGame) {
+            if (mgr != null && mgr.isGameActive()
+                    && (mgr.getCurrentGame() instanceof PillarsOfFortuneGame
+                        || mgr.getCurrentGame() instanceof BlackHoleGame)) {
                 return;
             }
             event.setCancelled(true);
@@ -464,8 +483,8 @@ public class MiniGameListener implements Listener {
             } else {
                 event.setCancelled(true);
             }
-        } else if (game instanceof PillarsOfFortuneGame) {
-            // Pilares de la Fortuna: permitir recoger items
+        } else if (game instanceof PillarsOfFortuneGame || game instanceof BlackHoleGame) {
+            // Pilares de la Fortuna / Black Hole: permitir recoger items
             return;
         } else {
             // Bloquear recolección en otros minijuegos
@@ -476,9 +495,11 @@ public class MiniGameListener implements Listener {
     @EventHandler
     public void onHunger(FoodLevelChangeEvent event) {
         if (event.getEntity() instanceof Player && isInMinigame((Player) event.getEntity())) {
-            // Pilares de la Fortuna: permitir hambre
+            // Pilares de la Fortuna / Black Hole: permitir hambre
             MiniGameManager mgr = getManager();
-            if (mgr != null && mgr.isGameActive() && mgr.getCurrentGame() instanceof PillarsOfFortuneGame) {
+            if (mgr != null && mgr.isGameActive()
+                    && (mgr.getCurrentGame() instanceof PillarsOfFortuneGame
+                        || mgr.getCurrentGame() instanceof BlackHoleGame)) {
                 return;
             }
             event.setCancelled(true);
@@ -946,6 +967,27 @@ public class MiniGameListener implements Listener {
                 }
                 // Limitar altura de construcción
                 if (event.getBlock().getY() > 160) { // PILLAR_Y(100) + PILLAR_HEIGHT(20) + 40 margen
+                    event.setCancelled(true);
+                    event.getPlayer().sendMessage("§c§l✖ §cNo puedes construir tan alto.");
+                    return;
+                }
+                return;
+            }
+            // Black Hole: permitir colocar bloques (con restricciones)
+            if (mgr != null && mgr.isGameActive() && mgr.getCurrentGame() instanceof BlackHoleGame) {
+                org.bukkit.Material placed = event.getBlock().getType();
+                if (placed == org.bukkit.Material.OBSIDIAN
+                        || placed == org.bukkit.Material.END_PORTAL_FRAME
+                        || placed == org.bukkit.Material.RESPAWN_ANCHOR
+                        || placed == org.bukkit.Material.BEDROCK
+                        || placed == org.bukkit.Material.COMMAND_BLOCK
+                        || placed == org.bukkit.Material.CHAIN_COMMAND_BLOCK
+                        || placed == org.bukkit.Material.REPEATING_COMMAND_BLOCK
+                        || placed == org.bukkit.Material.STRUCTURE_BLOCK) {
+                    event.setCancelled(true);
+                    return;
+                }
+                if (event.getBlock().getY() > 150) {
                     event.setCancelled(true);
                     event.getPlayer().sendMessage("§c§l✖ §cNo puedes construir tan alto.");
                     return;

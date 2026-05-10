@@ -19,7 +19,8 @@ public enum MiniGameType {
     FARM_HUNT("§6§lCaza en la Granja", "§7¡Disfrazate de animal y escóndete! Los cazadores deben encontrar a los impostores.", "§6", 2, 24),
     BUILD_BATTLE("§a§lBuild Battle", "§7¡Replica la figura modelo! El peor constructor es eliminado cada ronda.", "§a", 2, 8),
     BUILD_BATTLE_CLASSIC("§b§lBuild Battle Clásico", "§7¡Construye sobre una temática y vota las creaciones de los demás!", "§b", 2, 12),
-    PILLARS_OF_FORTUNE("§5§lPilares de la Fortuna", "§7¡Cada jugador en su pilar! Recibe items aleatorios y elimina a los demás. Último en pie gana.", "§5", 2, 15);
+    PILLARS_OF_FORTUNE("§5§lPilares de la Fortuna", "§7¡Cada jugador en su pilar! Recibe items aleatorios y elimina a los demás. Último en pie gana.", "§5", 2, 15),
+    BLACK_HOLE("§8§lAgujero Negro", "§7Un agujero negro crece en el centro atrayendo todo. ¡Lootea, pelea y escapa de la gravedad!", "§8", 2, 16);
 
     private final String displayName;
     private final String description;

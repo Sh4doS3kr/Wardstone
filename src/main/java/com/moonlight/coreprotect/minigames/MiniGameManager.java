@@ -321,6 +321,7 @@ public class MiniGameManager {
             case BUILD_BATTLE: return new BuildBattleGame(plugin, this);
             case BUILD_BATTLE_CLASSIC: return new BuildBattleClassicGame(plugin, this);
             case PILLARS_OF_FORTUNE: return new PillarsOfFortuneGame(plugin, this);
+            case BLACK_HOLE: return new BlackHoleGame(plugin, this);
             default: return null;
         }
     }
