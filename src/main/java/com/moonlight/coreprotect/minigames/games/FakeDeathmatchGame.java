@@ -51,9 +51,9 @@ public class FakeDeathmatchGame extends MiniGame {
     private static final int VOID_Y = 60;
 
     // === EVENTS ===
-    private static final int FIRST_EVENT_AT = 20; // Primer evento a los 20s (parece un PvP normal al inicio)
-    private static final int EVENT_INTERVAL_MIN = 12;
-    private static final int EVENT_INTERVAL_MAX = 25;
+    private static final int FIRST_EVENT_AT = 7;
+    private static final int EVENT_INTERVAL_MIN = 7;
+    private static final int EVENT_INTERVAL_MAX = 7;
 
     // === STORM ===
     private static final int STORM_START = 240;
@@ -324,9 +324,7 @@ public class FakeDeathmatchGame extends MiniGame {
         if (gameTime >= nextEventAt && alivePlayers.size() > 1) {
             triggerRandomEvent();
             // Próximo evento: intervalo aleatorio decreciente con el tiempo
-            int interval = EVENT_INTERVAL_MAX - Math.min(10, eventCount * 2);
-            interval = Math.max(EVENT_INTERVAL_MIN, interval);
-            nextEventAt = gameTime + interval + random.nextInt(5);
+            nextEventAt = gameTime + 7;
         }
 
         // === TORMENTA ===
