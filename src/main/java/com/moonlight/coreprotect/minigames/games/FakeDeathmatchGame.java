@@ -84,7 +84,10 @@ public class FakeDeathmatchGame extends MiniGame {
     private enum ChaosEvent {
         INVERTED_GRAVITY, DARK_FOG, MAP_MUTATION, RESURRECTION, INVENTORY_SWAP,
         EXTREME_SPEED, SLOW_MOTION, BODY_SWAP, TNT_RAIN, GIANT_MODE,
-        LAVA_FLOOR, RANDOM_ARMOR, INVISIBILITY, BOXING_MATCH, RANDOM_EFFECTS
+        LAVA_FLOOR, RANDOM_ARMOR, INVISIBILITY, BOXING_MATCH, RANDOM_EFFECTS,
+        ANVIL_STORM, LIGHTNING_STRIKE, ZERO_GRAVITY, NAUSEA_CHAOS, FLOOR_DISAPPEAR,
+        LAUNCH_ALL, FREEZE_ALL, RANDOM_TELEPORT, BOUNCY_FLOOR, WITHER_STORM,
+        FIREBALL_RAIN, COBWEB_BOMB, HUNGER_GAMES, REVERSE_HEALTH, CHICKEN_MODE
     }
 
     public FakeDeathmatchGame(CoreProtectPlugin plugin, MiniGameManager manager) {
@@ -410,6 +413,21 @@ public class FakeDeathmatchGame extends MiniGame {
             case INVISIBILITY -> eventInvisibility();
             case BOXING_MATCH -> eventBoxingMatch();
             case RANDOM_EFFECTS -> eventRandomEffects();
+            case ANVIL_STORM -> eventAnvilStorm();
+            case LIGHTNING_STRIKE -> eventLightningStrike();
+            case ZERO_GRAVITY -> eventZeroGravity();
+            case NAUSEA_CHAOS -> eventNauseaChaos();
+            case FLOOR_DISAPPEAR -> eventFloorDisappear();
+            case LAUNCH_ALL -> eventLaunchAll();
+            case FREEZE_ALL -> eventFreezeAll();
+            case RANDOM_TELEPORT -> eventRandomTeleport();
+            case BOUNCY_FLOOR -> eventBouncyFloor();
+            case WITHER_STORM -> eventWitherStorm();
+            case FIREBALL_RAIN -> eventFireballRain();
+            case COBWEB_BOMB -> eventCobwebBomb();
+            case HUNGER_GAMES -> eventHungerGames();
+            case REVERSE_HEALTH -> eventReverseHealth();
+            case CHICKEN_MODE -> eventChickenMode();
         }
     }
 
@@ -469,45 +487,50 @@ public class FakeDeathmatchGame extends MiniGame {
         World world = Bukkit.getWorld(MiniGameWorld.getWorldName());
         if (world == null) return;
 
-        int mutation = random.nextInt(4);
+        int mutation = random.nextInt(6);
         switch (mutation) {
             case 0 -> {
                 // Paredes aleatorias surgen del suelo
-                for (int i = 0; i < 8; i++) {
+                for (int i = 0; i < 20; i++) {
                     double angle = random.nextDouble() * Math.PI * 2;
-                    double dist = 5 + random.nextDouble() * 20;
+                    double dist = 8 + random.nextDouble() * 65;
                     int bx = (int) (dist * Math.cos(angle));
                     int bz = (int) (dist * Math.sin(angle));
-                    for (int dy = 1; dy <= 3; dy++) {
+                    for (int dy = 1; dy <= 4; dy++) {
                         world.getBlockAt(bx, ARENA_Y + dy, bz).setType(Material.DEEPSLATE_BRICKS);
                         world.getBlockAt(bx + 1, ARENA_Y + dy, bz).setType(Material.DEEPSLATE_BRICKS);
+                        world.getBlockAt(bx - 1, ARENA_Y + dy, bz).setType(Material.DEEPSLATE_BRICKS);
                     }
                 }
                 broadcastGame("§6  §7→ Paredes surgieron del suelo.");
             }
             case 1 -> {
-                // Agujeros en el suelo
-                for (int i = 0; i < 6; i++) {
+                // Agujeros en el suelo (todas las capas!)
+                for (int i = 0; i < 15; i++) {
                     double angle = random.nextDouble() * Math.PI * 2;
-                    double dist = 5 + random.nextDouble() * 20;
+                    double dist = 8 + random.nextDouble() * 65;
                     int hx = (int) (dist * Math.cos(angle));
                     int hz = (int) (dist * Math.sin(angle));
-                    for (int dx = -1; dx <= 1; dx++) {
-                        for (int dz = -1; dz <= 1; dz++) {
-                            world.getBlockAt(hx + dx, ARENA_Y, hz + dz).setType(Material.AIR);
+                    int radius = 1 + random.nextInt(2);
+                    for (int dx = -radius; dx <= radius; dx++) {
+                        for (int dz = -radius; dz <= radius; dz++) {
+                            // Eliminar TODAS las capas (superficie + deepslate + dirt)
+                            for (int dy = -4; dy <= 0; dy++) {
+                                world.getBlockAt(hx + dx, ARENA_Y + dy, hz + dz).setType(Material.AIR);
+                            }
                         }
                     }
                 }
-                broadcastGame("§6  §7→ ¡Cuidado! Agujeros en el suelo.");
+                broadcastGame("§6  §7→ ¡Cuidado! Agujeros al vacío.");
             }
             case 2 -> {
                 // Plataformas flotantes
-                for (int i = 0; i < 5; i++) {
+                for (int i = 0; i < 12; i++) {
                     double angle = random.nextDouble() * Math.PI * 2;
-                    double dist = 5 + random.nextDouble() * 22;
+                    double dist = 10 + random.nextDouble() * 60;
                     int px = (int) (dist * Math.cos(angle));
                     int pz = (int) (dist * Math.sin(angle));
-                    int py = ARENA_Y + 4 + random.nextInt(3);
+                    int py = ARENA_Y + 4 + random.nextInt(4);
                     for (int dx = -1; dx <= 1; dx++) {
                         for (int dz = -1; dz <= 1; dz++) {
                             world.getBlockAt(px + dx, py, pz + dz).setType(Material.AMETHYST_BLOCK);
@@ -518,9 +541,9 @@ public class FakeDeathmatchGame extends MiniGame {
             }
             case 3 -> {
                 // Telarañas por todas partes
-                for (int i = 0; i < 20; i++) {
+                for (int i = 0; i < 50; i++) {
                     double angle = random.nextDouble() * Math.PI * 2;
-                    double dist = 3 + random.nextDouble() * 25;
+                    double dist = 5 + random.nextDouble() * 70;
                     int wx = (int) (dist * Math.cos(angle));
                     int wz = (int) (dist * Math.sin(angle));
                     int wy = ARENA_Y + 1 + random.nextInt(2);
@@ -529,7 +552,6 @@ public class FakeDeathmatchGame extends MiniGame {
                     }
                 }
                 broadcastGame("§6  §7→ ¡Telarañas por todas partes!");
-                // Limpiar telarañas después de 12 segundos
                 Bukkit.getScheduler().runTaskLater(plugin, () -> {
                     for (int x = -ARENA_RADIUS; x <= ARENA_RADIUS; x++) {
                         for (int z = -ARENA_RADIUS; z <= ARENA_RADIUS; z++) {
@@ -541,6 +563,49 @@ public class FakeDeathmatchGame extends MiniGame {
                         }
                     }
                 }, 240L);
+            }
+            case 4 -> {
+                // CAMBIO TOTAL DE SUELO: las 3 capas cambian de material
+                Material[] surfaces = {Material.SAND, Material.RED_SAND, Material.ICE, Material.SOUL_SAND,
+                        Material.HONEY_BLOCK, Material.SLIME_BLOCK, Material.PRISMARINE, Material.NETHER_BRICKS};
+                Material newSurface = surfaces[random.nextInt(surfaces.length)];
+                Material[] underMats = {Material.NETHERRACK, Material.END_STONE, Material.PACKED_ICE, Material.TERRACOTTA};
+                Material newUnder = underMats[random.nextInt(underMats.length)];
+
+                for (int x = -ARENA_RADIUS; x <= ARENA_RADIUS; x += 2) {
+                    for (int z = -ARENA_RADIUS; z <= ARENA_RADIUS; z += 2) {
+                        double d = Math.sqrt(x * x + z * z);
+                        if (d > ARENA_RADIUS) continue;
+                        // Cambiar superficie
+                        if (world.getBlockAt(x, ARENA_Y, z).getType() != Material.AIR) {
+                            world.getBlockAt(x, ARENA_Y, z).setType(newSurface);
+                        }
+                        // Cambiar capas bajo superficie
+                        for (int dy = -1; dy >= -4; dy--) {
+                            if (world.getBlockAt(x, ARENA_Y + dy, z).getType() != Material.AIR) {
+                                world.getBlockAt(x, ARENA_Y + dy, z).setType(newUnder);
+                            }
+                        }
+                    }
+                }
+                broadcastGame("§6  §7→ ¡El suelo entero ha mutado a §e" + newSurface.name() + "§7!");
+            }
+            case 5 -> {
+                // Columnas de bloques aleatorios surgen por todo el mapa
+                Material[] mats = {Material.OBSIDIAN, Material.GLOWSTONE, Material.CRYING_OBSIDIAN,
+                        Material.COPPER_BLOCK, Material.AMETHYST_BLOCK, Material.PURPUR_BLOCK};
+                for (int i = 0; i < 30; i++) {
+                    double angle = random.nextDouble() * Math.PI * 2;
+                    double dist = 5 + random.nextDouble() * 70;
+                    int cx = (int) (dist * Math.cos(angle));
+                    int cz = (int) (dist * Math.sin(angle));
+                    int colHeight = 3 + random.nextInt(6);
+                    Material mat = mats[random.nextInt(mats.length)];
+                    for (int dy = 1; dy <= colHeight; dy++) {
+                        world.getBlockAt(cx, ARENA_Y + dy, cz).setType(mat);
+                    }
+                }
+                broadcastGame("§6  §7→ ¡Columnas gigantes brotaron del suelo!");
             }
         }
     }
@@ -871,6 +936,375 @@ public class FakeDeathmatchGame extends MiniGame {
                 p.sendMessage("§c§l✖ §7Efecto negativo: §c" + effect.getName());
             }
         }
+    }
+
+    // --- LLUVIA DE YUNQUES ---
+    private void eventAnvilStorm() {
+        lastEventName = "§8¡Yunques!";
+        announceEvent("§8§l⬇ LLUVIA DE YUNQUES", "§7¡Yunques caen del cielo! ¡Cuidado con tu cabeza!");
+        soundAll(Sound.BLOCK_ANVIL_LAND, 1.0f, 0.5f);
+
+        World world = Bukkit.getWorld(MiniGameWorld.getWorldName());
+        if (world == null) return;
+
+        new BukkitRunnable() {
+            int ticks = 0;
+            @Override
+            public void run() {
+                if (!gameStarted || ticks > 100) { cancel(); return; }
+                ticks += 5;
+                for (int i = 0; i < 3; i++) {
+                    double angle = random.nextDouble() * Math.PI * 2;
+                    double dist = random.nextDouble() * (ARENA_RADIUS - 5);
+                    Location loc = new Location(world, dist * Math.cos(angle), ARENA_Y + 25, dist * Math.sin(angle));
+                    org.bukkit.entity.FallingBlock fb = world.spawnFallingBlock(loc, Material.ANVIL.createBlockData());
+                    fb.setDropItem(false);
+                    fb.setHurtEntities(true);
+                }
+            }
+        }.runTaskTimer(plugin, 0L, 5L);
+    }
+
+    // --- RAYOS ---
+    private void eventLightningStrike() {
+        lastEventName = "§e¡Rayos!";
+        announceEvent("§e§l⚡ TORMENTA ELÉCTRICA", "§e¡Rayos caen sobre jugadores aleatorios!");
+        soundAll(Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 1.0f, 1.0f);
+
+        World world = Bukkit.getWorld(MiniGameWorld.getWorldName());
+        if (world == null) return;
+
+        new BukkitRunnable() {
+            int strikes = 0;
+            @Override
+            public void run() {
+                if (!gameStarted || strikes >= 8) { cancel(); return; }
+                strikes++;
+                List<UUID> alive = new ArrayList<>(alivePlayers);
+                if (alive.isEmpty()) { cancel(); return; }
+                UUID target = alive.get(random.nextInt(alive.size()));
+                Player p = Bukkit.getPlayer(target);
+                if (p != null && p.isOnline()) {
+                    world.strikeLightning(p.getLocation());
+                }
+            }
+        }.runTaskTimer(plugin, 10L, 15L);
+    }
+
+    // --- GRAVEDAD CERO ---
+    private void eventZeroGravity() {
+        lastEventName = "§f¡Gravedad Cero!";
+        announceEvent("§f§l🌙 GRAVEDAD CERO", "§f¡Flotas sin control durante 6 segundos!");
+        soundAll(Sound.ENTITY_BAT_TAKEOFF, 1.0f, 0.3f);
+
+        for (UUID uuid : alivePlayers) {
+            Player p = Bukkit.getPlayer(uuid);
+            if (p == null) continue;
+            p.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, 60, 0, false, true));
+            p.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_FALLING, 180, 0, false, true));
+            p.setVelocity(new Vector(
+                    (random.nextDouble() - 0.5) * 2,
+                    1.0,
+                    (random.nextDouble() - 0.5) * 2));
+        }
+    }
+
+    // --- NAUSEA CAOS ---
+    private void eventNauseaChaos() {
+        lastEventName = "§2¡Nausea!";
+        announceEvent("§2§l🤮 NAUSEA CAÓTICA", "§2¡Todo da vueltas! ¡No puedes apuntar!");
+        soundAll(Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1.0f, 0.5f);
+
+        for (UUID uuid : alivePlayers) {
+            Player p = Bukkit.getPlayer(uuid);
+            if (p == null) continue;
+            p.addPotionEffect(new PotionEffect(PotionEffectType.NAUSEA, 160, 1, false, true));
+            p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 160, 2, false, true));
+            // Girar la cámara random
+            Location loc = p.getLocation();
+            loc.setYaw(loc.getYaw() + random.nextInt(180) - 90);
+            p.teleport(loc);
+        }
+    }
+
+    // --- SUELO DESAPARECE ---
+    private void eventFloorDisappear() {
+        lastEventName = "§c¡Suelo Eliminado!";
+        announceEvent("§c§l💨 EL SUELO DESAPARECE", "§c¡Partes del suelo desaparecen! ¡Salta o muere!");
+        soundAll(Sound.ENTITY_WITHER_BREAK_BLOCK, 1.0f, 1.5f);
+
+        World world = Bukkit.getWorld(MiniGameWorld.getWorldName());
+        if (world == null) return;
+
+        // Eliminar el 40% del suelo en parches grandes (TODAS las capas)
+        for (int i = 0; i < 25; i++) {
+            double angle = random.nextDouble() * Math.PI * 2;
+            double dist = 10 + random.nextDouble() * 65;
+            int cx = (int) (dist * Math.cos(angle));
+            int cz = (int) (dist * Math.sin(angle));
+            int size = 2 + random.nextInt(3);
+            for (int dx = -size; dx <= size; dx++) {
+                for (int dz = -size; dz <= size; dz++) {
+                    for (int dy = -4; dy <= 0; dy++) {
+                        world.getBlockAt(cx + dx, ARENA_Y + dy, cz + dz).setType(Material.AIR);
+                    }
+                }
+            }
+        }
+    }
+
+    // --- LANZAR A TODOS ---
+    private void eventLaunchAll() {
+        lastEventName = "§b¡Lanzamiento!";
+        announceEvent("§b§l🚀 LANZAMIENTO MASIVO", "§b¡Todos salen disparados en una dirección aleatoria!");
+        soundAll(Sound.ENTITY_FIREWORK_ROCKET_LAUNCH, 1.0f, 0.8f);
+
+        for (UUID uuid : alivePlayers) {
+            Player p = Bukkit.getPlayer(uuid);
+            if (p == null) continue;
+            Vector launch = new Vector(
+                    (random.nextDouble() - 0.5) * 4,
+                    1.5 + random.nextDouble() * 2,
+                    (random.nextDouble() - 0.5) * 4);
+            p.setVelocity(launch);
+            p.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_FALLING, 80, 0, false, true));
+        }
+    }
+
+    // --- CONGELAR A TODOS ---
+    private void eventFreezeAll() {
+        lastEventName = "§b¡Congelados!";
+        announceEvent("§b§l❄ CONGELACIÓN TOTAL", "§b¡No puedes moverte durante 4 segundos!");
+        soundAll(Sound.BLOCK_GLASS_BREAK, 1.0f, 0.3f);
+
+        for (UUID uuid : alivePlayers) {
+            Player p = Bukkit.getPlayer(uuid);
+            if (p == null) continue;
+            p.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 80, 127, false, true));
+            p.addPotionEffect(new PotionEffect(PotionEffectType.MINING_FATIGUE, 80, 127, false, true));
+            p.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 80, 128, false, true));
+            // Efecto visual de hielo
+            p.getWorld().spawnParticle(Particle.SNOWFLAKE, p.getLocation().add(0, 1, 0), 30, 0.5, 1, 0.5, 0.05);
+        }
+    }
+
+    // --- TELEPORT ALEATORIO ---
+    private void eventRandomTeleport() {
+        lastEventName = "§d¡Teleport!";
+        announceEvent("§d§l🌀 TELEPORT ALEATORIO", "§d¡Todos teletransportados a posiciones random!");
+        soundAll(Sound.ENTITY_ENDERMAN_TELEPORT, 1.0f, 1.0f);
+
+        World world = Bukkit.getWorld(MiniGameWorld.getWorldName());
+        if (world == null) return;
+
+        for (UUID uuid : alivePlayers) {
+            Player p = Bukkit.getPlayer(uuid);
+            if (p == null) continue;
+            double angle = random.nextDouble() * Math.PI * 2;
+            double dist = 10 + random.nextDouble() * 60;
+            int tx = (int) (dist * Math.cos(angle));
+            int tz = (int) (dist * Math.sin(angle));
+            // Buscar bloque sólido
+            int ty = ARENA_Y + 1;
+            for (int y = ARENA_Y + 5; y >= ARENA_Y - 2; y--) {
+                if (world.getBlockAt(tx, y, tz).getType() != Material.AIR) {
+                    ty = y + 1;
+                    break;
+                }
+            }
+            p.teleport(new Location(world, tx + 0.5, ty, tz + 0.5, p.getLocation().getYaw(), p.getLocation().getPitch()));
+            p.getWorld().spawnParticle(Particle.PORTAL, p.getLocation(), 40, 0.5, 1, 0.5, 0.5);
+        }
+    }
+
+    // --- SUELO REBOTANTE ---
+    private void eventBouncyFloor() {
+        lastEventName = "§a¡Suelo Rebotante!";
+        announceEvent("§a§l🟢 SUELO REBOTANTE", "§a¡El suelo se convierte en slime! ¡Boing!");
+        soundAll(Sound.ENTITY_SLIME_JUMP, 1.0f, 1.5f);
+
+        World world = Bukkit.getWorld(MiniGameWorld.getWorldName());
+        if (world == null) return;
+
+        List<Location> changed = new ArrayList<>();
+        for (int x = -ARENA_RADIUS; x <= ARENA_RADIUS; x += 3) {
+            for (int z = -ARENA_RADIUS; z <= ARENA_RADIUS; z += 3) {
+                double d = Math.sqrt(x * x + z * z);
+                if (d > ARENA_RADIUS) continue;
+                if (world.getBlockAt(x, ARENA_Y, z).getType() != Material.AIR) {
+                    changed.add(new Location(world, x, ARENA_Y, z));
+                    world.getBlockAt(x, ARENA_Y, z).setType(Material.SLIME_BLOCK);
+                }
+            }
+        }
+        // Revertir después de 10 segundos
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            for (Location loc : changed) {
+                if (loc.getBlock().getType() == Material.SLIME_BLOCK) {
+                    loc.getBlock().setType(Material.POLISHED_DEEPSLATE);
+                }
+            }
+            broadcastGame("§a§l🟢 §7Suelo rebotante terminado.");
+        }, 200L);
+    }
+
+    // --- TORMENTA WITHER ---
+    private void eventWitherStorm() {
+        lastEventName = "§0¡Wither!";
+        announceEvent("§0§l💀 TORMENTA WITHER", "§8¡Todos envenenados con Wither durante 6 segundos!");
+        soundAll(Sound.ENTITY_WITHER_AMBIENT, 1.0f, 0.5f);
+
+        for (UUID uuid : alivePlayers) {
+            Player p = Bukkit.getPlayer(uuid);
+            if (p == null) continue;
+            p.addPotionEffect(new PotionEffect(PotionEffectType.WITHER, 120, 1, false, true));
+            p.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, 120, 0, false, true));
+            p.getWorld().spawnParticle(Particle.SMOKE, p.getLocation(), 20, 0.5, 1, 0.5, 0.05);
+        }
+    }
+
+    // --- LLUVIA DE BOLAS DE FUEGO ---
+    private void eventFireballRain() {
+        lastEventName = "§6¡Bolas de Fuego!";
+        announceEvent("§6§l🔥 LLUVIA DE FUEGO", "§c¡Bolas de fuego caen del cielo!");
+        soundAll(Sound.ENTITY_BLAZE_SHOOT, 1.0f, 0.8f);
+
+        World world = Bukkit.getWorld(MiniGameWorld.getWorldName());
+        if (world == null) return;
+
+        new BukkitRunnable() {
+            int ticks = 0;
+            @Override
+            public void run() {
+                if (!gameStarted || ticks > 100) { cancel(); return; }
+                ticks += 10;
+                for (int i = 0; i < 3; i++) {
+                    double angle = random.nextDouble() * Math.PI * 2;
+                    double dist = random.nextDouble() * (ARENA_RADIUS - 5);
+                    Location loc = new Location(world, dist * Math.cos(angle), ARENA_Y + 20, dist * Math.sin(angle));
+                    org.bukkit.entity.Fireball fb = world.spawn(loc, org.bukkit.entity.Fireball.class);
+                    fb.setDirection(new Vector(0, -1, 0));
+                    fb.setYield(1.5f);
+                    fb.setIsIncendiary(false);
+                }
+            }
+        }.runTaskTimer(plugin, 0L, 10L);
+    }
+
+    // --- BOMBA DE TELARAÑAS (en jugadores) ---
+    private void eventCobwebBomb() {
+        lastEventName = "§f¡Trampa Web!";
+        announceEvent("§f§l🕸 BOMBA DE TELARAÑAS", "§7¡Telarañas aparecen alrededor de cada jugador!");
+        soundAll(Sound.ENTITY_SPIDER_AMBIENT, 1.0f, 0.5f);
+
+        World world = Bukkit.getWorld(MiniGameWorld.getWorldName());
+        if (world == null) return;
+
+        for (UUID uuid : alivePlayers) {
+            Player p = Bukkit.getPlayer(uuid);
+            if (p == null) continue;
+            Location loc = p.getLocation();
+            for (int dx = -2; dx <= 2; dx++) {
+                for (int dz = -2; dz <= 2; dz++) {
+                    for (int dy = 0; dy <= 2; dy++) {
+                        if (random.nextInt(3) == 0) {
+                            Location wl = loc.clone().add(dx, dy, dz);
+                            if (wl.getBlock().getType() == Material.AIR) {
+                                wl.getBlock().setType(Material.COBWEB);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        // Limpiar después de 8 segundos
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            for (int x = -ARENA_RADIUS; x <= ARENA_RADIUS; x++) {
+                for (int z = -ARENA_RADIUS; z <= ARENA_RADIUS; z++) {
+                    for (int y = ARENA_Y + 1; y <= ARENA_Y + 5; y++) {
+                        if (world.getBlockAt(x, y, z).getType() == Material.COBWEB) {
+                            world.getBlockAt(x, y, z).setType(Material.AIR);
+                        }
+                    }
+                }
+            }
+        }, 160L);
+    }
+
+    // --- HAMBRE EXTREMA ---
+    private void eventHungerGames() {
+        lastEventName = "§6¡Hambre Extrema!";
+        announceEvent("§6§l🍖 HAMBRE EXTREMA", "§6¡Tu comida desaparece y tienes hambre máxima!");
+        soundAll(Sound.ENTITY_PLAYER_BURP, 1.0f, 0.5f);
+
+        for (UUID uuid : alivePlayers) {
+            Player p = Bukkit.getPlayer(uuid);
+            if (p == null) continue;
+            p.setFoodLevel(1);
+            p.setSaturation(0);
+            p.addPotionEffect(new PotionEffect(PotionEffectType.HUNGER, 200, 4, false, true));
+            // Quitar toda la comida del inventario
+            for (int slot = 0; slot < p.getInventory().getSize(); slot++) {
+                ItemStack item = p.getInventory().getItem(slot);
+                if (item != null && item.getType().isEdible()) {
+                    p.getInventory().setItem(slot, null);
+                }
+            }
+        }
+    }
+
+    // --- VIDA INVERTIDA ---
+    private void eventReverseHealth() {
+        lastEventName = "§c¡Vida Invertida!";
+        announceEvent("§c§l💔 VIDA INVERTIDA", "§c¡Si tienes mucha vida, ahora tienes poca! Y viceversa.");
+        soundAll(Sound.ENTITY_WITHER_SHOOT, 1.0f, 1.5f);
+
+        for (UUID uuid : alivePlayers) {
+            Player p = Bukkit.getPlayer(uuid);
+            if (p == null) continue;
+            double current = p.getHealth();
+            double max = p.getMaxHealth();
+            double inverted = max - current + 1;
+            p.setHealth(Math.max(1, Math.min(max, inverted)));
+            p.sendMessage("§c§l💔 §7Tu vida se invirtió: §c" + String.format("%.0f", current) + " §7→ §a" + String.format("%.0f", inverted));
+        }
+    }
+
+    // --- MODO POLLO ---
+    private void eventChickenMode() {
+        lastEventName = "§e¡Modo Pollo!";
+        announceEvent("§e§l🐔 MODO POLLO", "§e¡Todos se vuelven pollos! Débiles pero rápidos.");
+        soundAll(Sound.ENTITY_CHICKEN_AMBIENT, 1.0f, 1.5f);
+
+        for (UUID uuid : alivePlayers) {
+            Player p = Bukkit.getPlayer(uuid);
+            if (p == null) continue;
+            // Quitar armadura temporalmente
+            savedInventories.put(uuid, null); // Marker
+            savedArmor.put(uuid, p.getInventory().getArmorContents().clone());
+            p.getInventory().setArmorContents(new ItemStack[4]);
+            // Efectos de pollo
+            p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 160, 3, false, true));
+            p.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, 160, 2, false, true));
+            p.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 160, 3, false, true));
+            p.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_FALLING, 160, 0, false, true));
+            // Dar huevos como arma
+            p.getInventory().addItem(new ItemStack(Material.EGG, 16));
+        }
+
+        // Devolver armadura después de 8 segundos
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            for (UUID uuid : alivePlayers) {
+                Player p = Bukkit.getPlayer(uuid);
+                if (p == null) continue;
+                if (savedArmor.containsKey(uuid)) {
+                    p.getInventory().setArmorContents(savedArmor.get(uuid));
+                }
+            }
+            savedArmor.clear();
+            savedInventories.clear();
+            broadcastGame("§e§l🐔 §7Modo pollo terminado.");
+        }, 160L);
     }
 
     // ═══════════════════════════════════════════
