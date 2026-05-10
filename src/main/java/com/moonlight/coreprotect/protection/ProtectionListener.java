@@ -789,7 +789,7 @@ public class ProtectionListener implements Listener {
         }
     }
     
-    // Scheduled task to check zombies and vex in spawn core (called from plugin onEnable)
+    // Scheduled task to check zombies and vex in spawn core AND hostile mobs in protected regions
     public void checkZombiesInSpawnCore() {
         for (org.bukkit.World world : org.bukkit.Bukkit.getWorlds()) {
             if (!world.getName().equals("world")) continue;
@@ -798,6 +798,7 @@ public class ProtectionListener implements Listener {
                 if (entity instanceof org.bukkit.entity.Zombie) {
                     if (plugin.getProtectionManager().isSpawnCore(entity.getLocation())) {
                         entity.remove();
+                        continue;
                     }
                 }
                 // Remove vex from protected zones and spawn
@@ -806,9 +807,29 @@ public class ProtectionListener implements Listener {
                     if (plugin.getProtectionManager().isSpawnProtected(loc)
                             || plugin.getProtectionManager().getRegionAt(loc) != null) {
                         entity.remove();
+                        continue;
+                    }
+                }
+                // Remove hostile mobs that wander into protected regions with anti-mob upgrade
+                if (entity instanceof org.bukkit.entity.Monster) {
+                    ProtectedRegion region = plugin.getProtectionManager().getRegionAt(entity.getLocation());
+                    if (region != null && region.isNoMobSpawn()) {
+                        entity.remove();
                     }
                 }
             }
+        }
+    }
+
+    // === PREVENT HOSTILE MOB TARGET INSIDE PROTECTED REGIONS ===
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onMobTargetInProtection(org.bukkit.event.entity.EntityTargetLivingEntityEvent event) {
+        if (!(event.getEntity() instanceof org.bukkit.entity.Monster)) return;
+        if (!(event.getTarget() instanceof Player)) return;
+
+        ProtectedRegion region = plugin.getProtectionManager().getRegionAt(event.getTarget().getLocation());
+        if (region != null && region.isNoMobSpawn()) {
+            event.setCancelled(true);
         }
     }
 

@@ -406,6 +406,27 @@ public class MiniGameListener implements Listener {
     }
 
     // ==========================================
+    // PILARES: Snowball/Egg aplican daño custom (vanilla = 0)
+    // ==========================================
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onProjectileHitPillars(org.bukkit.event.entity.ProjectileHitEvent event) {
+        if (!(event.getHitEntity() instanceof Player victim)) return;
+        Projectile proj = event.getEntity();
+        if (!(proj.getShooter() instanceof Player shooter)) return;
+        if (!isInMinigame(shooter) || !isInMinigame(victim)) return;
+
+        MiniGameManager mgr = getManager();
+        if (mgr == null || !mgr.isGameActive() || mgr.getCurrentGame() == null) return;
+        if (!(mgr.getCurrentGame() instanceof PillarsOfFortuneGame)) return;
+
+        // Snowball y Egg no hacen daño vanilla, aplicar daño custom
+        if (proj instanceof Snowball || proj instanceof org.bukkit.entity.Egg) {
+            victim.damage(3.0, shooter); // 1.5 corazones
+            victim.getWorld().playSound(victim.getLocation(), org.bukkit.Sound.ENTITY_ARROW_HIT_PLAYER, 0.8f, 1.2f);
+        }
+    }
+
+    // ==========================================
     // PREVENT: Drops, pickups, hunger, build en mundo minijuegos
     // ==========================================
     @EventHandler
