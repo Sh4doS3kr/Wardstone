@@ -39,6 +39,10 @@ public class PrestigeParticleTask extends BukkitRunnable {
             // No mostrar partículas si está en staff mode (NookureStaff)
             if (p.hasMetadata("vanished")) continue;
 
+            // No mostrar partículas en minijuegos ni en KotH
+            String worldName = p.getWorld().getName();
+            if (worldName.equals("minigames") || worldName.equals("koth")) continue;
+
             int prestige = mgr.getData(uid).prestige;
             if (prestige <= 0) continue;
 
