@@ -58,6 +58,7 @@ public class EyeOfStormGame extends MiniGame {
     private static final int PHASE_3_TIME = 150;
     private static final int PHASE_4_TIME = 240;
     private static final int PHASE_5_TIME = 320;
+    private static final int CRUSH_TIME = 440; // 320 + 120s (2 min en zona final) = aplastamiento
 
     // === STATE ===
     private BossBar stormBar;
@@ -68,6 +69,7 @@ public class EyeOfStormGame extends MiniGame {
     private double stormRadius = STORM_INITIAL_RADIUS;
     private double stormCenterX = 0;
     private double stormCenterZ = 0;
+    private boolean crushStarted = false;
 
     // Tasks
     private int stormEffectTaskId = -1;
@@ -541,6 +543,7 @@ public class EyeOfStormGame extends MiniGame {
         stormRadius = STORM_INITIAL_RADIUS;
         stormCenterX = 0;
         stormCenterZ = 0;
+        crushStarted = false;
 
         // BossBar
         stormBar = Bukkit.createBossBar("§8§l⛈ OJO DE LA TORMENTA ⛈", BarColor.PURPLE, BarStyle.SEGMENTED_10);
@@ -591,6 +594,7 @@ public class EyeOfStormGame extends MiniGame {
         updatePhase();
         applyStormDamage();
         strikeLightningOutside();
+        checkCrush();
         updateBossBar();
         showActionBar();
     }
@@ -733,6 +737,69 @@ public class EyeOfStormGame extends MiniGame {
                 }
             }
         }.runTaskTimer(plugin, 1L, 1L).getTaskId();
+    }
+
+    /**
+     * Si llevan +2 min en la zona final (fase 5), la tormenta aplasta:
+     * borde se cierra a 0, daño masivo, y mata a todos si no terminan.
+     */
+    private void checkCrush() {
+        if (currentPhase < 5 || crushStarted) return;
+        if (gameTime < CRUSH_TIME) {
+            // Warnings
+            int timeLeft = CRUSH_TIME - gameTime;
+            if (timeLeft == 30 || timeLeft == 15 || timeLeft == 10 || timeLeft == 5) {
+                broadcastGame("§4§l☠ §c¡APLASTAMIENTO en §f" + timeLeft + "s§c! §lMATEN O MUERAN.");
+                soundAll(Sound.ENTITY_WITHER_SPAWN, 0.5f, 1.5f);
+            }
+            return;
+        }
+
+        crushStarted = true;
+        broadcastGame("§4§l☠☠☠ APLASTAMIENTO FINAL ☠☠☠");
+        broadcastGame("§c§lLa tormenta aplasta todo. Nadie sobrevive.");
+        titleAlive("§4§l☠ APLASTAMIENTO", "§c§lLa tormenta te aplasta");
+        soundAll(Sound.ENTITY_ENDER_DRAGON_GROWL, 1.0f, 0.5f);
+
+        // Cerrar borde a 0 en 15 segundos
+        World world = Bukkit.getWorld(MiniGameWorld.getWorldName());
+        if (world != null) {
+            world.getWorldBorder().setSize(1, 15);
+        }
+
+        // Daño masivo creciente cada segundo hasta matar a todos
+        new BukkitRunnable() {
+            int crushTick = 0;
+            @Override
+            public void run() {
+                if (!gameStarted || alivePlayers.size() <= 1) {
+                    cancel();
+                    return;
+                }
+                crushTick++;
+                double crushDamage = 4.0 + crushTick * 2.0; // 6, 8, 10, 12... 
+                for (UUID uuid : new ArrayList<>(alivePlayers)) {
+                    Player p = Bukkit.getPlayer(uuid);
+                    if (p == null || !p.isOnline()) continue;
+                    p.damage(crushDamage);
+                    p.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, 40, 1, false, false));
+                    if (crushTick % 2 == 0) {
+                        p.playSound(p.getLocation(), Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 1.0f, 0.3f);
+                    }
+                }
+                // A los 20s, matar a todos los que queden
+                if (crushTick >= 20) {
+                    for (UUID uuid : new ArrayList<>(alivePlayers)) {
+                        Player p = Bukkit.getPlayer(uuid);
+                        if (p != null && p.isOnline()) {
+                            p.setHealth(0);
+                        }
+                        eliminatePlayer(uuid);
+                    }
+                    cancel();
+                }
+            }
+        }.runTaskTimer(plugin, 20L, 20L); // cada segundo
     }
 
     private void applyStormDamage() {
