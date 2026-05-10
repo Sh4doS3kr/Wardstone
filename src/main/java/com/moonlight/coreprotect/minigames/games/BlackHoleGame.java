@@ -660,19 +660,33 @@ public class BlackHoleGame extends MiniGame {
 
             Vector toCenter = center.toVector().subtract(p.getLocation().toVector());
             double dist = toCenter.length();
-            if (dist < 0.5) dist = 0.5;
+            if (dist < 0.3) dist = 0.3;
 
-            // Gravedad potente: base + componente inversa a la distancia
-            // Cerca: fuerza brutal. Lejos: fuerza suave pero constante.
-            double closeBoost = Math.max(0, 50.0 / (dist * dist)); // Muy fuerte cerca
-            double farPull = currentGravity * 0.5; // Siempre tira un poco
-            double strength = currentGravity * closeBoost + farPull;
+            double strength;
 
-            // Clamp para que no sea demasiado brutal y vueles atravesando todo
-            strength = Math.min(strength, 2.5);
+            if (dist < currentKillRadius + 10) {
+                // ZONA DE MUERTE INMINENTE: fuerza ABSURDA, te lanza directo al centro
+                // Cuanto más cerca, más violento. A <5 bloques es imparable.
+                strength = 3.0 + (200.0 / (dist * dist));
+                strength = Math.min(strength, 8.0); // Cap para no crashear
+            } else if (dist < 40) {
+                // ZONA PELIGROSA: atracción fuerte, difícil escapar
+                strength = currentGravity * (150.0 / (dist * dist)) + currentGravity * 1.5;
+                strength = Math.min(strength, 3.5);
+            } else {
+                // ZONA EXTERIOR: tirón constante que se siente, pero puedes moverte
+                strength = currentGravity * (80.0 / (dist * dist)) + currentGravity * 0.4;
+                strength = Math.min(strength, 1.5);
+            }
 
             Vector pull = toCenter.normalize().multiply(strength);
-            p.setVelocity(p.getVelocity().add(pull));
+
+            // Cerca del agujero: REEMPLAZAR la velocidad en vez de sumar (imposible escapar)
+            if (dist < currentKillRadius + 8) {
+                p.setVelocity(pull);
+            } else {
+                p.setVelocity(p.getVelocity().add(pull));
+            }
         }
     }
 
