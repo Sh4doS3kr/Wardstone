@@ -516,9 +516,9 @@ public class FarmHuntGame extends MiniGame {
     public void eliminatePlayer(UUID uuid) {
         if (animals.contains(uuid)) {
             Player p = Bukkit.getPlayer(uuid);
-            // if (p != null && DisguiseAPI.isDisguised(p)) {
-            //     DisguiseAPI.undisguiseToAll(p);
-            // }
+            if (p != null && DisguiseAPI.isDisguised(p)) {
+                DisguiseAPI.undisguiseToAll(p);
+            }
             animals.remove(uuid);
         }
         hunters.remove(uuid);
@@ -527,9 +527,9 @@ public class FarmHuntGame extends MiniGame {
 
     public void eliminatePlayerSilent(UUID uuid) {
         Player p = Bukkit.getPlayer(uuid);
-        // if (p != null && DisguiseAPI.isDisguised(p)) {
-        //     DisguiseAPI.undisguiseToAll(p);
-        // }
+        if (p != null && DisguiseAPI.isDisguised(p)) {
+            DisguiseAPI.undisguiseToAll(p);
+        }
         animals.remove(uuid);
         hunters.remove(uuid);
     }
@@ -549,9 +549,9 @@ public class FarmHuntGame extends MiniGame {
         for (UUID uuid : players) {
             Player p = Bukkit.getPlayer(uuid);
             if (p != null && p.isOnline()) {
-                // if (DisguiseAPI.isDisguised(p)) {
-                //     DisguiseAPI.undisguiseToAll(p);
-                // }
+                if (DisguiseAPI.isDisguised(p)) {
+                    DisguiseAPI.undisguiseToAll(p);
+                }
                 p.removePotionEffect(PotionEffectType.BLINDNESS);
                 p.removePotionEffect(PotionEffectType.INVISIBILITY);
                 p.removePotionEffect(PotionEffectType.SLOWNESS);

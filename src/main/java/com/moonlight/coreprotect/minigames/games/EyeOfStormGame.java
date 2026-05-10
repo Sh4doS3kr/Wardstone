@@ -70,6 +70,7 @@ public class EyeOfStormGame extends MiniGame {
     private double stormCenterX = 0;
     private double stormCenterZ = 0;
     private boolean crushStarted = false;
+    private boolean graceActive = true; // 60s sin PvP para lootear
 
     // Tasks
     private int stormEffectTaskId = -1;
@@ -544,6 +545,7 @@ public class EyeOfStormGame extends MiniGame {
         stormCenterX = 0;
         stormCenterZ = 0;
         crushStarted = false;
+        graceActive = true;
 
         // BossBar
         stormBar = Bukkit.createBossBar("§8§l⛈ OJO DE LA TORMENTA ⛈", BarColor.PURPLE, BarStyle.SEGMENTED_10);
@@ -589,7 +591,20 @@ public class EyeOfStormGame extends MiniGame {
     @Override
     public void onTick() {
         if (!gameStarted) return;
-        gameTime++;
+
+        // Grace period: primeros 60s sin PvP para lootear
+        if (graceActive && gameTime >= STORM_START) {
+            graceActive = false;
+            broadcastGame("§c§l⚔ §f¡TIEMPO DE GRACIA TERMINADO! §7El PvP está activado.");
+            titleAlive("§c§l⚔ PvP ACTIVADO", "§7¡Cuidado con los demás jugadores!");
+            soundAll(Sound.ENTITY_ENDER_DRAGON_GROWL, 0.7f, 1.5f);
+        }
+        if (graceActive) {
+            int timeLeft = STORM_START - gameTime;
+            if (timeLeft == 30 || timeLeft == 15 || timeLeft == 10 || timeLeft == 5) {
+                broadcastGame("§e§l⏳ §fPvP se activa en §c" + timeLeft + "s§f. ¡Lootea cofres!");
+            }
+        }
 
         updatePhase();
         applyStormDamage();
@@ -1058,4 +1073,5 @@ public class EyeOfStormGame extends MiniGame {
     public boolean allowsPickups() { return true; }
     public boolean allowsInventory() { return true; }
     public boolean allowsHunger() { return true; }
+    public boolean isGraceActive() { return graceActive; }
 }

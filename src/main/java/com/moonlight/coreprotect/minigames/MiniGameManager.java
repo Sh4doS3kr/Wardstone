@@ -427,6 +427,13 @@ public class MiniGameManager {
                 restorePlayerData(p);
                 p.setGameMode(GameMode.SURVIVAL);
                 restoreFlightIfPermitted(p);
+                // Quitar disfraz de LibsDisguises si quedó (FarmHunt)
+                try {
+                    if (me.libraryaddict.disguise.DisguiseAPI.isDisguised(p)) {
+                        me.libraryaddict.disguise.DisguiseAPI.undisguiseToAll(p);
+                    }
+                } catch (Exception ignored) {}
+                p.setPlayerListName(p.getName());
                 p.sendMessage("§a§l✔ §7Teletransportado de vuelta al mundo principal.");
                 restoredPlayers.add(entry.getKey());
             } else {

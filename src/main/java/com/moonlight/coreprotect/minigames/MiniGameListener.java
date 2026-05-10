@@ -77,9 +77,16 @@ public class MiniGameListener implements Listener {
 
         MiniGame game = mgr.getCurrentGame();
 
-        // SUMO, OITC, PILARES y EYE OF STORM permiten daño jugador→jugador
-        if (game instanceof SumoGame || game instanceof OITCGame || game instanceof PillarsOfFortuneGame || game instanceof EyeOfStormGame) {
+        // SUMO, OITC, PILARES permiten daño jugador→jugador siempre
+        if (game instanceof SumoGame || game instanceof OITCGame || game instanceof PillarsOfFortuneGame) {
             event.setCancelled(false); // Forzar que NO esté cancelado
+            return;
+        }
+        // EYE OF STORM: permitir PvP solo si NO hay gracia
+        if (game instanceof EyeOfStormGame eyeGame) {
+            if (!eyeGame.isGraceActive()) {
+                event.setCancelled(false);
+            }
             return;
         }
 
@@ -107,6 +114,9 @@ public class MiniGameListener implements Listener {
                 && !(mgr.getCurrentGame() instanceof BlackHoleGame)
                 && !(mgr.getCurrentGame() instanceof FakeDeathmatchGame)
                 && !(mgr.getCurrentGame() instanceof EyeOfStormGame)) return;
+
+        // EYE OF STORM: respetar gracia (no forzar PvP si hay gracia)
+        if (mgr.getCurrentGame() instanceof EyeOfStormGame eyeGame && eyeGame.isGraceActive()) return;
 
         // Detectar si el daño viene de un jugador (directo o proyectil)
         Player attacker = null;
@@ -238,8 +248,15 @@ public class MiniGameListener implements Listener {
                 return; // daño normal
             }
 
-            // EYE OF STORM: PvP completo permitido
-            if (game instanceof EyeOfStormGame) {
+            // EYE OF STORM: PvP permitido SOLO si no hay gracia
+            if (game instanceof EyeOfStormGame eyeGame) {
+                if (eyeGame.isGraceActive()) {
+                    event.setCancelled(true);
+                    if (event.getDamager() instanceof Player attacker) {
+                        attacker.sendMessage("§e§l⏳ §7PvP desactivado durante el tiempo de gracia. ¡Lootea cofres!");
+                    }
+                    return;
+                }
                 return; // daño normal
             }
 
@@ -268,8 +285,13 @@ public class MiniGameListener implements Listener {
                 return;
             }
 
-            // EYE OF STORM: todo proyectil permitido
-            if (game instanceof EyeOfStormGame) {
+            // EYE OF STORM: proyectil solo si no hay gracia
+            if (game instanceof EyeOfStormGame eyeGame) {
+                if (eyeGame.isGraceActive()) {
+                    event.setCancelled(true);
+                    shooter.sendMessage("§e§l⏳ §7PvP desactivado durante el tiempo de gracia.");
+                    return;
+                }
                 return;
             }
 
@@ -387,13 +409,21 @@ public class MiniGameListener implements Listener {
         Player player = event.getEntity();
         if (!isInMinigame(player)) return;
 
-        event.setKeepInventory(true);
-        event.getDrops().clear();
-        event.setDroppedExp(0);
-        event.setKeepLevel(true);
-
         MiniGameManager mgr = getManager();
         MiniGame game = mgr.getCurrentGame();
+
+        // Eye of Storm: dropear items del jugador al morir
+        if (game instanceof EyeOfStormGame) {
+            event.setKeepInventory(false);
+            event.setDroppedExp(0);
+            event.setKeepLevel(true);
+            // Los drops se generan automáticamente por Minecraft
+        } else {
+            event.setKeepInventory(true);
+            event.getDrops().clear();
+            event.setDroppedExp(0);
+            event.setKeepLevel(true);
+        }
 
         // En Murder Mystery, ocultamos mensaje de muerte en el chat y el sheriff dropea el arco
         if (game instanceof MurderMysteryGame) {
