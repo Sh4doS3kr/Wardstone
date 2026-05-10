@@ -66,6 +66,8 @@ public class EyeOfStormGame extends MiniGame {
     private boolean stormActive = false;
     private int currentPhase = 1;
     private double stormRadius = STORM_INITIAL_RADIUS;
+    private double stormCenterX = 0;
+    private double stormCenterZ = 0;
 
     // Tasks
     private int stormEffectTaskId = -1;
@@ -536,6 +538,8 @@ public class EyeOfStormGame extends MiniGame {
         stormActive = false;
         currentPhase = 1;
         stormRadius = STORM_INITIAL_RADIUS;
+        stormCenterX = 0;
+        stormCenterZ = 0;
 
         // BossBar
         stormBar = Bukkit.createBossBar("§8§l⛈ OJO DE LA TORMENTA ⛈", BarColor.PURPLE, BarStyle.SEGMENTED_10);
@@ -613,10 +617,35 @@ public class EyeOfStormGame extends MiniGame {
 
             if (currentPhase >= 2) {
                 stormActive = true;
-                // Usar WorldBorder para el shrink suave
+
+                // Elegir nuevo centro ALEATORIO dentro de la zona segura actual
+                // El nuevo centro debe estar dentro del mapa y a una distancia que
+                // permita que el nuevo círculo quepa dentro del arena
+                double maxOffset = Math.max(0, stormRadius - targetRadius - 10);
+                if (maxOffset > 0) {
+                    double angle = random.nextDouble() * Math.PI * 2;
+                    double offset = random.nextDouble() * maxOffset;
+                    double newCX = stormCenterX + offset * Math.cos(angle);
+                    double newCZ = stormCenterZ + offset * Math.sin(angle);
+                    // Asegurar que el nuevo centro + radio no se salga del mapa
+                    double maxDist = ARENA_RADIUS - targetRadius - 5;
+                    if (maxDist > 0) {
+                        double distFromOrigin = Math.sqrt(newCX * newCX + newCZ * newCZ);
+                        if (distFromOrigin > maxDist) {
+                            double ratio = maxDist / distFromOrigin;
+                            newCX *= ratio;
+                            newCZ *= ratio;
+                        }
+                    }
+                    stormCenterX = newCX;
+                    stormCenterZ = newCZ;
+                }
+
+                // Usar WorldBorder para el shrink suave con nuevo centro
                 World world = Bukkit.getWorld(MiniGameWorld.getWorldName());
                 if (world != null) {
                     org.bukkit.WorldBorder border = world.getWorldBorder();
+                    border.setCenter(stormCenterX, stormCenterZ);
                     border.setSize(targetRadius * 2, shrinkDuration);
                 }
             }
@@ -669,8 +698,9 @@ public class EyeOfStormGame extends MiniGame {
             Player p = Bukkit.getPlayer(uuid);
             if (p == null || !p.isOnline()) continue;
 
-            double dist = Math.sqrt(p.getLocation().getX() * p.getLocation().getX()
-                    + p.getLocation().getZ() * p.getLocation().getZ());
+            double dx = p.getLocation().getX() - stormCenterX;
+            double dz = p.getLocation().getZ() - stormCenterZ;
+            double dist = Math.sqrt(dx * dx + dz * dz);
 
             if (dist > stormRadius) {
                 // FUERA DE LA ZONA: daño + efectos
@@ -707,8 +737,8 @@ public class EyeOfStormGame extends MiniGame {
         for (int i = 0; i < numLightning; i++) {
             double angle = random.nextDouble() * Math.PI * 2;
             double dist = stormRadius + 5 + random.nextDouble() * 40;
-            double lx = dist * Math.cos(angle);
-            double lz = dist * Math.sin(angle);
+            double lx = stormCenterX + dist * Math.cos(angle);
+            double lz = stormCenterZ + dist * Math.sin(angle);
             if (Math.abs(lx) <= ARENA_RADIUS && Math.abs(lz) <= ARENA_RADIUS) {
                 int ly = getGroundY(world, (int) lx, (int) lz) + 1;
                 world.strikeLightningEffect(new Location(world, lx, ly, lz));
@@ -720,8 +750,9 @@ public class EyeOfStormGame extends MiniGame {
             for (UUID uuid : alivePlayers) {
                 Player p = Bukkit.getPlayer(uuid);
                 if (p == null) continue;
-                double dist = Math.sqrt(p.getLocation().getX() * p.getLocation().getX()
-                        + p.getLocation().getZ() * p.getLocation().getZ());
+                double ldx = p.getLocation().getX() - stormCenterX;
+                double ldz = p.getLocation().getZ() - stormCenterZ;
+                double dist = Math.sqrt(ldx * ldx + ldz * ldz);
                 if (dist > stormRadius + 10 && random.nextInt(3) == 0) {
                     world.strikeLightning(p.getLocation());
                 }
@@ -736,8 +767,9 @@ public class EyeOfStormGame extends MiniGame {
             Player p = Bukkit.getPlayer(uuid);
             if (p == null) continue;
 
-            double dist = Math.sqrt(p.getLocation().getX() * p.getLocation().getX()
-                    + p.getLocation().getZ() * p.getLocation().getZ());
+            double adx = p.getLocation().getX() - stormCenterX;
+            double adz = p.getLocation().getZ() - stormCenterZ;
+            double dist = Math.sqrt(adx * adx + adz * adz);
             boolean safe = dist <= stormRadius;
             String distStr = String.format("%.0f", dist);
             String radiusStr = String.format("%.0f", stormRadius);
