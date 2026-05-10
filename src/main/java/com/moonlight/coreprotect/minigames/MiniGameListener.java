@@ -77,8 +77,8 @@ public class MiniGameListener implements Listener {
 
         MiniGame game = mgr.getCurrentGame();
 
-        // SUMO, OITC y PILARES permiten daño jugador→jugador
-        if (game instanceof SumoGame || game instanceof OITCGame || game instanceof PillarsOfFortuneGame) {
+        // SUMO, OITC, PILARES y EYE OF STORM permiten daño jugador→jugador
+        if (game instanceof SumoGame || game instanceof OITCGame || game instanceof PillarsOfFortuneGame || game instanceof EyeOfStormGame) {
             event.setCancelled(false); // Forzar que NO esté cancelado
             return;
         }
@@ -105,7 +105,8 @@ public class MiniGameListener implements Listener {
         if (mgr == null || !mgr.isGameActive() || mgr.getCurrentGame() == null) return;
         if (!(mgr.getCurrentGame() instanceof PillarsOfFortuneGame)
                 && !(mgr.getCurrentGame() instanceof BlackHoleGame)
-                && !(mgr.getCurrentGame() instanceof FakeDeathmatchGame)) return;
+                && !(mgr.getCurrentGame() instanceof FakeDeathmatchGame)
+                && !(mgr.getCurrentGame() instanceof EyeOfStormGame)) return;
 
         // Detectar si el daño viene de un jugador (directo o proyectil)
         Player attacker = null;
@@ -237,6 +238,11 @@ public class MiniGameListener implements Listener {
                 return; // daño normal
             }
 
+            // EYE OF STORM: PvP completo permitido
+            if (game instanceof EyeOfStormGame) {
+                return; // daño normal
+            }
+
             // TODOS LOS DEMÁS: sin PvP
             event.setCancelled(true);
             return;
@@ -259,6 +265,11 @@ public class MiniGameListener implements Listener {
 
             // FAKE DEATHMATCH: todo proyectil permitido
             if (game instanceof FakeDeathmatchGame) {
+                return;
+            }
+
+            // EYE OF STORM: todo proyectil permitido
+            if (game instanceof EyeOfStormGame) {
                 return;
             }
 
@@ -354,9 +365,8 @@ public class MiniGameListener implements Listener {
                 event.setDropItems(false);
                 return;
             }
-            // Eye of Storm: permitir romper bloques
+            // Eye of Storm: permitir romper bloques CON drops
             if (game instanceof EyeOfStormGame) {
-                event.setDropItems(false);
                 return;
             }
             // Fake Deathmatch: permitir romper bloques
@@ -476,7 +486,8 @@ public class MiniGameListener implements Listener {
             if (mgr != null && mgr.isGameActive()
                     && (mgr.getCurrentGame() instanceof PillarsOfFortuneGame
                         || mgr.getCurrentGame() instanceof BlackHoleGame
-                        || mgr.getCurrentGame() instanceof FakeDeathmatchGame)) {
+                        || mgr.getCurrentGame() instanceof FakeDeathmatchGame
+                        || mgr.getCurrentGame() instanceof EyeOfStormGame)) {
                 return;
             }
             event.setCancelled(true);
@@ -506,8 +517,8 @@ public class MiniGameListener implements Listener {
             } else {
                 event.setCancelled(true);
             }
-        } else if (game instanceof PillarsOfFortuneGame || game instanceof BlackHoleGame || game instanceof FakeDeathmatchGame) {
-            // Pilares / Black Hole / Fake Deathmatch: permitir recoger items
+        } else if (game instanceof PillarsOfFortuneGame || game instanceof BlackHoleGame || game instanceof FakeDeathmatchGame || game instanceof EyeOfStormGame) {
+            // Pilares / Black Hole / Fake Deathmatch / Eye of Storm: permitir recoger items
             return;
         } else {
             // Bloquear recolección en otros minijuegos
@@ -523,7 +534,8 @@ public class MiniGameListener implements Listener {
             if (mgr != null && mgr.isGameActive()
                     && (mgr.getCurrentGame() instanceof PillarsOfFortuneGame
                         || mgr.getCurrentGame() instanceof BlackHoleGame
-                        || mgr.getCurrentGame() instanceof FakeDeathmatchGame)) {
+                        || mgr.getCurrentGame() instanceof FakeDeathmatchGame
+                        || mgr.getCurrentGame() instanceof EyeOfStormGame)) {
                 return;
             }
             event.setCancelled(true);

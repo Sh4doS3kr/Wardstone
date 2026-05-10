@@ -37,27 +37,27 @@ import java.util.*;
 public class EyeOfStormGame extends MiniGame {
 
     // === ARENA ===
-    private static final int ARENA_RADIUS = 120;
+    private static final int ARENA_RADIUS = 250;
     private static final int ARENA_Y = 70;
-    private static final int BLOCKS_PER_TICK = 6000;
+    private static final int BLOCKS_PER_TICK = 12000;
 
     // === STORM (Fortnite-style shrinking border) ===
-    private static final double STORM_INITIAL_RADIUS = 150.0; // Empieza MÁS GRANDE que el mapa
+    private static final double STORM_INITIAL_RADIUS = 300.0; // Empieza MÁS GRANDE que el mapa
     private static final double STORM_MIN_RADIUS = 5.0;
-    private static final int STORM_START = 30; // Segundos hasta que empieza a cerrar
+    private static final int STORM_START = 60; // Segundos hasta que empieza a cerrar
     private static final double STORM_DAMAGE_BASE = 1.5;
     private static final double STORM_DAMAGE_PER_PHASE = 2.0;
 
     // === PHASES (storm shrinks in stages like Fortnite) ===
-    // Fase 1: 0-30s = loot libre, borde enorme
-    // Fase 2: 30-90s = borde cierra hasta r80
-    // Fase 3: 90-150s = borde cierra hasta r40
-    // Fase 4: 150-210s = borde cierra hasta r15
-    // Fase 5: 210s+ = borde cierra hasta r5
-    private static final int PHASE_2_TIME = 30;
-    private static final int PHASE_3_TIME = 90;
-    private static final int PHASE_4_TIME = 150;
-    private static final int PHASE_5_TIME = 210;
+    // Fase 1: 0-60s = loot libre, borde enorme
+    // Fase 2: 60-150s = borde cierra hasta r160
+    // Fase 3: 150-240s = borde cierra hasta r80
+    // Fase 4: 240-320s = borde cierra hasta r25
+    // Fase 5: 320s+ = borde cierra hasta r5
+    private static final int PHASE_2_TIME = 60;
+    private static final int PHASE_3_TIME = 150;
+    private static final int PHASE_4_TIME = 240;
+    private static final int PHASE_5_TIME = 320;
 
     // === STATE ===
     private BossBar stormBar;
@@ -135,74 +135,74 @@ public class EyeOfStormGame extends MiniGame {
         }
 
         // === ESTRUCTURAS: Ruinas, casas, torres ===
-        // Ruinas dispersas (20)
-        for (int i = 0; i < 20; i++) {
+        // Ruinas dispersas (50)
+        for (int i = 0; i < 50; i++) {
             double angle = random.nextDouble() * Math.PI * 2;
-            double dist = 15 + random.nextDouble() * 95;
+            double dist = 15 + random.nextDouble() * 220;
             int sx = (int) (dist * Math.cos(angle));
             int sz = (int) (dist * Math.sin(angle));
             blockTasks.add(() -> buildRuin(world, sx, sz));
         }
 
-        // Casas pequeñas (12)
-        for (int i = 0; i < 12; i++) {
+        // Casas pequeñas (30)
+        for (int i = 0; i < 30; i++) {
             double angle = random.nextDouble() * Math.PI * 2;
-            double dist = 20 + random.nextDouble() * 90;
+            double dist = 20 + random.nextDouble() * 220;
             int sx = (int) (dist * Math.cos(angle));
             int sz = (int) (dist * Math.sin(angle));
             blockTasks.add(() -> buildHouse(world, sx, sz));
         }
 
-        // Torres de vigilancia (6)
-        for (int i = 0; i < 6; i++) {
-            double angle = (2 * Math.PI / 6) * i + random.nextDouble() * 0.5;
-            double dist = 50 + random.nextDouble() * 50;
+        // Torres de vigilancia (14)
+        for (int i = 0; i < 14; i++) {
+            double angle = (2 * Math.PI / 14) * i + random.nextDouble() * 0.5;
+            double dist = 40 + random.nextDouble() * 190;
             int sx = (int) (dist * Math.cos(angle));
             int sz = (int) (dist * Math.sin(angle));
             blockTasks.add(() -> buildTower(world, sx, sz));
         }
 
-        // Bunkers subterráneos (8)
-        for (int i = 0; i < 8; i++) {
+        // Bunkers subterráneos (20)
+        for (int i = 0; i < 20; i++) {
             double angle = random.nextDouble() * Math.PI * 2;
-            double dist = 25 + random.nextDouble() * 80;
+            double dist = 25 + random.nextDouble() * 210;
             int sx = (int) (dist * Math.cos(angle));
             int sz = (int) (dist * Math.sin(angle));
             blockTasks.add(() -> buildBunker(world, sx, sz));
         }
 
-        // Árboles grandes (35)
-        for (int i = 0; i < 35; i++) {
+        // Árboles grandes (90)
+        for (int i = 0; i < 90; i++) {
             double angle = random.nextDouble() * Math.PI * 2;
-            double dist = 10 + random.nextDouble() * 105;
+            double dist = 10 + random.nextDouble() * 235;
             int sx = (int) (dist * Math.cos(angle));
             int sz = (int) (dist * Math.sin(angle));
             blockTasks.add(() -> buildTree(world, sx, sz));
         }
 
-        // Rocas/piedras grandes (25)
-        for (int i = 0; i < 25; i++) {
+        // Rocas/piedras grandes (60)
+        for (int i = 0; i < 60; i++) {
             double angle = random.nextDouble() * Math.PI * 2;
-            double dist = 10 + random.nextDouble() * 100;
+            double dist = 10 + random.nextDouble() * 235;
             int sx = (int) (dist * Math.cos(angle));
             int sz = (int) (dist * Math.sin(angle));
             blockTasks.add(() -> buildRockFormation(world, sx, sz));
         }
 
-        // Muros rotos/trincheras (15)
-        for (int i = 0; i < 15; i++) {
+        // Muros rotos/trincheras (35)
+        for (int i = 0; i < 35; i++) {
             double angle = random.nextDouble() * Math.PI * 2;
-            double dist = 15 + random.nextDouble() * 95;
+            double dist = 15 + random.nextDouble() * 220;
             int sx = (int) (dist * Math.cos(angle));
             int sz = (int) (dist * Math.sin(angle));
             double wallAngle = random.nextDouble() * Math.PI;
             blockTasks.add(() -> buildBrokenWall(world, sx, sz, wallAngle));
         }
 
-        // Cofres con loot (40 repartidos por todo el mapa)
-        for (int i = 0; i < 40; i++) {
+        // Cofres con loot (100 repartidos por todo el mapa)
+        for (int i = 0; i < 100; i++) {
             double angle = random.nextDouble() * Math.PI * 2;
-            double dist = 10 + random.nextDouble() * 105;
+            double dist = 10 + random.nextDouble() * 235;
             int sx = (int) (dist * Math.cos(angle));
             int sz = (int) (dist * Math.sin(angle));
             blockTasks.add(() -> placeChest(world, sx, sz));
@@ -512,7 +512,7 @@ public class EyeOfStormGame extends MiniGame {
     public List<Location> getSpawnLocations(World world) {
         List<Location> spawns = new ArrayList<>();
         int maxPlayers = 16;
-        double spawnRadius = 80;
+        double spawnRadius = 180;
 
         for (int i = 0; i < maxPlayers; i++) {
             double angle = (2 * Math.PI / maxPlayers) * i;
@@ -604,11 +604,11 @@ public class EyeOfStormGame extends MiniGame {
             double targetRadius;
             int shrinkDuration;
             switch (currentPhase) {
-                case 2: targetRadius = 80; shrinkDuration = 55; break;   // 30-90s → cierra a 80
-                case 3: targetRadius = 40; shrinkDuration = 50; break;   // 90-150s → cierra a 40
-                case 4: targetRadius = 15; shrinkDuration = 45; break;   // 150-210s → cierra a 15
-                case 5: targetRadius = STORM_MIN_RADIUS; shrinkDuration = 40; break; // 210+ → cierra a 5
-                default: targetRadius = STORM_INITIAL_RADIUS; shrinkDuration = 60; break;
+                case 2: targetRadius = 160; shrinkDuration = 80; break;   // 60-150s → cierra a 160
+                case 3: targetRadius = 80; shrinkDuration = 70; break;    // 150-240s → cierra a 80
+                case 4: targetRadius = 25; shrinkDuration = 60; break;    // 240-320s → cierra a 25
+                case 5: targetRadius = STORM_MIN_RADIUS; shrinkDuration = 50; break; // 320+ → cierra a 5
+                default: targetRadius = STORM_INITIAL_RADIUS; shrinkDuration = 90; break;
             }
 
             if (currentPhase >= 2) {
