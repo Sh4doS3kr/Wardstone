@@ -72,6 +72,7 @@ public class EyeOfStormGame extends MiniGame {
     // Tasks
     private int stormEffectTaskId = -1;
     private int stormSyncTaskId = -1;
+    private int centerMoveTaskId = -1;
 
     public EyeOfStormGame(CoreProtectPlugin plugin, MiniGameManager manager) {
         super(plugin, manager, MiniGameType.EYE_OF_STORM);
@@ -619,33 +620,33 @@ public class EyeOfStormGame extends MiniGame {
                 stormActive = true;
 
                 // Elegir nuevo centro ALEATORIO dentro de la zona segura actual
-                // El nuevo centro debe estar dentro del mapa y a una distancia que
-                // permita que el nuevo círculo quepa dentro del arena
+                double targetCX = stormCenterX;
+                double targetCZ = stormCenterZ;
                 double maxOffset = Math.max(0, stormRadius - targetRadius - 10);
                 if (maxOffset > 0) {
                     double angle = random.nextDouble() * Math.PI * 2;
                     double offset = random.nextDouble() * maxOffset;
-                    double newCX = stormCenterX + offset * Math.cos(angle);
-                    double newCZ = stormCenterZ + offset * Math.sin(angle);
+                    targetCX = stormCenterX + offset * Math.cos(angle);
+                    targetCZ = stormCenterZ + offset * Math.sin(angle);
                     // Asegurar que el nuevo centro + radio no se salga del mapa
                     double maxDist = ARENA_RADIUS - targetRadius - 5;
                     if (maxDist > 0) {
-                        double distFromOrigin = Math.sqrt(newCX * newCX + newCZ * newCZ);
+                        double distFromOrigin = Math.sqrt(targetCX * targetCX + targetCZ * targetCZ);
                         if (distFromOrigin > maxDist) {
                             double ratio = maxDist / distFromOrigin;
-                            newCX *= ratio;
-                            newCZ *= ratio;
+                            targetCX *= ratio;
+                            targetCZ *= ratio;
                         }
                     }
-                    stormCenterX = newCX;
-                    stormCenterZ = newCZ;
                 }
 
-                // Usar WorldBorder para el shrink suave con nuevo centro
+                // Mover el centro GRADUALMENTE durante el shrink (no teletransportar)
+                startGradualCenterMove(targetCX, targetCZ, shrinkDuration);
+
+                // Usar WorldBorder para el shrink suave del tamaño
                 World world = Bukkit.getWorld(MiniGameWorld.getWorldName());
                 if (world != null) {
                     org.bukkit.WorldBorder border = world.getWorldBorder();
-                    border.setCenter(stormCenterX, stormCenterZ);
                     border.setSize(targetRadius * 2, shrinkDuration);
                 }
             }
@@ -682,6 +683,56 @@ public class EyeOfStormGame extends MiniGame {
                 soundAll(Sound.BLOCK_NOTE_BLOCK_BELL, 1.0f, 2.0f);
             }
         }
+    }
+
+    /**
+     * Mueve el centro del WorldBorder gradualmente (cada tick) desde la posición actual
+     * hasta la posición objetivo durante la duración del shrink. Sin teletransportes.
+     */
+    private void startGradualCenterMove(double targetCX, double targetCZ, int durationSeconds) {
+        // Cancelar movimiento anterior si existe
+        if (centerMoveTaskId != -1) {
+            Bukkit.getScheduler().cancelTask(centerMoveTaskId);
+            centerMoveTaskId = -1;
+        }
+
+        final double startCX = stormCenterX;
+        final double startCZ = stormCenterZ;
+        final int totalTicks = durationSeconds * 20; // 20 ticks por segundo
+        final double endCX = targetCX;
+        final double endCZ = targetCZ;
+
+        centerMoveTaskId = new BukkitRunnable() {
+            int tick = 0;
+
+            @Override
+            public void run() {
+                if (!gameStarted || tick >= totalTicks) {
+                    // Asegurar posición final exacta
+                    stormCenterX = endCX;
+                    stormCenterZ = endCZ;
+                    World world = Bukkit.getWorld(MiniGameWorld.getWorldName());
+                    if (world != null) {
+                        world.getWorldBorder().setCenter(endCX, endCZ);
+                    }
+                    centerMoveTaskId = -1;
+                    cancel();
+                    return;
+                }
+
+                tick++;
+                double progress = (double) tick / totalTicks;
+
+                // Interpolación lineal
+                stormCenterX = startCX + (endCX - startCX) * progress;
+                stormCenterZ = startCZ + (endCZ - startCZ) * progress;
+
+                World world = Bukkit.getWorld(MiniGameWorld.getWorldName());
+                if (world != null) {
+                    world.getWorldBorder().setCenter(stormCenterX, stormCenterZ);
+                }
+            }
+        }.runTaskTimer(plugin, 1L, 1L).getTaskId();
     }
 
     private void applyStormDamage() {
@@ -901,6 +952,10 @@ public class EyeOfStormGame extends MiniGame {
         if (stormSyncTaskId != -1) {
             Bukkit.getScheduler().cancelTask(stormSyncTaskId);
             stormSyncTaskId = -1;
+        }
+        if (centerMoveTaskId != -1) {
+            Bukkit.getScheduler().cancelTask(centerMoveTaskId);
+            centerMoveTaskId = -1;
         }
 
         resetStormBorder();
