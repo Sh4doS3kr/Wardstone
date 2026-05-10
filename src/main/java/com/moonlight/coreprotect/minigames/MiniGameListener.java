@@ -104,7 +104,8 @@ public class MiniGameListener implements Listener {
         MiniGameManager mgr = getManager();
         if (mgr == null || !mgr.isGameActive() || mgr.getCurrentGame() == null) return;
         if (!(mgr.getCurrentGame() instanceof PillarsOfFortuneGame)
-                && !(mgr.getCurrentGame() instanceof BlackHoleGame)) return;
+                && !(mgr.getCurrentGame() instanceof BlackHoleGame)
+                && !(mgr.getCurrentGame() instanceof FakeDeathmatchGame)) return;
 
         // Detectar si el daño viene de un jugador (directo o proyectil)
         Player attacker = null;
@@ -231,6 +232,11 @@ public class MiniGameListener implements Listener {
                 return; // daño normal
             }
 
+            // FAKE DEATHMATCH: PvP completo permitido
+            if (game instanceof FakeDeathmatchGame) {
+                return; // daño normal
+            }
+
             // TODOS LOS DEMÁS: sin PvP
             event.setCancelled(true);
             return;
@@ -248,6 +254,11 @@ public class MiniGameListener implements Listener {
 
             // BLACK HOLE: todo proyectil permitido
             if (game instanceof BlackHoleGame) {
+                return;
+            }
+
+            // FAKE DEATHMATCH: todo proyectil permitido
+            if (game instanceof FakeDeathmatchGame) {
                 return;
             }
 
@@ -434,7 +445,8 @@ public class MiniGameListener implements Listener {
         MiniGameManager mgr = getManager();
         if (mgr == null || !mgr.isGameActive() || mgr.getCurrentGame() == null) return;
         if (!(mgr.getCurrentGame() instanceof PillarsOfFortuneGame)
-                && !(mgr.getCurrentGame() instanceof BlackHoleGame)) return;
+                && !(mgr.getCurrentGame() instanceof BlackHoleGame)
+                && !(mgr.getCurrentGame() instanceof FakeDeathmatchGame)) return;
 
         // Snowball y Egg no hacen daño vanilla, aplicar daño custom
         if (proj instanceof Snowball || proj instanceof org.bukkit.entity.Egg) {
@@ -449,11 +461,12 @@ public class MiniGameListener implements Listener {
     @EventHandler
     public void onDrop(PlayerDropItemEvent event) {
         if (isInMinigame(event.getPlayer())) {
-            // Pilares de la Fortuna y Black Hole: permitir dropear items
+            // Pilares, Black Hole, Fake Deathmatch: permitir dropear items
             MiniGameManager mgr = getManager();
             if (mgr != null && mgr.isGameActive()
                     && (mgr.getCurrentGame() instanceof PillarsOfFortuneGame
-                        || mgr.getCurrentGame() instanceof BlackHoleGame)) {
+                        || mgr.getCurrentGame() instanceof BlackHoleGame
+                        || mgr.getCurrentGame() instanceof FakeDeathmatchGame)) {
                 return;
             }
             event.setCancelled(true);
@@ -483,8 +496,8 @@ public class MiniGameListener implements Listener {
             } else {
                 event.setCancelled(true);
             }
-        } else if (game instanceof PillarsOfFortuneGame || game instanceof BlackHoleGame) {
-            // Pilares de la Fortuna / Black Hole: permitir recoger items
+        } else if (game instanceof PillarsOfFortuneGame || game instanceof BlackHoleGame || game instanceof FakeDeathmatchGame) {
+            // Pilares / Black Hole / Fake Deathmatch: permitir recoger items
             return;
         } else {
             // Bloquear recolección en otros minijuegos
@@ -495,11 +508,12 @@ public class MiniGameListener implements Listener {
     @EventHandler
     public void onHunger(FoodLevelChangeEvent event) {
         if (event.getEntity() instanceof Player && isInMinigame((Player) event.getEntity())) {
-            // Pilares de la Fortuna / Black Hole: permitir hambre
+            // Pilares / Black Hole / Fake Deathmatch: permitir hambre
             MiniGameManager mgr = getManager();
             if (mgr != null && mgr.isGameActive()
                     && (mgr.getCurrentGame() instanceof PillarsOfFortuneGame
-                        || mgr.getCurrentGame() instanceof BlackHoleGame)) {
+                        || mgr.getCurrentGame() instanceof BlackHoleGame
+                        || mgr.getCurrentGame() instanceof FakeDeathmatchGame)) {
                 return;
             }
             event.setCancelled(true);
