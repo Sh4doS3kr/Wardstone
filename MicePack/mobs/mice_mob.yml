@@ -1,0 +1,203 @@
+#Black Mouse
+black_mouse:
+  Type: FOX
+  Display: 'Black Mouse'
+  Health: 10
+  Damage: 0
+  DamageModifiers:
+  - SUFFOCATION -0.0000001
+  - FALL -0.0000001
+  AIGoalSelectors:
+  -  clear
+  -  meleeattack
+  -  movetowardstarget
+  -  randomlookaround
+  -  lookatplayers
+  -  randomstroll
+  AITargetSelectors:
+  -  clear
+  -  nearestConditionalTarget{conditions=[
+       - stance{s=breedable} true
+     ]}
+  Options:
+    NoDamageTicks: 10
+    MovementSpeed: 0.3
+    FollowRange: 48
+    KnockbackResistance: 0.1
+    Silent: true
+    Despawn: true
+    Invincible: false
+    PreventSunburn: true
+    PreventBlockInfection: true
+    PreventOtherDrops: true
+    PreventRandomEquipment: true
+    PreventJockeyMounts: true
+    MaxCombatDistance: 50
+  Skills:
+  - CancelEvent{sync=true} @self ~onAttack
+  - CancelEvent{sync=true} @self ~onBreed
+  - model{mid=black_mouse;rt=black_mouse;n=false;step=1;scale=<random.float.0.8to1.2>;usm=true;save=true} @self ~onSpawn
+  - model{mid=black_mouse;rt=black_mouse;n=false;step=1;scale=<random.float.0.8to1.2>;usm=true;save=true} @self ~onLoad
+  - cullconfig{vc=false;bkc=false;blc=false} @self ~onSpawn
+  - cullconfig{vc=false;bkc=false;blc=false} @self ~onLoad
+  - setSkillCooldown{s=black_mouse_smell_cheese;t=60} @self ~onSpawn
+  - setSkillCooldown{s=black_mouse_feed_cheese;t=60} @self ~onSpawn
+  - skill{s=black_mouse_smell_cheese} @PIR{r=10} ~onTimer:5
+  - skill{s=black_mouse_feed_cheese} @self ~onInteract
+  - skill{s=black_mouse_breed_succes} @self ~onAttack
+  - skill{s=black_mouse_death} @self ~onDeath
+  #Sounds
+  - sound{s=entity.fox.ambient;v=1.5} @self ~onTimer:100
+
+#Brown Mouse
+brown_mouse:
+  Type: FOX
+  Display: 'Brown Mouse'
+  Health: 10
+  Damage: 0
+  DamageModifiers:
+  - SUFFOCATION -0.0000001
+  - FALL -0.0000001
+  AIGoalSelectors:
+  -  clear
+  -  meleeattack
+  -  movetowardstarget
+  -  randomlookaround
+  -  lookatplayers
+  -  randomstroll
+  AITargetSelectors:
+  -  clear
+  -  nearestConditionalTarget{conditions=[
+       - stance{s=breedable} true
+     ]}
+  Options:
+    NoDamageTicks: 10
+    MovementSpeed: 0.3
+    FollowRange: 48
+    KnockbackResistance: 0.1
+    Silent: true
+    Despawn: true
+    Invincible: false
+    PreventSunburn: true
+    PreventBlockInfection: true
+    PreventOtherDrops: true
+    PreventRandomEquipment: true
+    PreventJockeyMounts: true
+    MaxCombatDistance: 50
+  Skills:
+  - CancelEvent{sync=true} @self ~onAttack
+  - CancelEvent{sync=true} @self ~onBreed
+  - model{mid=brown_mouse;rt=brown_mouse;n=false;step=1;scale=<random.float.0.8to1.2>;usm=true;save=true} @self ~onSpawn
+  - model{mid=brown_mouse;rt=brown_mouse;n=false;step=1;scale=<random.float.0.8to1.2>;usm=true;save=true} @self ~onLoad
+  - cullconfig{vc=false;bkc=false;blc=false} @self ~onSpawn
+  - cullconfig{vc=false;bkc=false;blc=false} @self ~onLoad
+  - setSkillCooldown{s=brown_mouse_smell_cheese;t=60} @self ~onSpawn
+  - setSkillCooldown{s=brown_mouse_feed_cheese;t=60} @self ~onSpawn
+  - skill{s=brown_mouse_smell_cheese} @PIR{r=10} ~onTimer:5
+  - skill{s=brown_mouse_feed_cheese} @self ~onInteract
+  - skill{s=brown_mouse_breed_succes} @self ~onAttack
+  - skill{s=brown_mouse_death} @self ~onDeath
+  #Sounds
+  - sound{s=entity.fox.ambient} @self ~onTimer:100
+
+#Gray Mouse
+gray_mouse:
+  Type: FOX
+  Display: 'Gray Mouse'
+  Health: 10
+  Damage: 0
+  DamageModifiers:
+  - SUFFOCATION -0.0000001
+  - FALL -0.0000001
+  AIGoalSelectors:
+  -  clear
+  -  meleeattack
+  -  movetowardstarget
+  -  randomlookaround
+  -  lookatplayers
+  -  randomstroll
+  AITargetSelectors:
+  -  clear
+  -  nearestConditionalTarget{conditions=[
+       - stance{s=breedable} true
+     ]}
+  Options:
+    NoDamageTicks: 10
+    MovementSpeed: 0.2
+    FollowRange: 48
+    KnockbackResistance: 0.1
+    Silent: true
+    Despawn: true
+    Invincible: false
+    PreventSunburn: true
+    PreventBlockInfection: true
+    PreventOtherDrops: true
+    PreventRandomEquipment: true
+    PreventJockeyMounts: true
+    MaxCombatDistance: 50
+  Skills:
+  - CancelEvent{sync=true} @self ~onAttack
+  - CancelEvent{sync=true} @self ~onBreed
+  - model{mid=gray_mouse;rt=gray_mouse;n=false;step=1;scale=<random.float.0.8to1.2>;usm=true;save=true} @self ~onSpawn
+  - model{mid=gray_mouse;rt=gray_mouse;n=false;step=1;scale=<random.float.0.8to1.2>;usm=true;save=true} @self ~onLoad
+  - cullconfig{vc=false;bkc=false;blc=false} @self ~onSpawn
+  - cullconfig{vc=false;bkc=false;blc=false} @self ~onLoad
+  - setSkillCooldown{s=gray_mouse_smell_cheese;t=60} @self ~onSpawn
+  - setSkillCooldown{s=gray_mouse_feed_cheese;t=60} @self ~onSpawn
+  - skill{s=gray_mouse_smell_cheese} @PIR{r=10} ~onTimer:5
+  - skill{s=gray_mouse_feed_cheese} @self ~onInteract
+  - skill{s=gray_mouse_breed_succes} @self ~onAttack
+  - skill{s=gray_mouse_death} @self ~onDeath
+  #Sounds
+  - sound{s=entity.fox.ambient} @self ~onTimer:100
+
+#White Mouse
+white_mouse:
+  Type: FOX
+  Display: 'White Mouse'
+  Health: 10
+  Damage: 0
+  DamageModifiers:
+  - SUFFOCATION -0.0000001
+  - FALL -0.0000001
+  AIGoalSelectors:
+  -  clear
+  -  meleeattack
+  -  movetowardstarget
+  -  randomlookaround
+  -  lookatplayers
+  -  randomstroll
+  AITargetSelectors:
+  -  clear
+  -  nearestConditionalTarget{conditions=[
+       - stance{s=breedable} true
+     ]}
+  Options:
+    NoDamageTicks: 10
+    MovementSpeed: 0.2
+    FollowRange: 48
+    KnockbackResistance: 0.1
+    Silent: true
+    Despawn: true
+    Invincible: false
+    PreventSunburn: true
+    PreventBlockInfection: true
+    PreventOtherDrops: true
+    PreventRandomEquipment: true
+    PreventJockeyMounts: true
+    MaxCombatDistance: 50
+  Skills:
+  - CancelEvent{sync=true} @self ~onAttack
+  - CancelEvent{sync=true} @self ~onBreed
+  - model{mid=white_mouse;rt=white_mouse;n=false;step=1;scale=<random.float.0.8to1.2>;usm=true;save=true} @self ~onSpawn
+  - model{mid=white_mouse;rt=white_mouse;n=false;step=1;scale=<random.float.0.8to1.2>;usm=true;save=true} @self ~onLoad
+  - cullconfig{vc=false;bkc=false;blc=false} @self ~onSpawn
+  - cullconfig{vc=false;bkc=false;blc=false} @self ~onLoad
+  - setSkillCooldown{s=white_mouse_smell_cheese;t=60} @self ~onSpawn
+  - setSkillCooldown{s=white_mouse_feed_cheese;t=60} @self ~onSpawn
+  - skill{s=white_mouse_smell_cheese} @PIR{r=10} ~onTimer:5
+  - skill{s=white_mouse_feed_cheese} @self ~onInteract
+  - skill{s=white_mouse_breed_succes} @self ~onAttack
+  - skill{s=white_mouse_death} @self ~onDeath
+  #Sounds
+  - sound{s=entity.fox.ambient} @self ~onTimer:100

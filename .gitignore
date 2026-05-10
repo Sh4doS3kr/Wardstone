@@ -47,10 +47,17 @@ web/
 # ===== CONFIGS DE SERVIDOR (NO SUBIR) =====
 ModelEngine/
 MythicMobs/
+!MythicMobs/mobs/mice_mob.yml
+!MythicMobs/randomspawns/cubees_spawns.yml
+!MythicMobs/skills/mice_skills.yml
+!MythicMobs/items/mice_items.yml
 Nexo/
+!Nexo/items/mice_pack.yml
 MCPets/
 ExcellentCrates/
 MicePack/
+!MicePack/mobs/mice_mob.yml
+!MicePack/skills/mice_skills.yml
 skeleton_mobs-amonde/
 Rank Icons/
 bolsa-web/

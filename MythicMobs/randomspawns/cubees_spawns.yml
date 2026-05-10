@@ -1,0 +1,132 @@
+###########################################################
+# SPAWNS NATURALES — CONFIGURACION UNICA                  #
+# Cubees de biomas ELIMINADOS. Solo quedan Magicos + Mice. #
+###########################################################
+
+# ============================================================
+# CUBEES DE BIOMAS — ELIMINADOS
+# ============================================================
+# Todos los cubees de biomas (badlands, beach, birch, cherry_blossom,
+# dark_oak, taiga, deep_dark, dripstone, forest_keeper) han sido
+# eliminados del spawn natural por decision de diseño.
+
+# ============================================================
+# CUBEES MAGICOS (probabilidad MUY REDUCIDA)
+# ============================================================
+
+Cubee-ArcticWitch:
+  MobType: cubee-arctic_witch
+  Worlds: world,world_survival,survival
+  Chance: 0.0005
+  Priority: 20
+  Action: ADD
+  Conditions:
+  - outside true
+  - biome SNOWY_PLAINS,SNOWY_TAIGA,ICE_SPIKES,SNOWY_BEACH,FROZEN_RIVER,FROZEN_PEAKS,SNOWY_SLOPES
+
+Cubee-Meowgician:
+  MobType: cubee-meowgician
+  Worlds: world,world_survival,survival
+  Chance: 0.0005
+  Priority: 20
+  Action: ADD
+  Conditions:
+  - outside true
+  - biome PLAINS,FOREST,MEADOW,SUNFLOWER_PLAINS,FLOWER_FOREST
+
+Cubee-WishingTeddy:
+  MobType: cubee-wishing_teddy
+  Worlds: world,world_survival,survival
+  Chance: 0.0005
+  Priority: 20
+  Action: ADD
+  Conditions:
+  - outside true
+  - biome PLAINS,MEADOW,SUNFLOWER_PLAINS,CHERRY_GROVE,FLOWER_FOREST
+
+# ============================================================
+# RATONES — MicePack (spawn aleatorio en superficie)
+# ============================================================
+
+Mouse-Black:
+  MobType: black_mouse
+  Worlds: world,world_survival,survival
+  Chance: 0.002
+  Priority: 10
+  Action: ADD
+  Conditions:
+  - outside true
+
+Mouse-Brown:
+  MobType: brown_mouse
+  Worlds: world,world_survival,survival
+  Chance: 0.002
+  Priority: 10
+  Action: ADD
+  Conditions:
+  - outside true
+
+Mouse-Gray:
+  MobType: gray_mouse
+  Worlds: world,world_survival,survival
+  Chance: 0.002
+  Priority: 10
+  Action: ADD
+  Conditions:
+  - outside true
+
+Mouse-White:
+  MobType: white_mouse
+  Worlds: world,world_survival,survival
+  Chance: 0.002
+  Priority: 10
+  Action: ADD
+  Conditions:
+  - outside true
+
+# ============================================================
+# SKELETONS — skeleton_mobs-amonde (spawn nocturno en superficie)
+# ============================================================
+
+Skeleton-Melee:
+  MobType: skeleton_melee
+  Worlds: world,world_survival,survival
+  Chance: 0.003
+  Priority: 10
+  Action: ADD
+  Conditions:
+  - outside true
+  - night true
+
+Skeleton-Archer:
+  MobType: skeleton_archer
+  Worlds: world,world_survival,survival
+  Chance: 0.003
+  Priority: 10
+  Action: ADD
+  Conditions:
+  - outside true
+  - night true
+
+Skeleton-Mage:
+  MobType: skeleton_mage
+  Worlds: world,world_survival,survival
+  Chance: 0.002
+  Priority: 10
+  Action: ADD
+  Conditions:
+  - outside true
+  - night true
+
+Skeleton-Elite:
+  MobType: skeleton_elite
+  Worlds: world,world_survival,survival
+  Chance: 0.0015
+  Priority: 15
+  Action: ADD
+  Conditions:
+  - outside true
+  - night true
+
+# BOSS Warlord Kragan ELIMINADO del spawn natural.
+# Solo aparece via Boss Arena (/wardboss).
