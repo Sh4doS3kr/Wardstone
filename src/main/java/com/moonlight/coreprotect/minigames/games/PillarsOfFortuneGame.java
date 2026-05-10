@@ -62,6 +62,9 @@ public class PillarsOfFortuneGame extends MiniGame {
     private double stormRadius = STORM_INITIAL_RADIUS;
     private double lastPlacedRadius = -1; // radio de la última pared de cristal colocada
     private int stormParticleTaskId = -1;
+    private boolean frozen = false;
+    private BukkitRunnable freezeTask = null;
+    private final Map<UUID, Location> frozenPositions = new HashMap<>();
 
     // Pillar locations per player (UUID -> pillar center top)
     private final Map<UUID, Location> pillarLocations = new LinkedHashMap<>();
@@ -135,6 +138,53 @@ public class PillarsOfFortuneGame extends MiniGame {
         for (int i = 0; i < playerList.size(); i++) {
             pillarLocations.put(playerList.get(i), spawns.get(i % spawns.size()));
         }
+
+        // Congelar jugadores en su pilar hasta que empiece el juego
+        frozen = true;
+        for (UUID uuid : players) {
+            Player p = Bukkit.getPlayer(uuid);
+            if (p != null) {
+                frozenPositions.put(uuid, p.getLocation().clone());
+            }
+        }
+        startFreezeTask();
+    }
+
+    private void startFreezeTask() {
+        stopFreezeTask();
+        freezeTask = new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (!frozen) {
+                    cancel();
+                    return;
+                }
+                for (UUID uuid : players) {
+                    Player p = Bukkit.getPlayer(uuid);
+                    if (p == null || !p.isOnline()) continue;
+                    Location frozenLoc = frozenPositions.get(uuid);
+                    if (frozenLoc == null) continue;
+                    Location current = p.getLocation();
+                    double dx = Math.abs(current.getX() - frozenLoc.getX());
+                    double dz = Math.abs(current.getZ() - frozenLoc.getZ());
+                    if (dx > 0.05 || dz > 0.05) {
+                        Location tp = frozenLoc.clone();
+                        tp.setYaw(current.getYaw());
+                        tp.setPitch(current.getPitch());
+                        p.teleport(tp);
+                    }
+                    p.setVelocity(new org.bukkit.util.Vector(0, 0, 0));
+                }
+            }
+        };
+        freezeTask.runTaskTimer(plugin, 0L, 1L);
+    }
+
+    private void stopFreezeTask() {
+        if (freezeTask != null) {
+            try { freezeTask.cancel(); } catch (Exception ignored) {}
+            freezeTask = null;
+        }
     }
 
     // ═══════════════════════════════════════════
@@ -144,6 +194,11 @@ public class PillarsOfFortuneGame extends MiniGame {
     @Override
     public void startGameLogic() {
         gameStarted = true;
+
+        // Descongelar jugadores
+        frozen = false;
+        stopFreezeTask();
+        frozenPositions.clear();
 
         statusBar = Bukkit.createBossBar("§5§l✦ PILARES DE LA FORTUNA §5§l✦", BarColor.PURPLE, BarStyle.SEGMENTED_10);
         statusBar.setProgress(1.0);
@@ -480,6 +535,9 @@ public class PillarsOfFortuneGame extends MiniGame {
             statusBar.setVisible(false);
             statusBar = null;
         }
+        frozen = false;
+        stopFreezeTask();
+        frozenPositions.clear();
         pillarLocations.clear();
     }
 
