@@ -608,10 +608,11 @@ public class CoreProtectPlugin extends JavaPlugin {
         proxiChatManager = new com.moonlight.coreprotect.voicechat.ProxiChatManager(this);
         proxiChatManager.start();
 
-        // Mice — /ratones crafteo de queso Swiss
+        // Mice — /ratones crafteo de queso Swiss + limpieza de ratones
         com.moonlight.coreprotect.mice.MiceCommand miceCmd = new com.moonlight.coreprotect.mice.MiceCommand(this);
         getCommand("ratones").setExecutor(miceCmd);
         getServer().getPluginManager().registerEvents(miceCmd, this);
+        com.moonlight.coreprotect.mice.MiceCleanupTask.start(this);
 
         // Owner Kit — kit OP exclusivo para OPs
         getCommand("ownerkit").setExecutor(new com.moonlight.coreprotect.kits.OwnerKitCommand(this));
