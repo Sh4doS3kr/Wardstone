@@ -354,6 +354,16 @@ public class MiniGameListener implements Listener {
                 event.setDropItems(false);
                 return;
             }
+            // Eye of Storm: permitir romper bloques
+            if (game instanceof EyeOfStormGame) {
+                event.setDropItems(false);
+                return;
+            }
+            // Fake Deathmatch: permitir romper bloques
+            if (game instanceof FakeDeathmatchGame) {
+                event.setDropItems(false);
+                return;
+            }
         }
 
         event.setCancelled(true);
@@ -542,6 +552,11 @@ public class MiniGameListener implements Listener {
         // Black Hole: permitir abrir cofres
         if (game instanceof BlackHoleGame) {
             return; // No cancelar ninguna interacción
+        }
+
+        // Eye of Storm: permitir abrir cofres y toda interacción
+        if (game instanceof EyeOfStormGame) {
+            return;
         }
 
         // Build Battle Classic: block ender pearls, interactables, handle vote clicks
@@ -1013,6 +1028,27 @@ public class MiniGameListener implements Listener {
                 }
                 return;
             }
+            // Eye of Storm: permitir colocar bloques (con restricciones)
+            if (mgr != null && mgr.isGameActive() && mgr.getCurrentGame() instanceof EyeOfStormGame) {
+                org.bukkit.Material placed = event.getBlock().getType();
+                if (placed == org.bukkit.Material.OBSIDIAN
+                        || placed == org.bukkit.Material.END_PORTAL_FRAME
+                        || placed == org.bukkit.Material.RESPAWN_ANCHOR
+                        || placed == org.bukkit.Material.BEDROCK
+                        || placed == org.bukkit.Material.COMMAND_BLOCK
+                        || placed == org.bukkit.Material.CHAIN_COMMAND_BLOCK
+                        || placed == org.bukkit.Material.REPEATING_COMMAND_BLOCK
+                        || placed == org.bukkit.Material.STRUCTURE_BLOCK) {
+                    event.setCancelled(true);
+                    return;
+                }
+                if (event.getBlock().getY() > 150) {
+                    event.setCancelled(true);
+                    event.getPlayer().sendMessage("§c§l✖ §cNo puedes construir tan alto.");
+                    return;
+                }
+                return;
+            }
             // Fake Deathmatch: permitir colocar bloques (con restricciones)
             if (mgr != null && mgr.isGameActive() && mgr.getCurrentGame() instanceof FakeDeathmatchGame) {
                 org.bukkit.Material placed = event.getBlock().getType();
@@ -1094,6 +1130,10 @@ public class MiniGameListener implements Listener {
         }
         // Fake Deathmatch: permitir mover items
         if (mgr != null && mgr.isGameActive() && mgr.getCurrentGame() instanceof FakeDeathmatchGame) {
+            return;
+        }
+        // Eye of Storm: permitir mover items (cofres incluidos)
+        if (mgr != null && mgr.isGameActive() && mgr.getCurrentGame() instanceof EyeOfStormGame) {
             return;
         }
         // Build Battle Classic: permitir mover items durante construcción + handle vote GUI
