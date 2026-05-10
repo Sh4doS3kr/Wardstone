@@ -539,6 +539,11 @@ public class MiniGameListener implements Listener {
             }
         }
 
+        // Black Hole: permitir abrir cofres
+        if (game instanceof BlackHoleGame) {
+            return; // No cancelar ninguna interacción
+        }
+
         // Build Battle Classic: block ender pearls, interactables, handle vote clicks
         if (game instanceof BuildBattleClassicGame) {
             BuildBattleClassicGame bbc = (BuildBattleClassicGame) game;
@@ -1058,6 +1063,14 @@ public class MiniGameListener implements Listener {
         }
         // Pilares de la Fortuna: permitir mover items
         if (mgr != null && mgr.isGameActive() && mgr.getCurrentGame() instanceof PillarsOfFortuneGame) {
+            return;
+        }
+        // Black Hole: permitir mover items (cofres incluidos)
+        if (mgr != null && mgr.isGameActive() && mgr.getCurrentGame() instanceof BlackHoleGame) {
+            return;
+        }
+        // Fake Deathmatch: permitir mover items
+        if (mgr != null && mgr.isGameActive() && mgr.getCurrentGame() instanceof FakeDeathmatchGame) {
             return;
         }
         // Build Battle Classic: permitir mover items durante construcción + handle vote GUI

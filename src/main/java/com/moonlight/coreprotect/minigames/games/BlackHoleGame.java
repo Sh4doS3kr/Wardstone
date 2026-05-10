@@ -46,9 +46,9 @@ import java.util.*;
 public class BlackHoleGame extends MiniGame {
 
     // === ARENA ===
-    private static final int ARENA_RADIUS = 45;
+    private static final int ARENA_RADIUS = 100;
     private static final int ARENA_Y = 80;
-    private static final int HOLE_CENTER_Y = ARENA_Y + 15; // El agujero flota sobre la arena
+    private static final int HOLE_CENTER_Y = ARENA_Y + 20; // El agujero flota sobre la arena
 
     // === BLACK HOLE PHASES ===
     private static final int PHASE_2_TIME = 45;
@@ -56,29 +56,32 @@ public class BlackHoleGame extends MiniGame {
     private static final int PHASE_4_TIME = 210;
 
     // === GRAVITY ===
-    private static final double GRAVITY_PHASE_1 = 0.03;
-    private static final double GRAVITY_PHASE_2 = 0.06;
-    private static final double GRAVITY_PHASE_3 = 0.12;
-    private static final double GRAVITY_PHASE_4 = 0.20;
+    private static final double GRAVITY_PHASE_1 = 0.08;
+    private static final double GRAVITY_PHASE_2 = 0.18;
+    private static final double GRAVITY_PHASE_3 = 0.35;
+    private static final double GRAVITY_PHASE_4 = 0.55;
 
     // === HOLE SIZE (radius of the visual sphere) ===
-    private static final double HOLE_SIZE_PHASE_1 = 2.0;
-    private static final double HOLE_SIZE_PHASE_2 = 4.0;
-    private static final double HOLE_SIZE_PHASE_3 = 7.0;
-    private static final double HOLE_SIZE_PHASE_4 = 11.0;
+    private static final double HOLE_SIZE_PHASE_1 = 3.0;
+    private static final double HOLE_SIZE_PHASE_2 = 6.0;
+    private static final double HOLE_SIZE_PHASE_3 = 10.0;
+    private static final double HOLE_SIZE_PHASE_4 = 15.0;
 
     // === KILL RADIUS (sucked into the hole = death) ===
-    private static final double KILL_RADIUS_PHASE_1 = 3.0;
-    private static final double KILL_RADIUS_PHASE_2 = 5.5;
-    private static final double KILL_RADIUS_PHASE_3 = 8.5;
-    private static final double KILL_RADIUS_PHASE_4 = 13.0;
+    private static final double KILL_RADIUS_PHASE_1 = 4.5;
+    private static final double KILL_RADIUS_PHASE_2 = 8.0;
+    private static final double KILL_RADIUS_PHASE_3 = 12.0;
+    private static final double KILL_RADIUS_PHASE_4 = 18.0;
 
     // === STORM ===
     private static final int STORM_START = PHASE_4_TIME;
-    private static final double STORM_INITIAL_RADIUS = 50.0;
-    private static final double STORM_MIN_RADIUS = 8.0;
+    private static final double STORM_INITIAL_RADIUS = 110.0;
+    private static final double STORM_MIN_RADIUS = 10.0;
     private static final int STORM_SHRINK_DURATION = 150;
     private static final double STORM_DAMAGE = 4.0;
+
+    // === ASYNC BUILD ===
+    private static final int BLOCKS_PER_TICK = 5000; // bloques por tick para no lagear
 
     // === LOOT ===
     private static final int FIRST_LOOT_AT = 3;
@@ -113,114 +116,195 @@ public class BlackHoleGame extends MiniGame {
 
     @Override
     public void buildArena(World world) {
-        int cx = 0, cz = 0;
+        // Pre-cargar chunks necesarios
+        int chunkRadius = (ARENA_RADIUS / 16) + 2;
+        for (int cx = -chunkRadius; cx <= chunkRadius; cx++) {
+            for (int cz = -chunkRadius; cz <= chunkRadius; cz++) {
+                world.getChunkAt(cx, cz).load(true);
+                world.getChunkAt(cx, cz).setForceLoaded(true);
+            }
+        }
+
+        // Generar la arena de forma batch (BLOCKS_PER_TICK bloques por tick)
+        List<Runnable> tasks = new ArrayList<>();
         int baseY = ARENA_Y;
+        Random buildRng = new Random(42); // Seed fija para determinismo
 
-        // === CAPA BASE: Isla circular con capas de terreno ===
-        for (int x = -ARENA_RADIUS; x <= ARENA_RADIUS; x++) {
-            for (int z = -ARENA_RADIUS; z <= ARENA_RADIUS; z++) {
-                double dist = Math.sqrt(x * x + z * z);
-                if (dist > ARENA_RADIUS) continue;
+        // === TAREA 1: Terreno base ===
+        tasks.add(() -> {
+            for (int x = -ARENA_RADIUS; x <= ARENA_RADIUS; x++) {
+                for (int z = -ARENA_RADIUS; z <= ARENA_RADIUS; z++) {
+                    double dist = Math.sqrt(x * x + z * z);
+                    if (dist > ARENA_RADIUS) continue;
 
-                // Relieve suave: más alto en el borde, depresión hacia el centro
-                double heightMod = Math.sin(dist / ARENA_RADIUS * Math.PI) * 4;
-                // Ruido pseudo-aleatorio para terreno natural
-                double noise = Math.sin(x * 0.3) * Math.cos(z * 0.3) * 2
-                        + Math.sin(x * 0.1 + z * 0.15) * 3;
-                int surfaceY = baseY + (int) (heightMod + noise);
+                    double heightMod = Math.sin(dist / ARENA_RADIUS * Math.PI) * 5;
+                    double noise = Math.sin(x * 0.2) * Math.cos(z * 0.2) * 3
+                            + Math.sin(x * 0.08 + z * 0.1) * 4
+                            + Math.sin(x * 0.05 - z * 0.07) * 2;
+                    int surfaceY = baseY + (int) (heightMod + noise);
 
-                // Capas de tierra bajo la superficie
-                for (int y = surfaceY - 5; y <= surfaceY; y++) {
-                    if (y < surfaceY - 3) {
-                        world.getBlockAt(cx + x, y, cz + z).setType(Material.STONE);
-                    } else if (y < surfaceY) {
-                        world.getBlockAt(cx + x, y, cz + z).setType(Material.DIRT);
-                    } else {
-                        // Superficie
-                        if (dist < 6) {
-                            // Centro: obsidiana y crying obsidiana (base del agujero negro)
-                            world.getBlockAt(cx + x, y, cz + z).setType(
-                                    random.nextBoolean() ? Material.OBSIDIAN : Material.CRYING_OBSIDIAN);
-                        } else if (dist < ARENA_RADIUS - 3) {
-                            world.getBlockAt(cx + x, y, cz + z).setType(Material.GRASS_BLOCK);
+                    for (int y = surfaceY - 6; y <= surfaceY; y++) {
+                        Material mat;
+                        if (y < surfaceY - 4) {
+                            mat = Material.STONE;
+                        } else if (y < surfaceY - 2) {
+                            mat = Material.DEEPSLATE;
+                        } else if (y < surfaceY) {
+                            mat = Material.DIRT;
                         } else {
-                            // Borde: piedra erosionada
-                            world.getBlockAt(cx + x, y, cz + z).setType(
-                                    random.nextBoolean() ? Material.COBBLESTONE : Material.STONE);
+                            if (dist < 8) {
+                                mat = ((x + z) % 2 == 0) ? Material.OBSIDIAN : Material.CRYING_OBSIDIAN;
+                            } else if (dist < 20) {
+                                mat = Material.PODZOL;
+                            } else if (dist < ARENA_RADIUS - 5) {
+                                mat = Material.GRASS_BLOCK;
+                            } else {
+                                mat = ((x + z) % 3 == 0) ? Material.COBBLESTONE : Material.STONE;
+                            }
                         }
+                        world.getBlockAt(x, y, z).setType(mat);
+                    }
+                    // Underneath: deepslate foundation
+                    for (int y = surfaceY - 7; y >= surfaceY - 9; y--) {
+                        world.getBlockAt(x, y, z).setType(Material.DEEPSLATE);
                     }
                 }
+            }
+        });
 
-                // Debajo de la isla: roca y vacío
-                for (int y = surfaceY - 6; y >= surfaceY - 8; y--) {
-                    if (y >= baseY - 10) {
-                        world.getBlockAt(cx + x, y, cz + z).setType(Material.DEEPSLATE);
+        // === TAREA 2: Esfera + estructuras + decoración ===
+        tasks.add(() -> {
+            // Esfera visual del agujero negro
+            buildHoleSphere(world, 3);
+
+            // Anillo interior de crying obsidian
+            for (int angle = 0; angle < 360; angle += 5) {
+                double rad = Math.toRadians(angle);
+                int rx = (int) (12 * Math.cos(rad));
+                int rz = (int) (12 * Math.sin(rad));
+                int ry = getHighestSolid(world, rx, rz, baseY + 15);
+                if (ry > baseY - 5) {
+                    world.getBlockAt(rx, ry, rz).setType(Material.CRYING_OBSIDIAN);
+                }
+            }
+
+            // 10 ruinas en dos anillos
+            for (int i = 0; i < 10; i++) {
+                double angle = (2 * Math.PI / 10) * i;
+                double ringDist = (i % 2 == 0) ? 40 : 65;
+                int sx = (int) (ringDist * Math.cos(angle));
+                int sz = (int) (ringDist * Math.sin(angle));
+                int sy = getHighestSolid(world, sx, sz, baseY + 15) + 1;
+                buildRuin(world, sx, sy, sz, i);
+            }
+
+            // 6 torres en el borde exterior
+            for (int i = 0; i < 6; i++) {
+                double angle = (2 * Math.PI / 6) * i + Math.PI / 6;
+                int tx = (int) (85 * Math.cos(angle));
+                int tz = (int) (85 * Math.sin(angle));
+                int ty = getHighestSolid(world, tx, tz, baseY + 15) + 1;
+                buildTower(world, tx, ty, tz);
+            }
+
+            // 8 pilares de End Stone con End Rod
+            for (int i = 0; i < 8; i++) {
+                double angle = (2 * Math.PI / 8) * i + Math.PI / 8;
+                int px = (int) (55 * Math.cos(angle));
+                int pz = (int) (55 * Math.sin(angle));
+                int py = getHighestSolid(world, px, pz, baseY + 15) + 1;
+                for (int y = py; y < py + 7; y++) {
+                    world.getBlockAt(px, y, pz).setType(Material.END_STONE_BRICKS);
+                }
+                world.getBlockAt(px, py + 7, pz).setType(Material.END_ROD);
+            }
+        });
+
+        // === TAREA 3: Árboles, cofres y detalles ===
+        tasks.add(() -> {
+            // 50 árboles muertos
+            Random treeRng = new Random(123);
+            for (int i = 0; i < 50; i++) {
+                double angle = treeRng.nextDouble() * Math.PI * 2;
+                double dist = 15 + treeRng.nextDouble() * 75;
+                int tx = (int) (dist * Math.cos(angle));
+                int tz = (int) (dist * Math.sin(angle));
+                int ty = getHighestSolid(world, tx, tz, baseY + 15) + 1;
+                if (ty > baseY - 5 && world.getBlockAt(tx, ty - 1, tz).getType() == Material.GRASS_BLOCK) {
+                    buildDeadTree(world, tx, ty, tz);
+                }
+            }
+
+            // 30 cofres de loot esparcidos
+            Random chestRng = new Random(456);
+            for (int i = 0; i < 30; i++) {
+                double angle = chestRng.nextDouble() * Math.PI * 2;
+                double dist = 15 + chestRng.nextDouble() * 80;
+                int chx = (int) (dist * Math.cos(angle));
+                int chz = (int) (dist * Math.sin(angle));
+                int chy = getHighestSolid(world, chx, chz, baseY + 15) + 1;
+                if (chy > baseY - 5) {
+                    world.getBlockAt(chx, chy, chz).setType(Material.CHEST);
+                    try {
+                        org.bukkit.block.Chest chest = (org.bukkit.block.Chest) world.getBlockAt(chx, chy, chz).getState();
+                        fillChest(chest);
+                    } catch (Exception ignored) {}
+                }
+            }
+
+            // Caminos de piedra entre estructuras
+            for (int angle = 0; angle < 360; angle += 60) {
+                double rad = Math.toRadians(angle);
+                for (int d = 20; d < 80; d++) {
+                    int px = (int) (d * Math.cos(rad));
+                    int pz = (int) (d * Math.sin(rad));
+                    int py = getHighestSolid(world, px, pz, baseY + 15);
+                    if (py > baseY - 5) {
+                        world.getBlockAt(px, py, pz).setType(Material.STONE_BRICKS);
+                        if (world.getBlockAt(px + 1, py, pz).getType() == Material.GRASS_BLOCK)
+                            world.getBlockAt(px + 1, py, pz).setType(Material.STONE_BRICK_SLAB);
+                        if (world.getBlockAt(px - 1, py, pz).getType() == Material.GRASS_BLOCK)
+                            world.getBlockAt(px - 1, py, pz).setType(Material.STONE_BRICK_SLAB);
+                    }
+                }
+            }
+        });
+
+        // Ejecutar las tareas secuencialmente con delay entre ellas
+        for (int i = 0; i < tasks.size(); i++) {
+            final int index = i;
+            Bukkit.getScheduler().runTaskLater(plugin, tasks.get(index), (long) i * 10L);
+        }
+    }
+
+    private void buildTower(World world, int x, int y, int z) {
+        // Torre 3x3 con escalera interior
+        for (int dy = 0; dy < 8; dy++) {
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dz = -1; dz <= 1; dz++) {
+                    if (Math.abs(dx) == 1 || Math.abs(dz) == 1) {
+                        world.getBlockAt(x + dx, y + dy, z + dz).setType(Material.STONE_BRICKS);
                     }
                 }
             }
         }
-
-        // === ESFERA VISUAL DEL AGUJERO NEGRO (bloques sólidos para quienes no ven partículas) ===
-        buildHoleSphere(world, 2);
-
-        // === ESTRUCTURAS: 6 ruinas simétricas alrededor ===
-        for (int i = 0; i < 6; i++) {
-            double angle = (2 * Math.PI / 6) * i;
-            int sx = (int) (25 * Math.cos(angle));
-            int sz = (int) (25 * Math.sin(angle));
-            int sy = getHighestSolid(world, cx + sx, cz + sz, baseY + 10) + 1;
-            buildRuin(world, cx + sx, sy, cz + sz, i);
-        }
-
-        // === ÁRBOLES MUERTOS ===
-        for (int i = 0; i < 20; i++) {
-            double angle = random.nextDouble() * Math.PI * 2;
-            double dist = 12 + random.nextDouble() * 28;
-            int tx = cx + (int) (dist * Math.cos(angle));
-            int tz = cz + (int) (dist * Math.sin(angle));
-            int ty = getHighestSolid(world, tx, tz, baseY + 10) + 1;
-            if (world.getBlockAt(tx, ty - 1, tz).getType() == Material.GRASS_BLOCK) {
-                buildDeadTree(world, tx, ty, tz);
+        // Techo
+        for (int dx = -2; dx <= 2; dx++) {
+            for (int dz = -2; dz <= 2; dz++) {
+                if (Math.abs(dx) + Math.abs(dz) <= 3) {
+                    world.getBlockAt(x + dx, y + 8, z + dz).setType(Material.STONE_BRICK_SLAB);
+                }
             }
         }
-
-        // === COFRES DE LOOT esparcidos ===
-        for (int i = 0; i < 12; i++) {
-            double angle = random.nextDouble() * Math.PI * 2;
-            double dist = 10 + random.nextDouble() * 30;
-            int chx = cx + (int) (dist * Math.cos(angle));
-            int chz = cz + (int) (dist * Math.sin(angle));
-            int chy = getHighestSolid(world, chx, chz, baseY + 10) + 1;
-            if (chy > baseY - 5) {
-                world.getBlockAt(chx, chy, chz).setType(Material.CHEST);
-                org.bukkit.block.Chest chest = (org.bukkit.block.Chest) world.getBlockAt(chx, chy, chz).getState();
-                fillChest(chest);
-            }
-        }
-
-        // === CRISTALES DECORATIVOS (end crystals visuales en el borde) ===
-        for (int i = 0; i < 4; i++) {
-            double angle = (2 * Math.PI / 4) * i + Math.PI / 4;
-            int px = cx + (int) (38 * Math.cos(angle));
-            int pz = cz + (int) (38 * Math.sin(angle));
-            int py = getHighestSolid(world, px, pz, baseY + 10) + 1;
-            // Pilar de end stone con end rod
-            for (int y = py; y < py + 5; y++) {
-                world.getBlockAt(px, y, pz).setType(Material.END_STONE_BRICKS);
-            }
-            world.getBlockAt(px, py + 5, pz).setType(Material.END_ROD);
-        }
-
-        // === Anillo interior de bloques de llanto (decoración ominosa) ===
-        for (int angle = 0; angle < 360; angle += 10) {
-            double rad = Math.toRadians(angle);
-            int rx = cx + (int) (8 * Math.cos(rad));
-            int rz = cz + (int) (8 * Math.sin(rad));
-            int ry = getHighestSolid(world, rx, rz, baseY + 10);
-            if (ry > baseY - 5) {
-                world.getBlockAt(rx, ry, rz).setType(Material.CRYING_OBSIDIAN);
-            }
-        }
+        // Cofre en la cima
+        world.getBlockAt(x, y + 8, z).setType(Material.CHEST);
+        try {
+            org.bukkit.block.Chest chest = (org.bukkit.block.Chest) world.getBlockAt(x, y + 8, z).getState();
+            fillChest(chest);
+        } catch (Exception ignored) {}
+        // Antorchas
+        world.getBlockAt(x + 1, y + 6, z).setType(Material.SOUL_TORCH);
+        world.getBlockAt(x - 1, y + 6, z).setType(Material.SOUL_TORCH);
     }
 
     private void buildHoleSphere(World world, int radius) {
@@ -331,13 +415,13 @@ public class BlackHoleGame extends MiniGame {
     public List<Location> getSpawnLocations(World world) {
         List<Location> spawns = new ArrayList<>();
         int maxPlayers = 16;
-        double spawnRadius = 35;
+        double spawnRadius = 70;
 
         for (int i = 0; i < maxPlayers; i++) {
             double angle = (2 * Math.PI / maxPlayers) * i;
             int sx = (int) (spawnRadius * Math.cos(angle));
             int sz = (int) (spawnRadius * Math.sin(angle));
-            int sy = getHighestSolid(world, sx, sz, ARENA_Y + 10) + 1;
+            int sy = getHighestSolid(world, sx, sz, ARENA_Y + 15) + 1;
 
             Location spawn = new Location(world, sx + 0.5, sy, sz + 0.5);
             spawn.setYaw((float) Math.toDegrees(-angle + Math.PI)); // Mirar al centro
@@ -566,7 +650,9 @@ public class BlackHoleGame extends MiniGame {
     // ═══════════════════════════════════════════
 
     private void applyGravity() {
-        Location center = new Location(Bukkit.getWorld(MiniGameWorld.getWorldName()), 0, HOLE_CENTER_Y, 0);
+        World world = Bukkit.getWorld(MiniGameWorld.getWorldName());
+        if (world == null) return;
+        Location center = new Location(world, 0, HOLE_CENTER_Y, 0);
 
         for (UUID uuid : alivePlayers) {
             Player p = Bukkit.getPlayer(uuid);
@@ -574,39 +660,43 @@ public class BlackHoleGame extends MiniGame {
 
             Vector toCenter = center.toVector().subtract(p.getLocation().toVector());
             double dist = toCenter.length();
-            if (dist < 1) dist = 1;
+            if (dist < 0.5) dist = 0.5;
 
-            // Gravedad inversa al cuadrado de la distancia (más fuerte cerca)
-            double strength = currentGravity * (30.0 / (dist * dist + 30));
-            // Mínima fuerza a cualquier distancia
-            strength = Math.max(strength, currentGravity * 0.2);
+            // Gravedad potente: base + componente inversa a la distancia
+            // Cerca: fuerza brutal. Lejos: fuerza suave pero constante.
+            double closeBoost = Math.max(0, 50.0 / (dist * dist)); // Muy fuerte cerca
+            double farPull = currentGravity * 0.5; // Siempre tira un poco
+            double strength = currentGravity * closeBoost + farPull;
+
+            // Clamp para que no sea demasiado brutal y vueles atravesando todo
+            strength = Math.min(strength, 2.5);
 
             Vector pull = toCenter.normalize().multiply(strength);
-
-            // No atraer verticalmente si están por debajo del agujero y lejos
-            if (p.getLocation().getY() < ARENA_Y - 5 && dist > 15) {
-                pull.setY(0);
-            }
-
             p.setVelocity(p.getVelocity().add(pull));
         }
     }
 
     private void checkKillRadius() {
-        Location center = new Location(Bukkit.getWorld(MiniGameWorld.getWorldName()), 0, HOLE_CENTER_Y, 0);
+        World world = Bukkit.getWorld(MiniGameWorld.getWorldName());
+        if (world == null) return;
+        Location center = new Location(world, 0, HOLE_CENTER_Y, 0);
 
         for (UUID uuid : new ArrayList<>(alivePlayers)) {
             Player p = Bukkit.getPlayer(uuid);
             if (p == null || !p.isOnline()) continue;
 
+            // 3D distance al centro del agujero
             double dist = p.getLocation().toVector().distance(center.toVector());
-            if (dist <= currentKillRadius) {
+            // También chequear distancia horizontal para jugadores que estén a la misma Y
+            double hDist = horizontalDist(p.getLocation());
+            double effectiveDist = Math.min(dist, hDist + Math.abs(p.getLocation().getY() - HOLE_CENTER_Y) * 0.5);
+
+            if (effectiveDist <= currentKillRadius) {
                 // Sucked into the black hole!
                 p.sendTitle("§0§l☠", "§8Absorbido por el agujero negro", 5, 40, 10);
                 p.playSound(p.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 1.0f, 0.1f);
 
                 // Efecto visual: partículas de muerte
-                World world = p.getWorld();
                 world.spawnParticle(Particle.LARGE_SMOKE, p.getLocation(), 50, 1, 1, 1, 0.1);
                 world.spawnParticle(Particle.PORTAL, p.getLocation(), 100, 1, 1, 1, 1);
 
@@ -708,7 +798,7 @@ public class BlackHoleGame extends MiniGame {
                             // Partícula que "vuela" hacia el centro
                             Vector dir = new Location(world, 0, HOLE_CENTER_Y, 0).toVector()
                                     .subtract(from.toVector()).normalize().multiply(0.5);
-                            world.spawnParticle(Particle.CAMPFIRE_SIGNAL_SMOKE, from, 1,
+                            world.spawnParticle(Particle.LARGE_SMOKE, from, 1,
                                     dir.getX(), dir.getY(), dir.getZ(), 0.05);
                         }
                     }
@@ -733,15 +823,15 @@ public class BlackHoleGame extends MiniGame {
                 if (phase < 2) return; // No arrancar bloques en fase 1
 
                 int blocksToRip = switch (phase) {
-                    case 2 -> 2;
-                    case 3 -> 5;
-                    case 4 -> 10;
+                    case 2 -> 4;
+                    case 3 -> 10;
+                    case 4 -> 20;
                     default -> 0;
                 };
 
                 double maxRipDistance = switch (phase) {
-                    case 2 -> 20;
-                    case 3 -> 35;
+                    case 2 -> 50;
+                    case 3 -> 80;
                     case 4 -> ARENA_RADIUS;
                     default -> 0;
                 };
