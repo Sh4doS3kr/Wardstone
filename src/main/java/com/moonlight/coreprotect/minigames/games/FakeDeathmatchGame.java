@@ -56,11 +56,11 @@ public class FakeDeathmatchGame extends MiniGame {
     private static final int EVENT_INTERVAL_MAX = 7;
 
     // === STORM ===
-    private static final int STORM_START = 240;
+    private static final int STORM_START = 90;
     private static final double STORM_INITIAL_RADIUS = 90.0;
-    private static final double STORM_MIN_RADIUS = 6.0;
-    private static final int STORM_SHRINK_DURATION = 120;
-    private static final double STORM_DAMAGE = 3.0;
+    private static final double STORM_MIN_RADIUS = 5.0;
+    private static final int STORM_SHRINK_DURATION = 180;
+    private static final double STORM_DAMAGE = 4.0;
 
     // === STATE ===
     private BossBar statusBar;

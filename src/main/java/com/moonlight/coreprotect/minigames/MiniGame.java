@@ -364,12 +364,12 @@ public abstract class MiniGame {
     void giveRewards(Player winner) {
         plugin.getLogger().info("[MiniGames] Giving rewards to: " + winner.getName());
         
-        // 2 Esencias
+        // 1 Esencia
         if (plugin.getEssenceManager() != null) {
-            plugin.getEssenceManager().addEssences(winner.getUniqueId(), 2);
+            plugin.getEssenceManager().addEssences(winner.getUniqueId(), 1);
             plugin.getEssenceManager().saveData();
-            winner.sendMessage(com.moonlight.coreprotect.util.SmallCaps.convert("§a§l+2 Esencias §7por ganar el minijuego."));
-            plugin.getLogger().info("[MiniGames] Gave 2 essences to " + winner.getName());
+            winner.sendMessage(com.moonlight.coreprotect.util.SmallCaps.convert("§a§l+1 Esencia §7por ganar el minijuego."));
+            plugin.getLogger().info("[MiniGames] Gave 1 essence to " + winner.getName());
         }
 
         // Dinero (25,000)
