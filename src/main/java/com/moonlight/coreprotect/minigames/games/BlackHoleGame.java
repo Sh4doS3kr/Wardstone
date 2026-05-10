@@ -664,25 +664,24 @@ public class BlackHoleGame extends MiniGame {
 
             double strength;
 
-            if (dist < currentKillRadius + 10) {
-                // ZONA DE MUERTE INMINENTE: fuerza ABSURDA, te lanza directo al centro
-                // Cuanto más cerca, más violento. A <5 bloques es imparable.
-                strength = 3.0 + (200.0 / (dist * dist));
-                strength = Math.min(strength, 8.0); // Cap para no crashear
-            } else if (dist < 40) {
-                // ZONA PELIGROSA: atracción fuerte, difícil escapar
-                strength = currentGravity * (150.0 / (dist * dist)) + currentGravity * 1.5;
-                strength = Math.min(strength, 3.5);
+            if (dist < currentKillRadius + 15) {
+                // ZONA DE MUERTE: fuerza BESTIAL, te dispara al centro como un cañón
+                strength = 6.0 + (800.0 / (dist * dist));
+                strength = Math.min(strength, 14.0);
+            } else if (dist < 50) {
+                // ZONA PELIGROSA: atracción brutal, casi imposible escapar corriendo
+                strength = currentGravity * (400.0 / (dist * dist)) + currentGravity * 3.0;
+                strength = Math.min(strength, 6.0);
             } else {
-                // ZONA EXTERIOR: tirón constante que se siente, pero puedes moverte
-                strength = currentGravity * (80.0 / (dist * dist)) + currentGravity * 0.4;
-                strength = Math.min(strength, 1.5);
+                // ZONA EXTERIOR: tirón fuerte constante, siempre te arrastra
+                strength = currentGravity * (200.0 / (dist * dist)) + currentGravity * 0.8;
+                strength = Math.min(strength, 3.0);
             }
 
             Vector pull = toCenter.normalize().multiply(strength);
 
-            // Cerca del agujero: REEMPLAZAR la velocidad en vez de sumar (imposible escapar)
-            if (dist < currentKillRadius + 8) {
+            // Cerca del agujero: REEMPLAZAR velocidad completa (IMPOSIBLE escapar)
+            if (dist < currentKillRadius + 12) {
                 p.setVelocity(pull);
             } else {
                 p.setVelocity(p.getVelocity().add(pull));
