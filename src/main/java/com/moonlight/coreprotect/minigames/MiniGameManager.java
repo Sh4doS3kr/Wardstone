@@ -378,7 +378,17 @@ public class MiniGameManager {
             }
         }
 
-        // 2. Limpiar bloques de la arena (async por batches, limpia TODOS los chunks cargados)
+        // 2. Resetear WorldBorder por si algún minijuego lo usó
+        try {
+            world.getWorldBorder().reset();
+        } catch (Exception ignored) {}
+
+        // 3. Resetear clima y hora
+        world.setStorm(false);
+        world.setThundering(false);
+        world.setTime(6000);
+
+        // 4. Limpiar bloques de la arena (async por batches, limpia TODOS los chunks cargados)
         miniGameWorld.clearArena();
 
         plugin.getLogger().info("[MiniGames] Limpieza iniciada: " + entityCount + " entidades eliminadas. Bloques limpiándose async...");

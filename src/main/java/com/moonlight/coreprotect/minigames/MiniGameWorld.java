@@ -94,7 +94,7 @@ public class MiniGameWorld {
         Chunk[] loadedChunks = world.getLoadedChunks();
         if (loadedChunks.length == 0) return;
 
-        final int CHUNKS_PER_TICK = 4; // Limpiar 4 chunks por tick (suave)
+        final int CHUNKS_PER_TICK = 16; // Limpiar 16 chunks por tick (rápido para mapas grandes)
         final java.util.List<Chunk> chunksToClean = new java.util.ArrayList<>();
         for (Chunk chunk : loadedChunks) {
             chunksToClean.add(chunk);

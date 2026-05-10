@@ -39,7 +39,7 @@ public class EyeOfStormGame extends MiniGame {
     // === ARENA ===
     private static final int ARENA_RADIUS = 250;
     private static final int ARENA_Y = 70;
-    private static final int BLOCKS_PER_TICK = 12000;
+    private static final int BLOCKS_PER_TICK = 2000;
 
     // === STORM (Fortnite-style shrinking border) ===
     private static final double STORM_INITIAL_RADIUS = 300.0; // Empieza MÁS GRANDE que el mapa
