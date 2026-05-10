@@ -46,7 +46,7 @@ import java.util.stream.Collectors;
 public class FakeDeathmatchGame extends MiniGame {
 
     // === ARENA ===
-    private static final int ARENA_RADIUS = 30;
+    private static final int ARENA_RADIUS = 80;
     private static final int ARENA_Y = 80;
     private static final int VOID_Y = 60;
 
@@ -57,8 +57,8 @@ public class FakeDeathmatchGame extends MiniGame {
 
     // === STORM ===
     private static final int STORM_START = 240;
-    private static final double STORM_INITIAL_RADIUS = 35.0;
-    private static final double STORM_MIN_RADIUS = 5.0;
+    private static final double STORM_INITIAL_RADIUS = 90.0;
+    private static final double STORM_MIN_RADIUS = 6.0;
     private static final int STORM_SHRINK_DURATION = 120;
     private static final double STORM_DAMAGE = 3.0;
 
@@ -149,8 +149,8 @@ public class FakeDeathmatchGame extends MiniGame {
         // === PILARES INTERIORES (cobertura + estética) ===
         for (int i = 0; i < 8; i++) {
             double angle = (2 * Math.PI / 8) * i;
-            int px = cx + (int) (18 * Math.cos(angle));
-            int pz = cz + (int) (18 * Math.sin(angle));
+            int px = cx + (int) (50 * Math.cos(angle));
+            int pz = cz + (int) (50 * Math.sin(angle));
             for (int y = ARENA_Y + 1; y <= ARENA_Y + 5; y++) {
                 world.getBlockAt(px, y, pz).setType(Material.BLACKSTONE_WALL);
             }
@@ -162,11 +162,11 @@ public class FakeDeathmatchGame extends MiniGame {
             world.getBlockAt(px, ARENA_Y + 5, pz - 1).setType(Material.POLISHED_BLACKSTONE_BRICK_SLAB);
         }
 
-        // === PLATAFORMAS ELEVADAS (4 a distintas alturas) ===
-        for (int i = 0; i < 4; i++) {
-            double angle = (2 * Math.PI / 4) * i + Math.PI / 8;
-            int px = cx + (int) (12 * Math.cos(angle));
-            int pz = cz + (int) (12 * Math.sin(angle));
+        // === PLATAFORMAS ELEVADAS (8 a distintas alturas) ===
+        for (int i = 0; i < 8; i++) {
+            double angle = (2 * Math.PI / 8) * i + Math.PI / 8;
+            int px = cx + (int) (35 * Math.cos(angle));
+            int pz = cz + (int) (35 * Math.sin(angle));
             int height = ARENA_Y + 3 + (i % 2);
             // Plataforma 3x3
             for (int dx = -1; dx <= 1; dx++) {
@@ -194,10 +194,10 @@ public class FakeDeathmatchGame extends MiniGame {
         world.getBlockAt(cx - 2, ARENA_Y + 3, cz - 2).setType(Material.SOUL_LANTERN);
 
         // === ZONAS DE COBERTURA BAJA (muros parciales) ===
-        for (int i = 0; i < 6; i++) {
-            double angle = (2 * Math.PI / 6) * i + Math.PI / 6;
-            int bx = cx + (int) (24 * Math.cos(angle));
-            int bz = cz + (int) (24 * Math.sin(angle));
+        for (int i = 0; i < 12; i++) {
+            double angle = (2 * Math.PI / 12) * i + Math.PI / 6;
+            int bx = cx + (int) (65 * Math.cos(angle));
+            int bz = cz + (int) (65 * Math.sin(angle));
             // Muro bajo 3 bloques
             for (int dy = 1; dy <= 2; dy++) {
                 world.getBlockAt(bx, ARENA_Y + dy, bz).setType(Material.STONE_BRICK_WALL);
@@ -207,9 +207,9 @@ public class FakeDeathmatchGame extends MiniGame {
         }
 
         // === DECORACIÓN: Cadenas colgantes del techo invisible ===
-        for (int i = 0; i < 12; i++) {
+        for (int i = 0; i < 20; i++) {
             double angle = random.nextDouble() * Math.PI * 2;
-            double dist = 5 + random.nextDouble() * 20;
+            double dist = 10 + random.nextDouble() * 60;
             int chainX = cx + (int) (dist * Math.cos(angle));
             int chainZ = cz + (int) (dist * Math.sin(angle));
             int chainLen = 2 + random.nextInt(3);
@@ -219,8 +219,8 @@ public class FakeDeathmatchGame extends MiniGame {
         }
 
         // === REDSTONE LAMPS en los muros (decoración) ===
-        for (int i = 0; i < 16; i++) {
-            double angle = (2 * Math.PI / 16) * i;
+        for (int i = 0; i < 32; i++) {
+            double angle = (2 * Math.PI / 32) * i;
             int lx = cx + (int) ((ARENA_RADIUS - 1) * Math.cos(angle));
             int lz = cz + (int) ((ARENA_RADIUS - 1) * Math.sin(angle));
             world.getBlockAt(lx, ARENA_Y + 3, lz).setType(Material.SOUL_LANTERN);
@@ -235,7 +235,7 @@ public class FakeDeathmatchGame extends MiniGame {
     public List<Location> getSpawnLocations(World world) {
         List<Location> spawns = new ArrayList<>();
         int maxPlayers = 16;
-        double spawnRadius = 22;
+        double spawnRadius = 60;
 
         for (int i = 0; i < maxPlayers; i++) {
             double angle = (2 * Math.PI / maxPlayers) * i;
@@ -454,7 +454,7 @@ public class FakeDeathmatchGame extends MiniGame {
                     double x = (random.nextDouble() - 0.5) * ARENA_RADIUS * 2;
                     double z = (random.nextDouble() - 0.5) * ARENA_RADIUS * 2;
                     double y = ARENA_Y + 1 + random.nextDouble() * 4;
-                    world.spawnParticle(Particle.CAMPFIRE_SIGNAL_SMOKE, x, y, z, 1, 0.5, 0.2, 0.5, 0);
+                    world.spawnParticle(Particle.LARGE_SMOKE, x, y, z, 1, 0.5, 0.2, 0.5, 0);
                 }
             }
         }.runTaskTimer(plugin, 0L, 5L).getTaskId();
