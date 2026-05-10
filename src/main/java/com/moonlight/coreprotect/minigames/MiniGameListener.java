@@ -1013,6 +1013,29 @@ public class MiniGameListener implements Listener {
                 }
                 return;
             }
+            // Fake Deathmatch: permitir colocar bloques (con restricciones)
+            if (mgr != null && mgr.isGameActive() && mgr.getCurrentGame() instanceof FakeDeathmatchGame) {
+                org.bukkit.Material placed = event.getBlock().getType();
+                if (placed == org.bukkit.Material.OBSIDIAN
+                        || placed == org.bukkit.Material.END_PORTAL_FRAME
+                        || placed == org.bukkit.Material.RESPAWN_ANCHOR
+                        || placed == org.bukkit.Material.BEDROCK
+                        || placed == org.bukkit.Material.COMMAND_BLOCK
+                        || placed == org.bukkit.Material.CHAIN_COMMAND_BLOCK
+                        || placed == org.bukkit.Material.REPEATING_COMMAND_BLOCK
+                        || placed == org.bukkit.Material.STRUCTURE_BLOCK
+                        || placed == org.bukkit.Material.TNT
+                        || placed == org.bukkit.Material.LAVA) {
+                    event.setCancelled(true);
+                    return;
+                }
+                if (event.getBlock().getY() > 150) {
+                    event.setCancelled(true);
+                    event.getPlayer().sendMessage("§c§l✖ §cNo puedes construir tan alto.");
+                    return;
+                }
+                return;
+            }
             // Build Battle Classic: permitir colocar en tu plot durante fase de construcción
             if (mgr != null && mgr.isGameActive() && mgr.getCurrentGame() instanceof BuildBattleClassicGame) {
                 BuildBattleClassicGame bbc = (BuildBattleClassicGame) mgr.getCurrentGame();
