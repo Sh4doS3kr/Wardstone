@@ -4,6 +4,7 @@ import com.moonlight.coreprotect.CoreProtectPlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.NamespacedKey;
 import org.bukkit.persistence.PersistentDataContainer;
@@ -80,27 +81,23 @@ public class MiceCleanupTask {
     }
 
     private static boolean isRat(Entity entity) {
+        // Los ratones de MythicMobs son zorros (Fox) disfrazados
+        if (entity.getType() != EntityType.FOX) return false;
+        if (!(entity instanceof LivingEntity living)) return false;
+
         // Verificar por PersistentDataContainer de MythicMobs
-        if (entity instanceof LivingEntity living) {
-            PersistentDataContainer pdc = living.getPersistentDataContainer();
-            if (pdc.has(MYTHIC_KEY, PersistentDataType.STRING)) {
-                String type = pdc.get(MYTHIC_KEY, PersistentDataType.STRING);
-                if (type != null) {
-                    String lower = type.toLowerCase();
-                    if (lower.contains("rat") || lower.contains("raton") || lower.contains("ratón")
-                            || lower.contains("mouse") || lower.contains("mice")) {
-                        return true;
-                    }
-                }
-            }
-            // Fallback: verificar custom name
-            String name = living.getCustomName();
-            if (name != null) {
-                String lower = name.toLowerCase().replaceAll("§.", "");
-                if (lower.contains("rat") || lower.contains("ratón") || lower.contains("raton")
-                        || lower.contains("mouse")) {
-                    return true;
-                }
+        PersistentDataContainer pdc = living.getPersistentDataContainer();
+        if (pdc.has(MYTHIC_KEY, PersistentDataType.STRING)) {
+            return true; // Cualquier zorro de MythicMobs es un ratón
+        }
+
+        // Fallback: verificar custom name
+        String name = living.getCustomName();
+        if (name != null) {
+            String lower = name.toLowerCase().replaceAll("§.", "");
+            if (lower.contains("rat") || lower.contains("ratón") || lower.contains("raton")
+                    || lower.contains("mouse")) {
+                return true;
             }
         }
         return false;
