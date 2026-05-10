@@ -76,29 +76,90 @@ public class MiniGameWorld {
     }
 
     /**
-     * Limpia toda la arena en un área grande alrededor del centro.
+     * Limpia toda la arena de forma asíncrona por batches para no causar lag.
+     * Recorre TODOS los chunks cargados y elimina todos los bloques no-aire.
      */
     public void clearArena() {
         World world = getWorld();
         if (world == null) return;
-        
-        // Limpiar un área de 200x200 bloques centrada en 0,0
-        for (int x = -100; x <= 100; x++) {
-            for (int z = -100; z <= 100; z++) {
-                for (int y = 0; y <= 200; y++) {
-                    if (world.getBlockAt(x, y, z).getType() != Material.AIR) {
-                        world.getBlockAt(x, y, z).setType(Material.AIR, false);
-                    }
-                }
-            }
-        }
-        
-        // Eliminar todas las entidades
+
+        // Eliminar todas las entidades inmediatamente
         world.getEntities().forEach(entity -> {
             if (!(entity instanceof org.bukkit.entity.Player)) {
                 entity.remove();
             }
         });
+
+        // Recoger todos los chunks cargados que tengan bloques
+        Chunk[] loadedChunks = world.getLoadedChunks();
+        if (loadedChunks.length == 0) return;
+
+        final int CHUNKS_PER_TICK = 4; // Limpiar 4 chunks por tick (suave)
+        final java.util.List<Chunk> chunksToClean = new java.util.ArrayList<>();
+        for (Chunk chunk : loadedChunks) {
+            chunksToClean.add(chunk);
+        }
+
+        plugin.getLogger().info("[MiniGames] Limpieza async: " + chunksToClean.size() + " chunks por limpiar.");
+
+        new org.bukkit.scheduler.BukkitRunnable() {
+            int index = 0;
+
+            @Override
+            public void run() {
+                World w = getWorld();
+                if (w == null) { cancel(); return; }
+
+                int cleaned = 0;
+                while (index < chunksToClean.size() && cleaned < CHUNKS_PER_TICK) {
+                    Chunk chunk = chunksToClean.get(index);
+                    index++;
+                    cleaned++;
+
+                    if (!chunk.isLoaded()) continue;
+
+                    int baseX = chunk.getX() * 16;
+                    int baseZ = chunk.getZ() * 16;
+
+                    // Solo escanear rango Y con posibles bloques (0 a 200, suficiente para cualquier arena)
+                    for (int x = 0; x < 16; x++) {
+                        for (int z = 0; z < 16; z++) {
+                            for (int y = 0; y <= 200; y++) {
+                                org.bukkit.block.Block block = chunk.getBlock(x, y, z);
+                                if (block.getType() != Material.AIR) {
+                                    block.setType(Material.AIR, false);
+                                }
+                            }
+                        }
+                    }
+
+                    chunk.setForceLoaded(false);
+                }
+
+                // Eliminar entidades que hayan aparecido mientras tanto
+                if (index % 20 == 0) {
+                    w.getEntities().forEach(entity -> {
+                        if (!(entity instanceof org.bukkit.entity.Player)) {
+                            entity.remove();
+                        }
+                    });
+                }
+
+                if (index >= chunksToClean.size()) {
+                    // Última pasada: eliminar entidades y descargar chunks
+                    w.getEntities().forEach(entity -> {
+                        if (!(entity instanceof org.bukkit.entity.Player)) {
+                            entity.remove();
+                        }
+                    });
+                    for (Chunk c : w.getLoadedChunks()) {
+                        c.setForceLoaded(false);
+                    }
+                    plugin.getLogger().info("[MiniGames] Limpieza async completada: " + chunksToClean.size() + " chunks limpiados.");
+                    cancel();
+                }
+            }
+        }.runTaskTimer(plugin, 1L, 1L); // 1 tick entre batches
     }
 
     public static class VoidChunkGenerator extends ChunkGenerator {

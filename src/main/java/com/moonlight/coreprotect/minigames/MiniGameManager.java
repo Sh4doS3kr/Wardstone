@@ -355,6 +355,7 @@ public class MiniGameManager {
     /**
      * Limpia ABSOLUTAMENTE TODO del mundo de minijuegos:
      * bloques, entidades, items en el suelo, chunks force-loaded, etc.
+     * La limpieza de bloques es asíncrona por batches (delegada a clearArena).
      */
     private void fullWorldCleanup() {
         World world = miniGameWorld.getWorld();
@@ -362,11 +363,10 @@ public class MiniGameManager {
 
         plugin.getLogger().info("[MiniGames] Iniciando limpieza completa del mundo...");
 
-        // 1. Eliminar TODAS las entidades (excepto jugadores que puedan estar stuck)
+        // 1. Eliminar TODAS las entidades y rescatar jugadores stuck
         int entityCount = 0;
         for (org.bukkit.entity.Entity entity : world.getEntities()) {
             if (entity instanceof Player) {
-                // Si hay un jugador stuck, teleportarlo al spawn
                 Player p = (Player) entity;
                 p.teleport(Bukkit.getWorlds().get(0).getSpawnLocation());
                 p.sendMessage(SmallCaps.convert("§c§l⚠ §7Teletransportado al spawn (limpieza de minijuegos)."));
@@ -377,22 +377,10 @@ public class MiniGameManager {
             }
         }
 
-        // 2. Limpiar bloques de la arena
+        // 2. Limpiar bloques de la arena (async por batches, limpia TODOS los chunks cargados)
         miniGameWorld.clearArena();
 
-        // 3. Descargar force-loaded chunks
-        for (Chunk chunk : world.getLoadedChunks()) {
-            chunk.setForceLoaded(false);
-        }
-
-        // 4. Limpiar items/dropped items (por si clearArena no los cubre)
-        for (org.bukkit.entity.Entity entity : world.getEntities()) {
-            if (!(entity instanceof Player)) {
-                entity.remove();
-            }
-        }
-
-        plugin.getLogger().info("[MiniGames] Limpieza completa: " + entityCount + " entidades eliminadas, arena reseteada.");
+        plugin.getLogger().info("[MiniGames] Limpieza iniciada: " + entityCount + " entidades eliminadas. Bloques limpiándose async...");
     }
 
     public void teleportAllBack() {
