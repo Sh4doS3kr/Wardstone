@@ -688,23 +688,30 @@ public class EyeOfStormGame extends MiniGame {
         if (!stormActive) return;
         double damage = getStormDamage();
 
-        // Sincronizar stormRadius con el WorldBorder real
+        // Usar el WorldBorder REAL para determinar si están dentro o fuera
         World world = Bukkit.getWorld(MiniGameWorld.getWorldName());
-        if (world != null) {
-            stormRadius = world.getWorldBorder().getSize() / 2.0;
-        }
+        if (world == null) return;
+        org.bukkit.WorldBorder border = world.getWorldBorder();
+        stormRadius = border.getSize() / 2.0;
+        double centerX = border.getCenter().getX();
+        double centerZ = border.getCenter().getZ();
 
         for (UUID uuid : new ArrayList<>(alivePlayers)) {
             Player p = Bukkit.getPlayer(uuid);
             if (p == null || !p.isOnline()) continue;
 
-            double dx = p.getLocation().getX() - stormCenterX;
-            double dz = p.getLocation().getZ() - stormCenterZ;
-            double dist = Math.sqrt(dx * dx + dz * dz);
+            Location loc = p.getLocation();
 
-            if (dist > stormRadius) {
-                // FUERA DE LA ZONA: daño + efectos
-                double extraDist = dist - stormRadius;
+            // Usar isInside() del WorldBorder — coincide EXACTAMENTE con el borde visual
+            if (!border.isInside(loc)) {
+                // Calcular distancia fuera del borde (WorldBorder es cuadrado)
+                double dx = Math.abs(loc.getX() - centerX);
+                double dz = Math.abs(loc.getZ() - centerZ);
+                double halfSize = stormRadius;
+                double outsideX = Math.max(0, dx - halfSize);
+                double outsideZ = Math.max(0, dz - halfSize);
+                double extraDist = Math.max(outsideX, outsideZ);
+
                 double scaledDamage = damage + (extraDist * 0.05);
                 scaledDamage = Math.min(scaledDamage, 10.0);
 
@@ -747,13 +754,11 @@ public class EyeOfStormGame extends MiniGame {
 
         // Rayos dirigidos a jugadores fuera del borde (fase 4+)
         if (currentPhase >= 4 && random.nextInt(3) == 0) {
+            org.bukkit.WorldBorder border = world.getWorldBorder();
             for (UUID uuid : alivePlayers) {
                 Player p = Bukkit.getPlayer(uuid);
                 if (p == null) continue;
-                double ldx = p.getLocation().getX() - stormCenterX;
-                double ldz = p.getLocation().getZ() - stormCenterZ;
-                double dist = Math.sqrt(ldx * ldx + ldz * ldz);
-                if (dist > stormRadius + 10 && random.nextInt(3) == 0) {
+                if (!border.isInside(p.getLocation()) && random.nextInt(3) == 0) {
                     world.strikeLightning(p.getLocation());
                 }
             }
@@ -763,15 +768,20 @@ public class EyeOfStormGame extends MiniGame {
     private void showActionBar() {
         if (gameTime % 2 != 0) return;
 
+        World world = Bukkit.getWorld(MiniGameWorld.getWorldName());
+        org.bukkit.WorldBorder border = (world != null) ? world.getWorldBorder() : null;
+
         for (UUID uuid : alivePlayers) {
             Player p = Bukkit.getPlayer(uuid);
             if (p == null) continue;
 
-            double adx = p.getLocation().getX() - stormCenterX;
-            double adz = p.getLocation().getZ() - stormCenterZ;
-            double dist = Math.sqrt(adx * adx + adz * adz);
-            boolean safe = dist <= stormRadius;
-            String distStr = String.format("%.0f", dist);
+            boolean safe = (border != null) ? border.isInside(p.getLocation()) : true;
+            // Distancia al borde más cercano (cuadrado)
+            double dx = Math.abs(p.getLocation().getX() - stormCenterX);
+            double dz = Math.abs(p.getLocation().getZ() - stormCenterZ);
+            double distToBorder = Math.min(stormRadius - dx, stormRadius - dz);
+            if (distToBorder < 0) distToBorder = -distToBorder;
+            String distStr = String.format("%.0f", distToBorder);
             String radiusStr = String.format("%.0f", stormRadius);
 
             if (stormActive) {
