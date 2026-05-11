@@ -324,6 +324,7 @@ public class MiniGameManager {
             case BLACK_HOLE: return new BlackHoleGame(plugin, this);
             case FAKE_DEATHMATCH: return new FakeDeathmatchGame(plugin, this);
             case EYE_OF_STORM: return new EyeOfStormGame(plugin, this);
+            case SKYWARS: return new SkyWarsGame(plugin, this);
             default: return null;
         }
     }

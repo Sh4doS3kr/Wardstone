@@ -22,7 +22,8 @@ public enum MiniGameType {
     PILLARS_OF_FORTUNE("§5§lPilares de la Fortuna", "§7¡Cada jugador en su pilar! Recibe items aleatorios y elimina a los demás. Último en pie gana.", "§5", 2, 15),
     BLACK_HOLE("§8§lAgujero Negro", "§7Un agujero negro crece en el centro atrayendo todo. ¡Lootea, pelea y escapa de la gravedad!", "§8", 2, 16),
     FAKE_DEATHMATCH("§4§lFake Deathmatch", "§7Empieza como PvP normal... pero la realidad se rompe. Eventos caóticos cambian todo.", "§4", 2, 16),
-    EYE_OF_STORM("§8§lOjo de la Tormenta", "§7Una tormenta mortal cubre todo. Persigue el OJO para sobrevivir. ¡Se mueve cada 18s!", "§8", 2, 16);
+    EYE_OF_STORM("§8§lOjo de la Tormenta", "§7Una tormenta mortal cubre todo. Persigue el OJO para sobrevivir. ¡Se mueve cada 18s!", "§8", 2, 16),
+    SKYWARS("§b§lSkyWars", "§7¡Islas flotantes, cofres con loot y PvP! Sé el último en pie. ¡Bridgea, lootea y lucha!", "§b", 2, 12);
 
     private final String displayName;
     private final String description;
