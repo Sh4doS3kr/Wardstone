@@ -898,10 +898,10 @@ public class EyeOfStormGame extends MiniGame {
             double targetRadius;
             int shrinkDuration;
             switch (currentPhase) {
-                case 2: targetRadius = 400; shrinkDuration = 160; break;  // cierra a 400 en 2:40
-                case 3: targetRadius = 180; shrinkDuration = 130; break;  // cierra a 180 en 2:10
-                case 4: targetRadius = 50; shrinkDuration = 100; break;   // cierra a 50 en 1:40
-                case 5: targetRadius = STORM_MIN_RADIUS; shrinkDuration = 90; break; // cierra a 5 en 1:30
+                case 2: targetRadius = 400; shrinkDuration = 240; break;  // cierra a 400 en 4:00
+                case 3: targetRadius = 180; shrinkDuration = 200; break;  // cierra a 180 en 3:20
+                case 4: targetRadius = 50; shrinkDuration = 160; break;   // cierra a 50 en 2:40
+                case 5: targetRadius = STORM_MIN_RADIUS; shrinkDuration = 120; break; // cierra a 5 en 2:00
                 default: targetRadius = STORM_INITIAL_RADIUS; shrinkDuration = 90; break;
             }
 

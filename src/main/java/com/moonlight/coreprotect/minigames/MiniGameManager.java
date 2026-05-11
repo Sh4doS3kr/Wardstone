@@ -408,7 +408,9 @@ public class MiniGameManager {
             Player p = Bukkit.getPlayer(entry.getKey());
             if (p != null && p.isOnline()) {
                 plugin.getLogger().info("[MiniGames] Teleportando a: " + p.getName() + " desde " + p.getWorld().getName());
-                // Primero sacar de spectator y limpiar estado
+                // Primero sacar de spectator y limpiar estado de vuelo
+                p.setFlying(false);
+                p.setAllowFlight(false);
                 p.setGameMode(GameMode.SURVIVAL);
                 p.setFallDistance(0);
                 p.setVelocity(new org.bukkit.util.Vector(0, 0, 0));
@@ -423,9 +425,13 @@ public class MiniGameManager {
                 // Teleportar al overworld
                 p.teleport(entry.getValue());
                 p.setFallDistance(0); // Resetear de nuevo DESPUÉS del TP
+                p.setFlying(false);
+                p.setAllowFlight(false);
                 p.setVelocity(new org.bukkit.util.Vector(0, 0, 0));
                 restorePlayerData(p);
                 p.setGameMode(GameMode.SURVIVAL);
+                // Forzar no volar DESPUÉS de restaurar datos
+                p.setFlying(false);
                 restoreFlightIfPermitted(p);
                 // Quitar disfraz de LibsDisguises si quedó (FarmHunt)
                 try {
@@ -461,13 +467,17 @@ public class MiniGameManager {
                 Player p = Bukkit.getPlayer(entry.getKey());
                 if (p != null && p.isOnline() && p.getWorld().getName().equals(MiniGameWorld.getWorldName())) {
                     stuckCount++;
+                    p.setFlying(false);
+                    p.setAllowFlight(false);
                     p.setGameMode(GameMode.SURVIVAL);
                     p.setFallDistance(0);
                     p.getActivePotionEffects().forEach(e -> p.removePotionEffect(e.getType()));
                     p.setItemOnCursor(null);
                     p.closeInventory();
                     p.teleport(entry.getValue());
+                    p.setFlying(false);
                     restorePlayerData(p);
+                    p.setFlying(false);
                     restoreFlightIfPermitted(p);
                     p.sendMessage("§c§l⚠ §7Teletransporte de seguridad aplicado.");
                     plugin.getLogger().warning("[MiniGames] Safety TP 1: " + p.getName() + " seguía en mundo minijuegos.");
@@ -486,13 +496,17 @@ public class MiniGameManager {
                 if (p != null && p.isOnline() && p.getWorld().getName().equals(MiniGameWorld.getWorldName())) {
                     stuckCount++;
                     // Forzar teleportación más agresiva
+                    p.setFlying(false);
+                    p.setAllowFlight(false);
                     p.setGameMode(GameMode.SURVIVAL);
                     p.setFallDistance(0);
                     p.getActivePotionEffects().forEach(e -> p.removePotionEffect(e.getType()));
                     p.setItemOnCursor(null);
                     p.closeInventory();
                     p.teleport(entry.getValue());
+                    p.setFlying(false);
                     restorePlayerData(p);
+                    p.setFlying(false);
                     restoreFlightIfPermitted(p);
                     // Si sigue stuck, teleportar al spawn del mundo principal
                     if (p.getWorld().getName().equals(MiniGameWorld.getWorldName())) {
@@ -676,6 +690,7 @@ public class MiniGameManager {
         player.getActivePotionEffects().forEach(e -> player.removePotionEffect(e.getType()));
         data.effects.forEach(e -> player.addPotionEffect(e));
         player.setAllowFlight(data.allowFlight);
+        player.setFlying(false); // Siempre forzar no volar al restaurar datos
 
         savedInventories.remove(player.getUniqueId());
     }
