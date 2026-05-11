@@ -445,8 +445,13 @@ public class MiniGameListener implements Listener {
             if (game instanceof EyeOfStormGame) {
                 return;
             }
-            // SkyWars: permitir romper bloques CON drops
-            if (game instanceof SkyWarsGame) {
+            // SkyWars: permitir romper bloques CON drops, pero NO cristal durante gracia
+            if (game instanceof SkyWarsGame skyGame) {
+                if (skyGame.isGraceActive() && event.getBlock().getType() == Material.GLASS) {
+                    event.setCancelled(true);
+                    event.getPlayer().sendMessage("§c§l✖ §7No puedes romper la jaula.");
+                    return;
+                }
                 return;
             }
             // Fake Deathmatch: permitir romper bloques
@@ -1262,6 +1267,10 @@ public class MiniGameListener implements Listener {
         }
         // Eye of Storm: permitir mover items (cofres incluidos)
         if (mgr != null && mgr.isGameActive() && mgr.getCurrentGame() instanceof EyeOfStormGame) {
+            return;
+        }
+        // SkyWars: permitir mover items (cofres incluidos)
+        if (mgr != null && mgr.isGameActive() && mgr.getCurrentGame() instanceof SkyWarsGame) {
             return;
         }
         // Build Battle Classic: permitir mover items durante construcción + handle vote GUI
