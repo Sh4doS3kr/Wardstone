@@ -91,9 +91,8 @@ public class MiniGameListener implements Listener {
         }
 
         // Murder Mystery y Beast Escape tienen su propia lógica (gestionada en HIGH)
-        // pero permitimos que el daño ya procesado pase si fue insta-kill (damage=1000)
-        if ((game instanceof MurderMysteryGame || game instanceof BeastEscapeGame)
-                && event.getDamage() >= 1000.0) return;
+        // No interferir: dejar que el handler HIGH decida
+        if (game instanceof MurderMysteryGame || game instanceof BeastEscapeGame) return;
 
         // Todo lo demás: CANCELAR sin excepción
         event.setCancelled(true);
@@ -211,18 +210,25 @@ public class MiniGameListener implements Listener {
                     return;
                 }
 
-                // Todo lo demás (inocente atacando) = cancelar
+                // Inocente → Asesino = daño normal (pueden pegarle)
+                if (mm.isInnocent(damagerUUID) && mm.isMurderer(victimUUID)) {
+                    return; // daño normal
+                }
+
+                // Inocente → Inocente/Sheriff = cancelar
                 event.setCancelled(true);
                 return;
             }
 
-            // BEAST ESCAPE: bestia mata, supervivientes no hacen daño entre sí
+            // BEAST ESCAPE: bestia mata de un golpe, supervivientes pueden pegar a la bestia
             if (game instanceof BeastEscapeGame) {
                 BeastEscapeGame beast = (BeastEscapeGame) game;
                 if (beast.isBeast(damager.getUniqueId()) && beast.isSurvivor(victim.getUniqueId())) {
-                    event.setDamage(1000.0);
+                    event.setDamage(1000.0); // bestia mata de un golpe
+                } else if (beast.isSurvivor(damager.getUniqueId()) && beast.isBeast(victim.getUniqueId())) {
+                    return; // supervivientes pueden pegar a la bestia (daño normal)
                 } else {
-                    event.setCancelled(true);
+                    event.setCancelled(true); // superviviente → superviviente = cancelar
                 }
                 return;
             }
@@ -330,6 +336,22 @@ public class MiniGameListener implements Listener {
                 }
 
                 // Inocente → Inocente/Sheriff = cancelar
+                event.setCancelled(true);
+                return;
+            }
+
+            // BEAST ESCAPE: supervivientes pueden disparar a la bestia
+            if (game instanceof BeastEscapeGame) {
+                BeastEscapeGame beast = (BeastEscapeGame) game;
+                UUID shooterUUID = shooter.getUniqueId();
+                UUID victimUUID = victim.getUniqueId();
+                if (beast.isBeast(shooterUUID) && beast.isSurvivor(victimUUID)) {
+                    event.setDamage(1000.0);
+                    return;
+                }
+                if (beast.isSurvivor(shooterUUID) && beast.isBeast(victimUUID)) {
+                    return; // daño normal
+                }
                 event.setCancelled(true);
                 return;
             }
