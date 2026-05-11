@@ -10,6 +10,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
@@ -324,6 +325,12 @@ public class PrestigeListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onBlockPlace(BlockPlaceEvent event) {
+        Player player = event.getPlayer();
+        checkAndCompleteMissions(player.getUniqueId(), "place", 1);
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerEat(PlayerItemConsumeEvent event) {
         Material type = event.getItem().getType();
         if (type.isEdible()) {
@@ -445,6 +452,16 @@ public class PrestigeListener implements Listener {
             case "coop_enchant": return plugin.getPrestigeManager().getData(uuid).coopEnchants;
             case "sync_kill":    return plugin.getPrestigeManager().getData(uuid).syncKills;
             case "gift_unique":  return plugin.getPrestigeManager().getData(uuid).giftedUniquePlayers.size();
+            case "place":
+                long placeTotal = 0;
+                for (Material m : Material.values()) {
+                    if (m.isBlock()) {
+                        try {
+                            placeTotal += player.getStatistic(org.bukkit.Statistic.USE_ITEM, m);
+                        } catch (IllegalArgumentException ignored) {}
+                    }
+                }
+                return placeTotal;
             case "eat":
                 long eatTotal = 0;
                 for (Material m : Material.values()) {

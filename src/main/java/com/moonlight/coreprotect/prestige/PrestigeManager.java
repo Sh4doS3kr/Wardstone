@@ -782,12 +782,15 @@ public class PrestigeManager {
             case "deaths":
                 return player.getStatistic(org.bukkit.Statistic.DEATHS);
             case "eat":
-                return player.getStatistic(org.bukkit.Statistic.USE_ITEM, Material.GOLDEN_APPLE)
-                     + player.getStatistic(org.bukkit.Statistic.USE_ITEM, Material.ENCHANTED_GOLDEN_APPLE)
-                     + player.getStatistic(org.bukkit.Statistic.USE_ITEM, Material.COOKED_BEEF)
-                     + player.getStatistic(org.bukkit.Statistic.USE_ITEM, Material.BREAD)
-                     + player.getStatistic(org.bukkit.Statistic.USE_ITEM, Material.COOKED_PORKCHOP)
-                     + player.getStatistic(org.bukkit.Statistic.USE_ITEM, Material.BAKED_POTATO);
+                long eatTotal = 0;
+                for (Material food : Material.values()) {
+                    if (food.isEdible()) {
+                        try {
+                            eatTotal += player.getStatistic(org.bukkit.Statistic.USE_ITEM, food);
+                        } catch (IllegalArgumentException ignored) {}
+                    }
+                }
+                return eatTotal;
             case "craft":
                 return player.getStatistic(org.bukkit.Statistic.CRAFT_ITEM, Material.DIAMOND_SWORD)
                      + player.getStatistic(org.bukkit.Statistic.CRAFT_ITEM, Material.DIAMOND_PICKAXE)
@@ -817,11 +820,15 @@ public class PrestigeManager {
             case "trade":
                 return player.getStatistic(org.bukkit.Statistic.TRADED_WITH_VILLAGER);
             case "place":
-                return player.getStatistic(org.bukkit.Statistic.USE_ITEM, Material.STONE)
-                     + player.getStatistic(org.bukkit.Statistic.USE_ITEM, Material.COBBLESTONE)
-                     + player.getStatistic(org.bukkit.Statistic.USE_ITEM, Material.DIRT)
-                     + player.getStatistic(org.bukkit.Statistic.USE_ITEM, Material.OAK_PLANKS)
-                     + player.getStatistic(org.bukkit.Statistic.USE_ITEM, Material.DEEPSLATE);
+                long placeTotal = 0;
+                for (Material m : Material.values()) {
+                    if (m.isBlock()) {
+                        try {
+                            placeTotal += player.getStatistic(org.bukkit.Statistic.USE_ITEM, m);
+                        } catch (IllegalArgumentException ignored) {}
+                    }
+                }
+                return placeTotal;
             case "kill_enderman":
                 return player.getStatistic(org.bukkit.Statistic.KILL_ENTITY, org.bukkit.entity.EntityType.ENDERMAN);
             case "kill_blaze":
