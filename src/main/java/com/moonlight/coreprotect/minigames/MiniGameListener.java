@@ -1161,11 +1161,10 @@ public class MiniGameListener implements Listener {
                 }
                 return;
             }
-            // SkyWars: permitir colocar bloques (con restricciones)
+            // SkyWars: permitir colocar bloques (con restricciones) — obsidiana permitida
             if (mgr != null && mgr.isGameActive() && mgr.getCurrentGame() instanceof SkyWarsGame) {
                 org.bukkit.Material placed = event.getBlock().getType();
-                if (placed == org.bukkit.Material.OBSIDIAN
-                        || placed == org.bukkit.Material.END_PORTAL_FRAME
+                if (placed == org.bukkit.Material.END_PORTAL_FRAME
                         || placed == org.bukkit.Material.RESPAWN_ANCHOR
                         || placed == org.bukkit.Material.BEDROCK
                         || placed == org.bukkit.Material.COMMAND_BLOCK
@@ -1288,6 +1287,16 @@ public class MiniGameListener implements Listener {
         }
         // Bloquear mover items en todos los demás minijuegos
         event.setCancelled(true);
+    }
+
+    // ==========================================
+    // PREVENT: Nether portal creation in minigame world
+    // ==========================================
+    @EventHandler
+    public void onPortalCreate(org.bukkit.event.world.PortalCreateEvent event) {
+        if (event.getWorld().getName().equals(MiniGameWorld.getWorldName())) {
+            event.setCancelled(true);
+        }
     }
 
     // ==========================================
