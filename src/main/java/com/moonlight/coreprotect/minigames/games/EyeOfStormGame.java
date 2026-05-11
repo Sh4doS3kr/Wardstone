@@ -7,11 +7,14 @@ import com.moonlight.coreprotect.minigames.MiniGameType;
 import com.moonlight.coreprotect.minigames.MiniGameWorld;
 import org.bukkit.*;
 import org.bukkit.block.Block;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -39,10 +42,10 @@ public class EyeOfStormGame extends MiniGame {
     // === ARENA ===
     private static final int ARENA_RADIUS = 800;
     private static final int ARENA_Y = 70;
-    private static final int BLOCKS_PER_TICK = 50; // Ultra lento para cero lag
+    private static final int ROWS_PER_TICK = 6; // Filas de terreno por tick (equilibrio velocidad/lag)
 
     // === STORM (Fortnite-style shrinking border) ===
-    private static final double STORM_INITIAL_RADIUS = 500.0; // Empieza MÁS GRANDE que el mapa
+    private static final double STORM_INITIAL_RADIUS = 850.0; // Empieza MÁS GRANDE que el mapa (radio 800)
     private static final double STORM_MIN_RADIUS = 5.0;
     private static final int STORM_START = 60; // Segundos hasta que empieza a cerrar
     private static final double STORM_DAMAGE_BASE = 1.5;
@@ -193,40 +196,38 @@ public class EyeOfStormGame extends MiniGame {
     public void buildArena(World world) {
         plugin.getLogger().info("[EyeOfStorm] Iniciando construcción de arena (radio=" + ARENA_RADIUS + ")...");
 
-        // Fase 1: Cargar chunks en batches (no todo de golpe)
-        // Fase 2: Construir terreno fila por fila
-        // Fase 3: Colocar estructuras
-        // Todo dentro del mismo BukkitRunnable progresivo
-
         final int chunkRadius = (ARENA_RADIUS / 16) + 2;
-        final int totalChunkRows = chunkRadius * 2 + 1;
+        final int totalTerrainRows = ARENA_RADIUS * 2 + 1;
 
         new BukkitRunnable() {
-            // Estado de la máquina de fases
             int phase = 0; // 0=chunks, 1=terreno, 2=estructuras
-            // Fase 0: chunk loading
             int chunkRow = -chunkRadius;
-            // Fase 1: terreno por filas
             int terrainX = -ARENA_RADIUS;
-            // Fase 2: estructuras
             int structIndex = 0;
             boolean structsGenerated = false;
             List<Runnable> structTasks = null;
+            int totalStructs = 0;
 
             @Override
             public void run() {
                 long startTime = System.currentTimeMillis();
 
-                // === FASE 0: Cargar chunks (4 filas de chunks por tick) ===
+                // === FASE 0: Cargar chunks (6 filas de chunks por tick) ===
                 if (phase == 0) {
                     int rowsDone = 0;
-                    while (chunkRow <= chunkRadius && rowsDone < 4) {
+                    while (chunkRow <= chunkRadius && rowsDone < 6) {
                         for (int cz = -chunkRadius; cz <= chunkRadius; cz++) {
                             world.getChunkAt(chunkRow, cz).load(true);
                         }
                         chunkRow++;
                         rowsDone++;
                     }
+                    // Progress title para chunks
+                    int chunksDone = chunkRow + chunkRadius;
+                    int totalChunkRows = chunkRadius * 2 + 1;
+                    int pct = (int) ((double) chunksDone / totalChunkRows * 20);
+                    sendBuildProgress("§7Cargando mundo", pct, 20);
+
                     if (chunkRow > chunkRadius) {
                         phase = 1;
                         plugin.getLogger().info("[EyeOfStorm] Chunks cargados. Generando terreno...");
@@ -234,11 +235,10 @@ public class EyeOfStormGame extends MiniGame {
                     return;
                 }
 
-                // === FASE 1: Terreno (varias filas X por tick) ===
+                // === FASE 1: Terreno (ROWS_PER_TICK filas por tick) ===
                 if (phase == 1) {
                     int rowsDone = 0;
-                    while (terrainX <= ARENA_RADIUS && rowsDone < BLOCKS_PER_TICK) {
-                        // Generar toda la fila Z para este X
+                    while (terrainX <= ARENA_RADIUS && rowsDone < ROWS_PER_TICK) {
                         for (int z = -ARENA_RADIUS; z <= ARENA_RADIUS; z++) {
                             double dist = Math.sqrt((double) terrainX * terrainX + (double) z * z);
                             if (dist > ARENA_RADIUS) continue;
@@ -270,10 +270,13 @@ public class EyeOfStormGame extends MiniGame {
                         }
                         terrainX++;
                         rowsDone++;
-
-                        // Protección: si llevamos >40ms en este tick, parar
-                        if (System.currentTimeMillis() - startTime > 40) break;
+                        if (System.currentTimeMillis() - startTime > 45) break;
                     }
+                    // Progress title para terreno (20% a 80%)
+                    int rowsDoneTotal = terrainX + ARENA_RADIUS;
+                    int pct = 20 + (int) ((double) rowsDoneTotal / totalTerrainRows * 60);
+                    sendBuildProgress("§aGenerando terreno", pct, 100);
+
                     if (terrainX > ARENA_RADIUS) {
                         phase = 2;
                         plugin.getLogger().info("[EyeOfStorm] Terreno completo. Generando estructuras...");
@@ -281,7 +284,7 @@ public class EyeOfStormGame extends MiniGame {
                     return;
                 }
 
-                // === FASE 2: Estructuras (pocas por tick) ===
+                // === FASE 2: Estructuras ===
                 if (phase == 2) {
                     if (!structsGenerated) {
                         structTasks = new ArrayList<>();
@@ -317,14 +320,6 @@ public class EyeOfStormGame extends MiniGame {
                             int sz = (int) (d * Math.sin(angle));
                             structTasks.add(() -> buildBunker(world, sx, sz));
                         }
-                        // Árboles (250)
-                        for (int i = 0; i < 250; i++) {
-                            double angle = random.nextDouble() * Math.PI * 2;
-                            double d = 10 + random.nextDouble() * 770;
-                            int sx = (int) (d * Math.cos(angle));
-                            int sz = (int) (d * Math.sin(angle));
-                            structTasks.add(() -> buildTree(world, sx, sz));
-                        }
                         // Rocas (150)
                         for (int i = 0; i < 150; i++) {
                             double angle = random.nextDouble() * Math.PI * 2;
@@ -342,26 +337,46 @@ public class EyeOfStormGame extends MiniGame {
                             double wallAngle = random.nextDouble() * Math.PI;
                             structTasks.add(() -> buildBrokenWall(world, sx, sz, wallAngle));
                         }
-                        // Cofres (250)
+                        // Árboles DESPUÉS de rocas/muros para que no se sobreescriban
                         for (int i = 0; i < 250; i++) {
+                            double angle = random.nextDouble() * Math.PI * 2;
+                            double d = 10 + random.nextDouble() * 770;
+                            int sx = (int) (d * Math.cos(angle));
+                            int sz = (int) (d * Math.sin(angle));
+                            structTasks.add(() -> buildTree(world, sx, sz));
+                        }
+                        // Cofres (400 — muchos más repartidos)
+                        for (int i = 0; i < 400; i++) {
                             double angle = random.nextDouble() * Math.PI * 2;
                             double d = 10 + random.nextDouble() * 770;
                             int sx = (int) (d * Math.cos(angle));
                             int sz = (int) (d * Math.sin(angle));
                             structTasks.add(() -> placeChest(world, sx, sz));
                         }
+                        totalStructs = structTasks.size();
                         structsGenerated = true;
                     }
 
                     int done = 0;
-                    while (structIndex < structTasks.size() && done < 10) {
+                    while (structIndex < structTasks.size() && done < 15) {
                         structTasks.get(structIndex).run();
                         structIndex++;
                         done++;
-                        if (System.currentTimeMillis() - startTime > 40) break;
+                        if (System.currentTimeMillis() - startTime > 45) break;
                     }
+                    // Progress title para estructuras (80% a 100%)
+                    int pct = 80 + (int) ((double) structIndex / totalStructs * 20);
+                    sendBuildProgress("§eColocando estructuras", pct, 100);
+
                     if (structIndex >= structTasks.size()) {
-                        plugin.getLogger().info("[EyeOfStorm] Arena construida completamente (" + structTasks.size() + " estructuras).");
+                        plugin.getLogger().info("[EyeOfStorm] Arena construida completamente (" + totalStructs + " estructuras).");
+                        // Título final
+                        for (UUID uuid : players) {
+                            Player p = Bukkit.getPlayer(uuid);
+                            if (p != null && p.isOnline()) {
+                                p.sendTitle("§a§l¡MAPA LISTO!", "§7Preparando inicio...", 5, 30, 10);
+                            }
+                        }
                         cancel();
                         if (onArenaBuiltCallback != null) {
                             Bukkit.getScheduler().runTask(plugin, onArenaBuiltCallback);
@@ -369,7 +384,26 @@ public class EyeOfStormGame extends MiniGame {
                     }
                 }
             }
-        }.runTaskTimer(plugin, 1L, 2L);
+        }.runTaskTimer(plugin, 1L, 1L);
+    }
+
+    private void sendBuildProgress(String phase, int pct, int max) {
+        if (pct > max) pct = max;
+        int barLength = 30;
+        int filled = (int) ((double) pct / max * barLength);
+        StringBuilder bar = new StringBuilder("§a");
+        for (int i = 0; i < barLength; i++) {
+            if (i == filled) bar.append("§7");
+            bar.append("▊");
+        }
+        String title = "§6§l⏳ " + phase;
+        String subtitle = bar + " §f" + pct + "%";
+        for (UUID uuid : players) {
+            Player p = Bukkit.getPlayer(uuid);
+            if (p != null && p.isOnline()) {
+                p.sendTitle(title, subtitle, 0, 25, 5);
+            }
+        }
     }
 
     // --- Estructura: Ruina ---
@@ -423,8 +457,8 @@ public class EyeOfStormGame extends MiniGame {
         world.getBlockAt(bx + w, baseY + 2, bz).setType(Material.AIR, false);
         // Ventanas
         if (h >= 3) {
-            world.getBlockAt(bx - w, baseY + 2, bz).setType(Material.GLASS_PANE, false);
-            world.getBlockAt(bx, baseY + 2, bz + w).setType(Material.GLASS_PANE, false);
+            world.getBlockAt(bx - w, baseY + 2, bz).setType(Material.GLASS_PANE, true);
+            world.getBlockAt(bx, baseY + 2, bz + w).setType(Material.GLASS_PANE, true);
         }
         // Suelo
         for (int x = -w + 1; x < w; x++) {
@@ -485,7 +519,7 @@ public class EyeOfStormGame extends MiniGame {
                     world.getBlockAt(bx + x, baseY + y, bz + z).setType(Material.AIR, false);
                 }
                 // Techo reforzado
-                world.getBlockAt(bx + x, baseY + 1, bz + z).setType(Material.IRON_BARS, false);
+                world.getBlockAt(bx + x, baseY + 1, bz + z).setType(Material.IRON_BARS, true);
             }
         }
         // Paredes del bunker
@@ -530,11 +564,12 @@ public class EyeOfStormGame extends MiniGame {
             int leafRadius = (y <= trunkHeight) ? 3 : 1;
             for (int x = -leafRadius; x <= leafRadius; x++) {
                 for (int z = -leafRadius; z <= leafRadius; z++) {
-                    if (x == 0 && z == 0 && y <= trunkHeight) continue; // Tronco
+                    if (x == 0 && z == 0 && y <= trunkHeight) continue;
                     double d = Math.sqrt(x * x + z * z);
                     if (d <= leafRadius + 0.5 && random.nextInt(5) > 0) {
                         Block b = world.getBlockAt(bx + x, baseY + y, bz + z);
-                        if (b.getType() == Material.AIR) {
+                        Material existing = b.getType();
+                        if (existing == Material.AIR || existing == Material.GRASS_BLOCK || existing == Material.DIRT) {
                             b.setType(leaves, false);
                         }
                     }
@@ -596,41 +631,119 @@ public class EyeOfStormGame extends MiniGame {
         org.bukkit.inventory.Inventory inv = chest.getInventory();
         inv.clear();
 
-        // Loot aleatorio
-        ItemStack[][] lootTable = {
-                {new ItemStack(Material.IRON_SWORD)},
-                {new ItemStack(Material.STONE_SWORD)},
-                {new ItemStack(Material.DIAMOND_SWORD)},
-                {new ItemStack(Material.BOW)},
-                {new ItemStack(Material.ARROW, 8 + random.nextInt(16))},
-                {new ItemStack(Material.GOLDEN_APPLE, 1 + random.nextInt(3))},
-                {new ItemStack(Material.IRON_HELMET)},
-                {new ItemStack(Material.IRON_CHESTPLATE)},
-                {new ItemStack(Material.IRON_LEGGINGS)},
-                {new ItemStack(Material.IRON_BOOTS)},
-                {new ItemStack(Material.DIAMOND_HELMET)},
-                {new ItemStack(Material.DIAMOND_CHESTPLATE)},
-                {new ItemStack(Material.CHAINMAIL_CHESTPLATE)},
-                {new ItemStack(Material.SHIELD)},
-                {new ItemStack(Material.COBBLESTONE, 16 + random.nextInt(32))},
-                {new ItemStack(Material.OAK_PLANKS, 16 + random.nextInt(16))},
-                {new ItemStack(Material.ENDER_PEARL, 1 + random.nextInt(2))},
-                {new ItemStack(Material.COOKED_BEEF, 4 + random.nextInt(8))},
-                {new ItemStack(Material.CROSSBOW)},
-                {new ItemStack(Material.SPLASH_POTION)}, // placeholder
-                {new ItemStack(Material.FISHING_ROD)},
-                {new ItemStack(Material.SNOWBALL, 8)},
-        };
+        // Pool de loot masivo con toda clase de rareza
+        List<ItemStack> lootPool = new ArrayList<>();
 
-        int numItems = 3 + random.nextInt(4);
+        // === ARMAS ===
+        lootPool.add(new ItemStack(Material.WOODEN_SWORD));
+        lootPool.add(new ItemStack(Material.STONE_SWORD));
+        lootPool.add(new ItemStack(Material.IRON_SWORD));
+        lootPool.add(new ItemStack(Material.DIAMOND_SWORD));
+        lootPool.add(enchant(new ItemStack(Material.IRON_SWORD), Enchantment.SHARPNESS, 1 + random.nextInt(3)));
+        lootPool.add(enchant(new ItemStack(Material.DIAMOND_SWORD), Enchantment.SHARPNESS, 1 + random.nextInt(4)));
+        lootPool.add(enchant(new ItemStack(Material.DIAMOND_SWORD), Enchantment.FIRE_ASPECT, 1 + random.nextInt(2)));
+        if (random.nextInt(8) == 0) lootPool.add(enchant(new ItemStack(Material.NETHERITE_SWORD), Enchantment.SHARPNESS, 2 + random.nextInt(3)));
+        lootPool.add(new ItemStack(Material.BOW));
+        lootPool.add(enchant(new ItemStack(Material.BOW), Enchantment.POWER, 1 + random.nextInt(3)));
+        lootPool.add(enchant(new ItemStack(Material.BOW), Enchantment.PUNCH, 1 + random.nextInt(2)));
+        if (random.nextInt(5) == 0) lootPool.add(enchant(new ItemStack(Material.BOW), Enchantment.INFINITY, 1));
+        lootPool.add(new ItemStack(Material.CROSSBOW));
+        lootPool.add(enchant(new ItemStack(Material.CROSSBOW), Enchantment.QUICK_CHARGE, 1 + random.nextInt(3)));
+        lootPool.add(new ItemStack(Material.TRIDENT));
+
+        // === MUNICIÓN ===
+        lootPool.add(new ItemStack(Material.ARROW, 8 + random.nextInt(24)));
+        lootPool.add(new ItemStack(Material.ARROW, 16 + random.nextInt(16)));
+        lootPool.add(new ItemStack(Material.SPECTRAL_ARROW, 4 + random.nextInt(8)));
+
+        // === ARMADURA: TODOS LOS TIERS ===
+        // Cuero
+        lootPool.add(new ItemStack(Material.LEATHER_HELMET));
+        lootPool.add(new ItemStack(Material.LEATHER_CHESTPLATE));
+        lootPool.add(new ItemStack(Material.LEATHER_LEGGINGS));
+        lootPool.add(new ItemStack(Material.LEATHER_BOOTS));
+        // Cadena
+        lootPool.add(new ItemStack(Material.CHAINMAIL_HELMET));
+        lootPool.add(new ItemStack(Material.CHAINMAIL_CHESTPLATE));
+        lootPool.add(new ItemStack(Material.CHAINMAIL_LEGGINGS));
+        lootPool.add(new ItemStack(Material.CHAINMAIL_BOOTS));
+        // Hierro
+        lootPool.add(new ItemStack(Material.IRON_HELMET));
+        lootPool.add(new ItemStack(Material.IRON_CHESTPLATE));
+        lootPool.add(new ItemStack(Material.IRON_LEGGINGS));
+        lootPool.add(new ItemStack(Material.IRON_BOOTS));
+        // Diamante
+        lootPool.add(new ItemStack(Material.DIAMOND_HELMET));
+        lootPool.add(new ItemStack(Material.DIAMOND_CHESTPLATE));
+        lootPool.add(new ItemStack(Material.DIAMOND_LEGGINGS));
+        lootPool.add(new ItemStack(Material.DIAMOND_BOOTS));
+        // Diamante encantado
+        lootPool.add(enchant(new ItemStack(Material.DIAMOND_CHESTPLATE), Enchantment.PROTECTION, 1 + random.nextInt(3)));
+        lootPool.add(enchant(new ItemStack(Material.DIAMOND_LEGGINGS), Enchantment.PROTECTION, 1 + random.nextInt(3)));
+        lootPool.add(enchant(new ItemStack(Material.DIAMOND_HELMET), Enchantment.PROTECTION, 1 + random.nextInt(3)));
+        lootPool.add(enchant(new ItemStack(Material.DIAMOND_BOOTS), Enchantment.PROTECTION, 1 + random.nextInt(3)));
+        // Netherite (muy raro)
+        if (random.nextInt(6) == 0) lootPool.add(enchant(new ItemStack(Material.NETHERITE_HELMET), Enchantment.PROTECTION, 2 + random.nextInt(2)));
+        if (random.nextInt(6) == 0) lootPool.add(enchant(new ItemStack(Material.NETHERITE_CHESTPLATE), Enchantment.PROTECTION, 2 + random.nextInt(2)));
+        if (random.nextInt(6) == 0) lootPool.add(enchant(new ItemStack(Material.NETHERITE_LEGGINGS), Enchantment.PROTECTION, 2 + random.nextInt(2)));
+        if (random.nextInt(6) == 0) lootPool.add(enchant(new ItemStack(Material.NETHERITE_BOOTS), Enchantment.PROTECTION, 2 + random.nextInt(2)));
+
+        // === ESCUDO ===
+        lootPool.add(new ItemStack(Material.SHIELD));
+
+        // === POCIONES REALES ===
+        lootPool.add(makePotion(Material.POTION, PotionEffectType.INSTANT_HEALTH, 1, 1));
+        lootPool.add(makePotion(Material.POTION, PotionEffectType.REGENERATION, 45 * 20, 1));
+        lootPool.add(makePotion(Material.POTION, PotionEffectType.SPEED, 90 * 20, 1));
+        lootPool.add(makePotion(Material.POTION, PotionEffectType.STRENGTH, 60 * 20, 0));
+        lootPool.add(makePotion(Material.POTION, PotionEffectType.FIRE_RESISTANCE, 120 * 20, 0));
+        lootPool.add(makePotion(Material.SPLASH_POTION, PotionEffectType.INSTANT_HEALTH, 1, 1));
+        lootPool.add(makePotion(Material.SPLASH_POTION, PotionEffectType.INSTANT_DAMAGE, 1, 0));
+        lootPool.add(makePotion(Material.SPLASH_POTION, PotionEffectType.SLOWNESS, 60 * 20, 1));
+        lootPool.add(makePotion(Material.SPLASH_POTION, PotionEffectType.POISON, 30 * 20, 0));
+
+        // === UTILIDADES ===
+        lootPool.add(new ItemStack(Material.GOLDEN_APPLE, 1 + random.nextInt(3)));
+        lootPool.add(new ItemStack(Material.ENCHANTED_GOLDEN_APPLE));
+        lootPool.add(new ItemStack(Material.ENDER_PEARL, 1 + random.nextInt(3)));
+        lootPool.add(new ItemStack(Material.COBBLESTONE, 16 + random.nextInt(48)));
+        lootPool.add(new ItemStack(Material.OAK_PLANKS, 16 + random.nextInt(32)));
+        lootPool.add(new ItemStack(Material.COOKED_BEEF, 4 + random.nextInt(12)));
+        lootPool.add(new ItemStack(Material.GOLDEN_CARROT, 4 + random.nextInt(8)));
+        lootPool.add(new ItemStack(Material.TOTEM_OF_UNDYING));
+        lootPool.add(new ItemStack(Material.FISHING_ROD));
+        lootPool.add(new ItemStack(Material.SNOWBALL, 8 + random.nextInt(8)));
+        lootPool.add(new ItemStack(Material.LAVA_BUCKET));
+        lootPool.add(new ItemStack(Material.WATER_BUCKET));
+        lootPool.add(new ItemStack(Material.FLINT_AND_STEEL));
+        lootPool.add(new ItemStack(Material.TNT, 2 + random.nextInt(3)));
+
+        // Seleccionar items aleatorios del pool
+        int numItems = 4 + random.nextInt(5); // 4-8 items por cofre
         Set<Integer> usedSlots = new HashSet<>();
         for (int i = 0; i < numItems; i++) {
             int slot = random.nextInt(27);
             while (usedSlots.contains(slot)) slot = random.nextInt(27);
             usedSlots.add(slot);
-            ItemStack item = lootTable[random.nextInt(lootTable.length)][0].clone();
+            ItemStack item = lootPool.get(random.nextInt(lootPool.size())).clone();
             inv.setItem(slot, item);
         }
+    }
+
+    private ItemStack enchant(ItemStack item, Enchantment ench, int level) {
+        item.addUnsafeEnchantment(ench, level);
+        return item;
+    }
+
+    private ItemStack makePotion(Material type, PotionEffectType effect, int duration, int amplifier) {
+        ItemStack potion = new ItemStack(type);
+        PotionMeta meta = (PotionMeta) potion.getItemMeta();
+        if (meta != null) {
+            meta.addCustomEffect(new PotionEffect(effect, duration, amplifier), true);
+            meta.setColor(effect.getColor());
+            potion.setItemMeta(meta);
+        }
+        return potion;
     }
 
     private int getGroundY(World world, int x, int z) {
@@ -767,9 +880,9 @@ public class EyeOfStormGame extends MiniGame {
             double targetRadius;
             int shrinkDuration;
             switch (currentPhase) {
-                case 2: targetRadius = 250; shrinkDuration = 80; break;   // 60-150s → cierra a 250
-                case 3: targetRadius = 120; shrinkDuration = 70; break;   // 150-240s → cierra a 120
-                case 4: targetRadius = 40; shrinkDuration = 60; break;    // 240-320s → cierra a 40
+                case 2: targetRadius = 400; shrinkDuration = 80; break;   // 60-150s → cierra a 400
+                case 3: targetRadius = 180; shrinkDuration = 70; break;   // 150-240s → cierra a 180
+                case 4: targetRadius = 50; shrinkDuration = 60; break;    // 240-320s → cierra a 50
                 case 5: targetRadius = STORM_MIN_RADIUS; shrinkDuration = 50; break; // 320+ → cierra a 5
                 default: targetRadius = STORM_INITIAL_RADIUS; shrinkDuration = 90; break;
             }
@@ -777,26 +890,18 @@ public class EyeOfStormGame extends MiniGame {
             if (currentPhase >= 2) {
                 stormActive = true;
 
-                // Elegir nuevo centro ALEATORIO dentro de la zona segura actual
-                double targetCX = stormCenterX;
-                double targetCZ = stormCenterZ;
-                double maxOffset = Math.max(0, stormRadius - targetRadius - 10);
-                if (maxOffset > 0) {
-                    double angle = random.nextDouble() * Math.PI * 2;
-                    double offset = random.nextDouble() * maxOffset;
-                    targetCX = stormCenterX + offset * Math.cos(angle);
-                    targetCZ = stormCenterZ + offset * Math.sin(angle);
-                    // Asegurar que el nuevo centro + radio no se salga del mapa
-                    double maxDist = ARENA_RADIUS - targetRadius - 5;
-                    if (maxDist > 0) {
-                        double distFromOrigin = Math.sqrt(targetCX * targetCX + targetCZ * targetCZ);
-                        if (distFromOrigin > maxDist) {
-                            double ratio = maxDist / distFromOrigin;
-                            targetCX *= ratio;
-                            targetCZ *= ratio;
-                        }
-                    }
-                }
+                // Elegir nuevo centro ALEATORIO — puede ir a cualquier esquina/borde
+                double targetCX;
+                double targetCZ;
+                // Mover agresivamente: el centro puede saltar a cualquier punto dentro del mapa
+                // siempre que el nuevo círculo (targetRadius) quepa dentro del mapa
+                double maxDist = ARENA_RADIUS - targetRadius - 10;
+                if (maxDist < 0) maxDist = 0;
+                double angle = random.nextDouble() * Math.PI * 2;
+                // Usar offset alto (70-100% del máximo) para que sea impredecible
+                double offset = maxDist * (0.7 + random.nextDouble() * 0.3);
+                targetCX = offset * Math.cos(angle);
+                targetCZ = offset * Math.sin(angle);
 
                 // Mover el centro GRADUALMENTE durante el shrink (no teletransportar)
                 startGradualCenterMove(targetCX, targetCZ, shrinkDuration);
