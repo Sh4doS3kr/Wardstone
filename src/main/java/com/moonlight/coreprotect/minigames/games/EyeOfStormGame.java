@@ -57,11 +57,11 @@ public class EyeOfStormGame extends MiniGame {
     // Fase 3: 150-240s = borde cierra hasta r80
     // Fase 4: 240-320s = borde cierra hasta r25
     // Fase 5: 320s+ = borde cierra hasta r5
-    private static final int PHASE_2_TIME = 60;
-    private static final int PHASE_3_TIME = 150;
-    private static final int PHASE_4_TIME = 240;
-    private static final int PHASE_5_TIME = 320;
-    private static final int CRUSH_TIME = 440; // 320 + 120s (2 min en zona final) = aplastamiento
+    private static final int PHASE_2_TIME = 90;   // 1:30 de loot
+    private static final int PHASE_3_TIME = 270;   // 4:30
+    private static final int PHASE_4_TIME = 420;   // 7:00
+    private static final int PHASE_5_TIME = 540;   // 9:00
+    private static final int CRUSH_TIME = 660;     // 11:00 = aplastamiento
 
     // === STATE ===
     private BossBar stormBar;
@@ -884,10 +884,10 @@ public class EyeOfStormGame extends MiniGame {
             double targetRadius;
             int shrinkDuration;
             switch (currentPhase) {
-                case 2: targetRadius = 400; shrinkDuration = 80; break;   // 60-150s → cierra a 400
-                case 3: targetRadius = 180; shrinkDuration = 70; break;   // 150-240s → cierra a 180
-                case 4: targetRadius = 50; shrinkDuration = 60; break;    // 240-320s → cierra a 50
-                case 5: targetRadius = STORM_MIN_RADIUS; shrinkDuration = 50; break; // 320+ → cierra a 5
+                case 2: targetRadius = 400; shrinkDuration = 160; break;  // cierra a 400 en 2:40
+                case 3: targetRadius = 180; shrinkDuration = 130; break;  // cierra a 180 en 2:10
+                case 4: targetRadius = 50; shrinkDuration = 100; break;   // cierra a 50 en 1:40
+                case 5: targetRadius = STORM_MIN_RADIUS; shrinkDuration = 90; break; // cierra a 5 en 1:30
                 default: targetRadius = STORM_INITIAL_RADIUS; shrinkDuration = 90; break;
             }
 
