@@ -77,8 +77,112 @@ public class EyeOfStormGame extends MiniGame {
     private int stormSyncTaskId = -1;
     private int centerMoveTaskId = -1;
 
+    // Callback cuando la arena termina de construirse
+    private Runnable onArenaBuiltCallback = null;
+
     public EyeOfStormGame(CoreProtectPlugin plugin, MiniGameManager manager) {
         super(plugin, manager, MiniGameType.EYE_OF_STORM);
+    }
+
+    /**
+     * Override start para manejar la construcción async del mapa gigante.
+     * En vez de esperar un delay fijo (5s), espera a que buildArena termine via callback.
+     */
+    @Override
+    public void start(Set<UUID> joinedPlayers) {
+        this.players.addAll(joinedPlayers);
+        this.alivePlayers.addAll(joinedPlayers);
+        this.running = true;
+        this.gameTime = 0;
+
+        World world = Bukkit.getWorld(MiniGameWorld.getWorldName());
+        if (world == null) return;
+
+        // Teletransportar jugadores a ubicación segura mientras se construye
+        Location safeWaitLocation = new Location(world, 0.5, 120, 0.5);
+        for (UUID uuid : joinedPlayers) {
+            Player p = Bukkit.getPlayer(uuid);
+            if (p != null && p.isOnline()) {
+                p.teleport(safeWaitLocation);
+                p.setGameMode(org.bukkit.GameMode.SPECTATOR);
+                p.setAllowFlight(true);
+                p.setFlying(true);
+                p.sendMessage("§e§l⏳ §7Construyendo mapa gigante, espera...");
+            }
+        }
+
+        // Configurar callback: cuando la arena termine de construirse, teleportar y empezar
+        onArenaBuiltCallback = () -> {
+            if (!running) return;
+
+            List<Location> spawns = getSpawnLocations(world);
+            cachedSpawns = spawns;
+            for (Location spawn : spawns) {
+                world.getChunkAt(spawn).load(true);
+                world.getChunkAt(spawn).setForceLoaded(true);
+            }
+            world.getChunkAt(0, 0).load(true);
+            world.getChunkAt(0, 0).setForceLoaded(true);
+
+            // Teletransportar a spawns
+            teleportPlayersToArena(world, spawns);
+            onPreCountdown();
+
+            // Safety TP retry
+            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                for (UUID uuid : players) {
+                    Player p = Bukkit.getPlayer(uuid);
+                    if (p != null && p.isOnline() && !p.getWorld().getName().equals(MiniGameWorld.getWorldName())) {
+                        int idx2 = new ArrayList<>(players).indexOf(uuid);
+                        Location spawn = spawns.get(idx2 % spawns.size());
+                        spawn.getChunk().load(true);
+                        p.teleport(spawn);
+                        p.setGameMode(org.bukkit.GameMode.SURVIVAL);
+                        p.setFallDistance(0);
+                    }
+                }
+            }, 20L);
+
+            // Countdown de inicio (5 segundos)
+            new BukkitRunnable() {
+                int count = 5;
+                @Override
+                public void run() {
+                    if (!running) { cancel(); return; }
+                    if (count <= 0) {
+                        cancel();
+                        for (Location spawn : spawns) {
+                            world.getChunkAt(spawn).setForceLoaded(false);
+                        }
+                        world.getChunkAt(0, 0).setForceLoaded(false);
+
+                        for (UUID uuid : players) {
+                            Player p = Bukkit.getPlayer(uuid);
+                            if (p != null && p.isOnline()) {
+                                p.sendTitle("§a§l¡GO!", "", 5, 20, 5);
+                                p.playSound(p.getLocation(), Sound.ENTITY_ENDER_DRAGON_GROWL, 0.5f, 1.5f);
+                            }
+                        }
+                        startGameLogic();
+                        startTickTask();
+                        return;
+                    }
+
+                    String color = count <= 2 ? "§c" : count <= 4 ? "§e" : "§a";
+                    for (UUID uuid : players) {
+                        Player p = Bukkit.getPlayer(uuid);
+                        if (p != null && p.isOnline()) {
+                            p.sendTitle(color + "§l" + count, "§7Prepárate...", 5, 15, 5);
+                            p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, count == 1 ? 2.0f : 1.0f);
+                        }
+                    }
+                    count--;
+                }
+            }.runTaskTimer(plugin, 0L, 20L);
+        };
+
+        // Construir arena (cuando termine, se dispara onArenaBuiltCallback)
+        buildArena(world);
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -87,150 +191,185 @@ public class EyeOfStormGame extends MiniGame {
 
     @Override
     public void buildArena(World world) {
-        // Pre-cargar chunks
-        int chunkRadius = (ARENA_RADIUS / 16) + 2;
-        for (int cx = -chunkRadius; cx <= chunkRadius; cx++) {
-            for (int cz = -chunkRadius; cz <= chunkRadius; cz++) {
-                world.getChunkAt(cx, cz).load(true);
-                world.getChunkAt(cx, cz).setForceLoaded(true);
-            }
-        }
+        plugin.getLogger().info("[EyeOfStorm] Iniciando construcción de arena (radio=" + ARENA_RADIUS + ")...");
 
-        // Generar todo de forma async por batches
-        List<Runnable> blockTasks = new ArrayList<>();
+        // Fase 1: Cargar chunks en batches (no todo de golpe)
+        // Fase 2: Construir terreno fila por fila
+        // Fase 3: Colocar estructuras
+        // Todo dentro del mismo BukkitRunnable progresivo
 
-        // === TERRENO BASE: colinas y valles con noise simulado ===
-        for (int x = -ARENA_RADIUS; x <= ARENA_RADIUS; x++) {
-            for (int z = -ARENA_RADIUS; z <= ARENA_RADIUS; z++) {
-                double dist = Math.sqrt(x * x + z * z);
-                if (dist > ARENA_RADIUS) continue;
+        final int chunkRadius = (ARENA_RADIUS / 16) + 2;
+        final int totalChunkRows = chunkRadius * 2 + 1;
 
-                final int fx = x;
-                final int fz = z;
-
-                blockTasks.add(() -> {
-                    // Altura variable (colinas) usando funciones trigonométricas como pseudo-noise
-                    double noise = Math.sin(fx * 0.05) * Math.cos(fz * 0.05) * 4
-                            + Math.sin(fx * 0.12 + 3) * Math.cos(fz * 0.08 + 1) * 3
-                            + Math.sin(fx * 0.02) * Math.sin(fz * 0.02) * 6;
-                    int height = ARENA_Y + (int) noise;
-                    if (height < ARENA_Y - 6) height = ARENA_Y - 6;
-
-                    // Borde del mapa: bajar para que caigan al vacío
-                    double edgeDist = ARENA_RADIUS - dist;
-                    if (edgeDist < 8) {
-                        height -= (int) (8 - edgeDist);
-                    }
-
-                    // Capas de terreno
-                    for (int y = ARENA_Y - 10; y <= height; y++) {
-                        Material mat;
-                        if (y == height) {
-                            mat = Material.GRASS_BLOCK;
-                        } else if (y >= height - 2) {
-                            mat = Material.DIRT;
-                        } else if (y >= height - 5) {
-                            mat = Material.STONE;
-                        } else {
-                            mat = Material.DEEPSLATE;
-                        }
-                        world.getBlockAt(fx, y, fz).setType(mat, false);
-                    }
-                });
-            }
-        }
-
-        // === ESTRUCTURAS: Ruinas, casas, torres ===
-        // Ruinas dispersas (120)
-        for (int i = 0; i < 120; i++) {
-            double angle = random.nextDouble() * Math.PI * 2;
-            double dist = 15 + random.nextDouble() * 750;
-            int sx = (int) (dist * Math.cos(angle));
-            int sz = (int) (dist * Math.sin(angle));
-            blockTasks.add(() -> buildRuin(world, sx, sz));
-        }
-
-        // Casas pequeñas (80)
-        for (int i = 0; i < 80; i++) {
-            double angle = random.nextDouble() * Math.PI * 2;
-            double dist = 20 + random.nextDouble() * 750;
-            int sx = (int) (dist * Math.cos(angle));
-            int sz = (int) (dist * Math.sin(angle));
-            blockTasks.add(() -> buildHouse(world, sx, sz));
-        }
-
-        // Torres de vigilancia (30)
-        for (int i = 0; i < 30; i++) {
-            double angle = (2 * Math.PI / 30) * i + random.nextDouble() * 0.5;
-            double dist = 40 + random.nextDouble() * 700;
-            int sx = (int) (dist * Math.cos(angle));
-            int sz = (int) (dist * Math.sin(angle));
-            blockTasks.add(() -> buildTower(world, sx, sz));
-        }
-
-        // Bunkers subterráneos (50)
-        for (int i = 0; i < 50; i++) {
-            double angle = random.nextDouble() * Math.PI * 2;
-            double dist = 25 + random.nextDouble() * 740;
-            int sx = (int) (dist * Math.cos(angle));
-            int sz = (int) (dist * Math.sin(angle));
-            blockTasks.add(() -> buildBunker(world, sx, sz));
-        }
-
-        // Árboles grandes (250)
-        for (int i = 0; i < 250; i++) {
-            double angle = random.nextDouble() * Math.PI * 2;
-            double dist = 10 + random.nextDouble() * 770;
-            int sx = (int) (dist * Math.cos(angle));
-            int sz = (int) (dist * Math.sin(angle));
-            blockTasks.add(() -> buildTree(world, sx, sz));
-        }
-
-        // Rocas/piedras grandes (150)
-        for (int i = 0; i < 150; i++) {
-            double angle = random.nextDouble() * Math.PI * 2;
-            double dist = 10 + random.nextDouble() * 770;
-            int sx = (int) (dist * Math.cos(angle));
-            int sz = (int) (dist * Math.sin(angle));
-            blockTasks.add(() -> buildRockFormation(world, sx, sz));
-        }
-
-        // Muros rotos/trincheras (80)
-        for (int i = 0; i < 80; i++) {
-            double angle = random.nextDouble() * Math.PI * 2;
-            double dist = 15 + random.nextDouble() * 750;
-            int sx = (int) (dist * Math.cos(angle));
-            int sz = (int) (dist * Math.sin(angle));
-            double wallAngle = random.nextDouble() * Math.PI;
-            blockTasks.add(() -> buildBrokenWall(world, sx, sz, wallAngle));
-        }
-
-        // Cofres con loot (250 repartidos por todo el mapa)
-        for (int i = 0; i < 250; i++) {
-            double angle = random.nextDouble() * Math.PI * 2;
-            double dist = 10 + random.nextDouble() * 770;
-            int sx = (int) (dist * Math.cos(angle));
-            int sz = (int) (dist * Math.sin(angle));
-            blockTasks.add(() -> placeChest(world, sx, sz));
-        }
-
-        // === EJECUTAR ASYNC POR BATCHES ===
         new BukkitRunnable() {
-            int index = 0;
+            // Estado de la máquina de fases
+            int phase = 0; // 0=chunks, 1=terreno, 2=estructuras
+            // Fase 0: chunk loading
+            int chunkRow = -chunkRadius;
+            // Fase 1: terreno por filas
+            int terrainX = -ARENA_RADIUS;
+            // Fase 2: estructuras
+            int structIndex = 0;
+            boolean structsGenerated = false;
+            List<Runnable> structTasks = null;
+
             @Override
             public void run() {
-                int done = 0;
-                while (index < blockTasks.size() && done < BLOCKS_PER_TICK) {
-                    blockTasks.get(index).run();
-                    index++;
-                    done++;
+                long startTime = System.currentTimeMillis();
+
+                // === FASE 0: Cargar chunks (4 filas de chunks por tick) ===
+                if (phase == 0) {
+                    int rowsDone = 0;
+                    while (chunkRow <= chunkRadius && rowsDone < 4) {
+                        for (int cz = -chunkRadius; cz <= chunkRadius; cz++) {
+                            world.getChunkAt(chunkRow, cz).load(true);
+                        }
+                        chunkRow++;
+                        rowsDone++;
+                    }
+                    if (chunkRow > chunkRadius) {
+                        phase = 1;
+                        plugin.getLogger().info("[EyeOfStorm] Chunks cargados. Generando terreno...");
+                    }
+                    return;
                 }
-                if (index >= blockTasks.size()) {
-                    plugin.getLogger().info("[EyeOfStorm] Arena construida: " + blockTasks.size() + " tareas ejecutadas.");
-                    cancel();
+
+                // === FASE 1: Terreno (varias filas X por tick) ===
+                if (phase == 1) {
+                    int rowsDone = 0;
+                    while (terrainX <= ARENA_RADIUS && rowsDone < BLOCKS_PER_TICK) {
+                        // Generar toda la fila Z para este X
+                        for (int z = -ARENA_RADIUS; z <= ARENA_RADIUS; z++) {
+                            double dist = Math.sqrt((double) terrainX * terrainX + (double) z * z);
+                            if (dist > ARENA_RADIUS) continue;
+
+                            double noise = Math.sin(terrainX * 0.05) * Math.cos(z * 0.05) * 4
+                                    + Math.sin(terrainX * 0.12 + 3) * Math.cos(z * 0.08 + 1) * 3
+                                    + Math.sin(terrainX * 0.02) * Math.sin(z * 0.02) * 6;
+                            int height = ARENA_Y + (int) noise;
+                            if (height < ARENA_Y - 6) height = ARENA_Y - 6;
+
+                            double edgeDist = ARENA_RADIUS - dist;
+                            if (edgeDist < 8) {
+                                height -= (int) (8 - edgeDist);
+                            }
+
+                            for (int y = ARENA_Y - 10; y <= height; y++) {
+                                Material mat;
+                                if (y == height) {
+                                    mat = Material.GRASS_BLOCK;
+                                } else if (y >= height - 2) {
+                                    mat = Material.DIRT;
+                                } else if (y >= height - 5) {
+                                    mat = Material.STONE;
+                                } else {
+                                    mat = Material.DEEPSLATE;
+                                }
+                                world.getBlockAt(terrainX, y, z).setType(mat, false);
+                            }
+                        }
+                        terrainX++;
+                        rowsDone++;
+
+                        // Protección: si llevamos >40ms en este tick, parar
+                        if (System.currentTimeMillis() - startTime > 40) break;
+                    }
+                    if (terrainX > ARENA_RADIUS) {
+                        phase = 2;
+                        plugin.getLogger().info("[EyeOfStorm] Terreno completo. Generando estructuras...");
+                    }
+                    return;
+                }
+
+                // === FASE 2: Estructuras (pocas por tick) ===
+                if (phase == 2) {
+                    if (!structsGenerated) {
+                        structTasks = new ArrayList<>();
+                        // Ruinas (120)
+                        for (int i = 0; i < 120; i++) {
+                            double angle = random.nextDouble() * Math.PI * 2;
+                            double d = 15 + random.nextDouble() * 750;
+                            int sx = (int) (d * Math.cos(angle));
+                            int sz = (int) (d * Math.sin(angle));
+                            structTasks.add(() -> buildRuin(world, sx, sz));
+                        }
+                        // Casas (80)
+                        for (int i = 0; i < 80; i++) {
+                            double angle = random.nextDouble() * Math.PI * 2;
+                            double d = 20 + random.nextDouble() * 750;
+                            int sx = (int) (d * Math.cos(angle));
+                            int sz = (int) (d * Math.sin(angle));
+                            structTasks.add(() -> buildHouse(world, sx, sz));
+                        }
+                        // Torres (30)
+                        for (int i = 0; i < 30; i++) {
+                            double angle = (2 * Math.PI / 30) * i + random.nextDouble() * 0.5;
+                            double d = 40 + random.nextDouble() * 700;
+                            int sx = (int) (d * Math.cos(angle));
+                            int sz = (int) (d * Math.sin(angle));
+                            structTasks.add(() -> buildTower(world, sx, sz));
+                        }
+                        // Bunkers (50)
+                        for (int i = 0; i < 50; i++) {
+                            double angle = random.nextDouble() * Math.PI * 2;
+                            double d = 25 + random.nextDouble() * 740;
+                            int sx = (int) (d * Math.cos(angle));
+                            int sz = (int) (d * Math.sin(angle));
+                            structTasks.add(() -> buildBunker(world, sx, sz));
+                        }
+                        // Árboles (250)
+                        for (int i = 0; i < 250; i++) {
+                            double angle = random.nextDouble() * Math.PI * 2;
+                            double d = 10 + random.nextDouble() * 770;
+                            int sx = (int) (d * Math.cos(angle));
+                            int sz = (int) (d * Math.sin(angle));
+                            structTasks.add(() -> buildTree(world, sx, sz));
+                        }
+                        // Rocas (150)
+                        for (int i = 0; i < 150; i++) {
+                            double angle = random.nextDouble() * Math.PI * 2;
+                            double d = 10 + random.nextDouble() * 770;
+                            int sx = (int) (d * Math.cos(angle));
+                            int sz = (int) (d * Math.sin(angle));
+                            structTasks.add(() -> buildRockFormation(world, sx, sz));
+                        }
+                        // Muros (80)
+                        for (int i = 0; i < 80; i++) {
+                            double angle = random.nextDouble() * Math.PI * 2;
+                            double d = 15 + random.nextDouble() * 750;
+                            int sx = (int) (d * Math.cos(angle));
+                            int sz = (int) (d * Math.sin(angle));
+                            double wallAngle = random.nextDouble() * Math.PI;
+                            structTasks.add(() -> buildBrokenWall(world, sx, sz, wallAngle));
+                        }
+                        // Cofres (250)
+                        for (int i = 0; i < 250; i++) {
+                            double angle = random.nextDouble() * Math.PI * 2;
+                            double d = 10 + random.nextDouble() * 770;
+                            int sx = (int) (d * Math.cos(angle));
+                            int sz = (int) (d * Math.sin(angle));
+                            structTasks.add(() -> placeChest(world, sx, sz));
+                        }
+                        structsGenerated = true;
+                    }
+
+                    int done = 0;
+                    while (structIndex < structTasks.size() && done < 10) {
+                        structTasks.get(structIndex).run();
+                        structIndex++;
+                        done++;
+                        if (System.currentTimeMillis() - startTime > 40) break;
+                    }
+                    if (structIndex >= structTasks.size()) {
+                        plugin.getLogger().info("[EyeOfStorm] Arena construida completamente (" + structTasks.size() + " estructuras).");
+                        cancel();
+                        if (onArenaBuiltCallback != null) {
+                            Bukkit.getScheduler().runTask(plugin, onArenaBuiltCallback);
+                        }
+                    }
                 }
             }
-        }.runTaskTimer(plugin, 1L, 2L); // Cada 2 ticks para minimizar impacto en TPS
+        }.runTaskTimer(plugin, 1L, 2L);
     }
 
     // --- Estructura: Ruina ---
@@ -518,7 +657,7 @@ public class EyeOfStormGame extends MiniGame {
     public List<Location> getSpawnLocations(World world) {
         List<Location> spawns = new ArrayList<>();
         int maxPlayers = 16;
-        double spawnRadius = 180;
+        double spawnRadius = 350;
 
         for (int i = 0; i < maxPlayers; i++) {
             double angle = (2 * Math.PI / maxPlayers) * i;

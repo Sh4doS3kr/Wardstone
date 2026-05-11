@@ -28,7 +28,7 @@ public abstract class MiniGame {
     public int getGameTime() { return gameTime; }
     protected Location spawnCenter;
     protected UUID pendingWinnerUUID = null;
-    private List<Location> cachedSpawns = null;
+    protected List<Location> cachedSpawns = null;
 
     public MiniGame(CoreProtectPlugin plugin, MiniGameManager manager, MiniGameType type) {
         this.plugin = plugin;
@@ -220,7 +220,7 @@ public abstract class MiniGame {
         }, 100L);
     }
 
-    private void teleportPlayersToArena(World world, List<Location> spawns) {
+    protected void teleportPlayersToArena(World world, List<Location> spawns) {
         int idx = 0;
         for (UUID uuid : players) {
             Player p = Bukkit.getPlayer(uuid);
@@ -258,7 +258,7 @@ public abstract class MiniGame {
         }
     }
 
-    private void startTickTask() {
+    protected void startTickTask() {
         taskId = new BukkitRunnable() {
             @Override
             public void run() {
