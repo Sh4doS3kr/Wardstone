@@ -42,7 +42,7 @@ public class EyeOfStormGame extends MiniGame {
     // === ARENA ===
     private static final int ARENA_RADIUS = 800;
     private static final int ARENA_Y = 70;
-    private static final int ROWS_PER_TICK = 6; // Filas de terreno por tick (equilibrio velocidad/lag)
+    private static final int ROWS_PER_TICK = 3; // Filas de terreno por tick (lento, sin lag)
 
     // === STORM (Fortnite-style shrinking border) ===
     private static final double STORM_INITIAL_RADIUS = 850.0; // Empieza MÁS GRANDE que el mapa (radio 800)
@@ -558,7 +558,7 @@ public class EyeOfStormGame extends MiniGame {
         for (int y = 1; y <= trunkHeight; y++) {
             world.getBlockAt(bx, baseY + y, bz).setType(log, false);
         }
-        // Copa
+        // Copa (hojas persistentes para que no decaigan)
         int leafStart = trunkHeight - 2;
         for (int y = leafStart; y <= trunkHeight + 2; y++) {
             int leafRadius = (y <= trunkHeight) ? 3 : 1;
@@ -571,6 +571,11 @@ public class EyeOfStormGame extends MiniGame {
                         Material existing = b.getType();
                         if (existing == Material.AIR || existing == Material.GRASS_BLOCK || existing == Material.DIRT) {
                             b.setType(leaves, false);
+                            // Marcar hojas como persistentes para que no decaigan
+                            if (b.getBlockData() instanceof org.bukkit.block.data.type.Leaves leafData) {
+                                leafData.setPersistent(true);
+                                b.setBlockData(leafData, false);
+                            }
                         }
                     }
                 }
