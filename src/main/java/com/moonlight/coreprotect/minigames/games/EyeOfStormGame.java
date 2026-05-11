@@ -698,16 +698,7 @@ public class EyeOfStormGame extends MiniGame {
         // === ESCUDO ===
         lootPool.add(new ItemStack(Material.SHIELD));
 
-        // === POCIONES REALES (usando PotionType para tipo base correcto) ===
-        lootPool.add(makeVanillaPotion(Material.POTION, org.bukkit.potion.PotionType.STRONG_HEALING));
-        lootPool.add(makeVanillaPotion(Material.POTION, org.bukkit.potion.PotionType.LONG_REGENERATION));
-        lootPool.add(makeVanillaPotion(Material.POTION, org.bukkit.potion.PotionType.LONG_SWIFTNESS));
-        lootPool.add(makeVanillaPotion(Material.POTION, org.bukkit.potion.PotionType.LONG_STRENGTH));
-        lootPool.add(makeVanillaPotion(Material.POTION, org.bukkit.potion.PotionType.LONG_FIRE_RESISTANCE));
-        lootPool.add(makeVanillaPotion(Material.SPLASH_POTION, org.bukkit.potion.PotionType.STRONG_HEALING));
-        lootPool.add(makeVanillaPotion(Material.SPLASH_POTION, org.bukkit.potion.PotionType.STRONG_HARMING));
-        lootPool.add(makeVanillaPotion(Material.SPLASH_POTION, org.bukkit.potion.PotionType.LONG_SLOWNESS));
-        lootPool.add(makeVanillaPotion(Material.SPLASH_POTION, org.bukkit.potion.PotionType.LONG_POISON));
+        // === POCIONES — se generan frescas en cada cofre, no del pool ===
 
         // === UTILIDADES ===
         lootPool.add(new ItemStack(Material.GOLDEN_APPLE, 1 + random.nextInt(3)));
@@ -734,6 +725,27 @@ public class EyeOfStormGame extends MiniGame {
             usedSlots.add(slot);
             ItemStack item = lootPool.get(random.nextInt(lootPool.size())).clone();
             inv.setItem(slot, item);
+        }
+
+        // Añadir 1-2 pociones frescas (generadas aquí, no clonadas)
+        org.bukkit.potion.PotionType[] potionTypes = {
+                org.bukkit.potion.PotionType.STRONG_HEALING,
+                org.bukkit.potion.PotionType.LONG_REGENERATION,
+                org.bukkit.potion.PotionType.LONG_SWIFTNESS,
+                org.bukkit.potion.PotionType.LONG_STRENGTH,
+                org.bukkit.potion.PotionType.LONG_FIRE_RESISTANCE,
+                org.bukkit.potion.PotionType.STRONG_HARMING,
+                org.bukkit.potion.PotionType.LONG_SLOWNESS,
+                org.bukkit.potion.PotionType.LONG_POISON,
+        };
+        int potionCount = 1 + random.nextInt(2);
+        for (int i = 0; i < potionCount; i++) {
+            int slot = random.nextInt(27);
+            while (usedSlots.contains(slot)) slot = random.nextInt(27);
+            usedSlots.add(slot);
+            Material potMat = random.nextBoolean() ? Material.SPLASH_POTION : Material.POTION;
+            org.bukkit.potion.PotionType pt = potionTypes[random.nextInt(potionTypes.length)];
+            inv.setItem(slot, makeVanillaPotion(potMat, pt));
         }
     }
 
