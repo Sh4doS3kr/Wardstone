@@ -696,16 +696,16 @@ public class EyeOfStormGame extends MiniGame {
         // === ESCUDO ===
         lootPool.add(new ItemStack(Material.SHIELD));
 
-        // === POCIONES REALES ===
-        lootPool.add(makePotion(Material.POTION, PotionEffectType.INSTANT_HEALTH, 1, 1));
-        lootPool.add(makePotion(Material.POTION, PotionEffectType.REGENERATION, 45 * 20, 1));
-        lootPool.add(makePotion(Material.POTION, PotionEffectType.SPEED, 90 * 20, 1));
-        lootPool.add(makePotion(Material.POTION, PotionEffectType.STRENGTH, 60 * 20, 0));
-        lootPool.add(makePotion(Material.POTION, PotionEffectType.FIRE_RESISTANCE, 120 * 20, 0));
-        lootPool.add(makePotion(Material.SPLASH_POTION, PotionEffectType.INSTANT_HEALTH, 1, 1));
-        lootPool.add(makePotion(Material.SPLASH_POTION, PotionEffectType.INSTANT_DAMAGE, 1, 0));
-        lootPool.add(makePotion(Material.SPLASH_POTION, PotionEffectType.SLOWNESS, 60 * 20, 1));
-        lootPool.add(makePotion(Material.SPLASH_POTION, PotionEffectType.POISON, 30 * 20, 0));
+        // === POCIONES REALES (usando PotionType para tipo base correcto) ===
+        lootPool.add(makeVanillaPotion(Material.POTION, org.bukkit.potion.PotionType.STRONG_HEALING));
+        lootPool.add(makeVanillaPotion(Material.POTION, org.bukkit.potion.PotionType.LONG_REGENERATION));
+        lootPool.add(makeVanillaPotion(Material.POTION, org.bukkit.potion.PotionType.LONG_SWIFTNESS));
+        lootPool.add(makeVanillaPotion(Material.POTION, org.bukkit.potion.PotionType.LONG_STRENGTH));
+        lootPool.add(makeVanillaPotion(Material.POTION, org.bukkit.potion.PotionType.LONG_FIRE_RESISTANCE));
+        lootPool.add(makeVanillaPotion(Material.SPLASH_POTION, org.bukkit.potion.PotionType.STRONG_HEALING));
+        lootPool.add(makeVanillaPotion(Material.SPLASH_POTION, org.bukkit.potion.PotionType.STRONG_HARMING));
+        lootPool.add(makeVanillaPotion(Material.SPLASH_POTION, org.bukkit.potion.PotionType.LONG_SLOWNESS));
+        lootPool.add(makeVanillaPotion(Material.SPLASH_POTION, org.bukkit.potion.PotionType.LONG_POISON));
 
         // === UTILIDADES ===
         lootPool.add(new ItemStack(Material.GOLDEN_APPLE, 1 + random.nextInt(3)));
@@ -740,12 +740,11 @@ public class EyeOfStormGame extends MiniGame {
         return item;
     }
 
-    private ItemStack makePotion(Material type, PotionEffectType effect, int duration, int amplifier) {
+    private ItemStack makeVanillaPotion(Material type, org.bukkit.potion.PotionType potionType) {
         ItemStack potion = new ItemStack(type);
         PotionMeta meta = (PotionMeta) potion.getItemMeta();
         if (meta != null) {
-            meta.addCustomEffect(new PotionEffect(effect, duration, amplifier), true);
-            meta.setColor(effect.getColor());
+            meta.setBasePotionType(potionType);
             potion.setItemMeta(meta);
         }
         return potion;
