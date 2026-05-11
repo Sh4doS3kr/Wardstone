@@ -344,9 +344,12 @@ public class SkyWarsGame extends MiniGame {
             }
         }
 
-        // === 2 COFRES por isla ===
+        // === 5 COFRES por isla distribuidos ===
         placeIslandChest(world, cx + 3, baseY, cz - 2, true);
         placeIslandChest(world, cx - 3, baseY, cz + 3, true);
+        placeIslandChest(world, cx + 5, baseY, cz + 4, true);
+        placeIslandChest(world, cx - 5, baseY, cz - 4, true);
+        placeIslandChest(world, cx, baseY, cz + 6, true);
 
         // === DECORACIÓN: flores, hierba, arbustos ===
         Material[] flora = {Material.SHORT_GRASS, Material.SHORT_GRASS, Material.POPPY, Material.DANDELION,
@@ -466,8 +469,8 @@ public class SkyWarsGame extends MiniGame {
             world.getBlockAt(pos[0], baseY + 2, pos[1]).setType(Material.BOOKSHELF, false);
         }
 
-        // === 6 COFRES ÉPICOS distribuidos alrededor ===
-        int[][] chestPositions = {{6, 0}, {-6, 0}, {0, 6}, {0, -6}, {5, 5}, {-5, -5}};
+        // === 8 COFRES ÉPICOS distribuidos alrededor ===
+        int[][] chestPositions = {{6, 0}, {-6, 0}, {0, 6}, {0, -6}, {5, 5}, {-5, -5}, {-5, 5}, {5, -5}};
         for (int[] pos : chestPositions) {
             Block chestBlock = world.getBlockAt(pos[0], baseY + 1, pos[1]);
             if (chestBlock.getType() == Material.AIR) {
@@ -536,7 +539,7 @@ public class SkyWarsGame extends MiniGame {
             }
         }
 
-        // 2 cofres mid-tier
+        // 3 cofres mid-tier
         Block chestBlock1 = world.getBlockAt(cx + 2, baseY + 1, cz);
         chestBlock1.setType(Material.CHEST, false);
         allChestLocations.add(chestBlock1.getLocation());
@@ -547,6 +550,12 @@ public class SkyWarsGame extends MiniGame {
         chestBlock2.setType(Material.CHEST, false);
         allChestLocations.add(chestBlock2.getLocation());
         if (chestBlock2.getState() instanceof Chest chest) {
+            fillMidChest(chest.getInventory());
+        }
+        Block chestBlock3 = world.getBlockAt(cx, baseY + 1, cz - 3);
+        chestBlock3.setType(Material.CHEST, false);
+        allChestLocations.add(chestBlock3.getLocation());
+        if (chestBlock3.getState() instanceof Chest chest) {
             fillMidChest(chest.getInventory());
         }
 
