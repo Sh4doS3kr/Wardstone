@@ -570,12 +570,14 @@ public class EyeOfStormGame extends MiniGame {
                         Block b = world.getBlockAt(bx + x, baseY + y, bz + z);
                         Material existing = b.getType();
                         if (existing == Material.AIR || existing == Material.GRASS_BLOCK || existing == Material.DIRT) {
-                            b.setType(leaves, false);
-                            // Marcar hojas como persistentes para que no decaigan
-                            if (b.getBlockData() instanceof org.bukkit.block.data.type.Leaves leafData) {
+                            // Crear BlockData con persistent=true ANTES de colocarlo
+                            BlockData data = Bukkit.createBlockData(leaves);
+                            if (data instanceof org.bukkit.block.data.type.Leaves leafData) {
                                 leafData.setPersistent(true);
-                                b.setBlockData(leafData, false);
+                                leafData.setDistance(1);
+                                data = leafData;
                             }
+                            b.setBlockData(data, false);
                         }
                     }
                 }
