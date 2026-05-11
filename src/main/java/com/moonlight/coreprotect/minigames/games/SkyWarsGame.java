@@ -34,12 +34,13 @@ public class SkyWarsGame extends MiniGame {
 
     // === CONSTANTES ===
     private static final int ISLAND_Y = 100;
-    private static final int ISLAND_RADIUS = 60; // Distancia de islas al centro
-    private static final int PLAYER_ISLAND_SIZE = 6; // Radio de isla de jugador
-    private static final int CENTER_ISLAND_SIZE = 10; // Radio de isla central
-    private static final int MID_ISLAND_SIZE = 4; // Radio de islas intermedias
-    private static final int MID_ISLAND_RADIUS = 35; // Distancia de islas mid al centro
+    private static final int ISLAND_RADIUS = 80; // Distancia de islas al centro
+    private static final int PLAYER_ISLAND_SIZE = 12; // Radio de isla de jugador
+    private static final int CENTER_ISLAND_SIZE = 16; // Radio de isla central
+    private static final int MID_ISLAND_SIZE = 7; // Radio de islas intermedias
+    private static final int MID_ISLAND_RADIUS = 45; // Distancia de islas mid al centro
     private static final int VOID_KILL_Y = 50;
+    private static final int CAGE_HEIGHT = 5; // Altura de la jaula sobre la isla
     private static final int GRACE_PERIOD = 30; // Segundos de gracia
     private static final int REFILL_TIME_1 = 180; // 3:00
     private static final int REFILL_TIME_2 = 360; // 6:00
@@ -207,7 +208,7 @@ public class SkyWarsGame extends MiniGame {
 
                 long start = System.currentTimeMillis();
 
-                while (step < totalTasks && System.currentTimeMillis() - start < 30) {
+                while (step < totalTasks && System.currentTimeMillis() - start < 45) {
                     if (step == 0) {
                         // Isla central
                         buildCenterIsland(world);
@@ -269,53 +270,139 @@ public class SkyWarsGame extends MiniGame {
         int r = PLAYER_ISLAND_SIZE;
         int baseY = ISLAND_Y;
 
-        // Capas de la isla: grass top, 2 dirt, 3 stone
-        for (int x = -r; x <= r; x++) {
-            for (int z = -r; z <= r; z++) {
+        // === TERRENO PRINCIPAL ===
+        // Forma elíptica con ruido orgánico para bordes irregulares
+        for (int x = -r - 1; x <= r + 1; x++) {
+            for (int z = -r - 1; z <= r + 1; z++) {
                 double dist = Math.sqrt(x * x + z * z);
-                if (dist > r + 0.5) continue;
+                // Ruido suave para bordes orgánicos
+                double edgeNoise = Math.sin(x * 0.4 + z * 0.3) * 0.6
+                        + Math.cos(x * 0.7 - z * 0.5) * 0.4;
+                double effectiveR = r + edgeNoise;
+                if (dist > effectiveR) continue;
 
-                // Forma orgánica irregular
-                double noise = Math.sin(x * 0.8) * Math.cos(z * 0.8) * 0.8;
-                if (dist > r - 0.5 && noise > 0.3) continue;
-
+                // Capa superior: grass
                 world.getBlockAt(cx + x, baseY, cz + z).setType(Material.GRASS_BLOCK, false);
-                world.getBlockAt(cx + x, baseY - 1, cz + z).setType(Material.DIRT, false);
-                world.getBlockAt(cx + x, baseY - 2, cz + z).setType(Material.DIRT, false);
 
-                // Stone debajo con forma cónica
-                for (int dy = 3; dy <= 6; dy++) {
-                    double coneR = r * (1.0 - (dy - 2.0) / 5.0);
+                // 3 capas de dirt
+                for (int dy = 1; dy <= 3; dy++) {
+                    world.getBlockAt(cx + x, baseY - dy, cz + z).setType(Material.DIRT, false);
+                }
+
+                // Stone con forma cónica descendente (hasta 10 bloques abajo)
+                for (int dy = 4; dy <= 12; dy++) {
+                    double coneR = effectiveR * (1.0 - (dy - 3.0) / 10.0);
                     if (dist <= coneR) {
-                        world.getBlockAt(cx + x, baseY - dy, cz + z).setType(Material.STONE, false);
+                        Material stoneMat = Material.STONE;
+                        if (random.nextInt(5) == 0) stoneMat = Material.COBBLESTONE;
+                        if (random.nextInt(8) == 0) stoneMat = Material.ANDESITE;
+                        if (dy >= 10 && random.nextInt(3) == 0) stoneMat = Material.DEEPSLATE;
+                        world.getBlockAt(cx + x, baseY - dy, cz + z).setType(stoneMat, false);
+                    }
+                }
+
+                // Caminos de tierra/path aleatorios
+                if (dist < r - 2 && random.nextInt(20) == 0) {
+                    world.getBlockAt(cx + x, baseY, cz + z).setType(Material.DIRT_PATH, false);
+                }
+                // Piedra expuesta en bordes
+                if (dist > effectiveR - 1.5 && random.nextInt(3) == 0) {
+                    world.getBlockAt(cx + x, baseY, cz + z).setType(Material.STONE, false);
+                }
+            }
+        }
+
+        // === ELEVACIÓN DE TERRENO — pequeñas colinas ===
+        for (int h = 0; h < 2; h++) {
+            int hx = cx - 4 + random.nextInt(9);
+            int hz = cz - 4 + random.nextInt(9);
+            int hillR = 2 + random.nextInt(2);
+            for (int x = -hillR; x <= hillR; x++) {
+                for (int z = -hillR; z <= hillR; z++) {
+                    if (Math.sqrt(x * x + z * z) <= hillR) {
+                        Block below = world.getBlockAt(hx + x, baseY, hz + z);
+                        if (below.getType() == Material.GRASS_BLOCK || below.getType() == Material.DIRT_PATH) {
+                            world.getBlockAt(hx + x, baseY + 1, hz + z).setType(Material.GRASS_BLOCK, false);
+                            below.setType(Material.DIRT, false);
+                        }
                     }
                 }
             }
         }
 
-        // Árbol pequeño en el centro
-        buildSmallTree(world, cx, baseY + 1, cz);
+        // === ÁRBOLES (LEJOS del centro para no molestar al spawn) ===
+        int[][] treeOffsets = {{-6, -5}, {5, -6}, {-5, 6}, {7, 4}};
+        for (int[] off : treeOffsets) {
+            int tx = cx + off[0] + random.nextInt(3) - 1;
+            int tz = cz + off[1] + random.nextInt(3) - 1;
+            double dist = Math.sqrt((tx - cx) * (tx - cx) + (tz - cz) * (tz - cz));
+            if (dist < r - 1 && dist > 3) {
+                // Encontrar Y correcto (puede haber colina)
+                int ty = baseY + 1;
+                if (world.getBlockAt(tx, baseY + 1, tz).getType() == Material.GRASS_BLOCK) ty = baseY + 2;
+                buildSmallTree(world, tx, ty, tz);
+            }
+        }
 
-        // Cofre de loot
-        int chestX = cx + 2 + random.nextInt(2);
-        int chestZ = cz - 1 + random.nextInt(3);
-        Block chestBlock = world.getBlockAt(chestX, baseY + 1, chestZ);
+        // === 2 COFRES por isla ===
+        placeIslandChest(world, cx + 3, baseY, cz - 2, true);
+        placeIslandChest(world, cx - 3, baseY, cz + 3, true);
+
+        // === DECORACIÓN: flores, hierba, arbustos ===
+        Material[] flora = {Material.SHORT_GRASS, Material.SHORT_GRASS, Material.POPPY, Material.DANDELION,
+                Material.CORNFLOWER, Material.AZURE_BLUET, Material.OXEYE_DAISY, Material.FERN};
+        for (int i = 0; i < 20; i++) {
+            int fx = cx - r + 2 + random.nextInt(r * 2 - 3);
+            int fz = cz - r + 2 + random.nextInt(r * 2 - 3);
+            for (int fy = baseY + 1; fy >= baseY; fy--) {
+                Block above = world.getBlockAt(fx, fy + 1, fz);
+                Block below = world.getBlockAt(fx, fy, fz);
+                if (above.getType() == Material.AIR && below.getType() == Material.GRASS_BLOCK) {
+                    above.setType(flora[random.nextInt(flora.length)], false);
+                    break;
+                }
+            }
+        }
+
+        // === DETALLES ESTRUCTURALES: mini-ruina o pozo ===
+        if (random.nextInt(2) == 0) {
+            // Pozo de agua
+            int px = cx + (random.nextBoolean() ? 4 : -4);
+            int pz = cz + (random.nextBoolean() ? 4 : -4);
+            Block base = world.getBlockAt(px, baseY, pz);
+            if (base.getType() == Material.GRASS_BLOCK) {
+                world.getBlockAt(px, baseY, pz).setType(Material.COBBLESTONE, false);
+                world.getBlockAt(px + 1, baseY + 1, pz).setType(Material.COBBLESTONE_WALL, false);
+                world.getBlockAt(px - 1, baseY + 1, pz).setType(Material.COBBLESTONE_WALL, false);
+                world.getBlockAt(px, baseY + 1, pz + 1).setType(Material.COBBLESTONE_WALL, false);
+                world.getBlockAt(px, baseY + 1, pz - 1).setType(Material.COBBLESTONE_WALL, false);
+            }
+        } else {
+            // Mini fogata
+            int fx = cx + (random.nextBoolean() ? 5 : -5);
+            int fz = cz + (random.nextBoolean() ? 3 : -3);
+            Block base = world.getBlockAt(fx, baseY, fz);
+            if (base.getType() == Material.GRASS_BLOCK) {
+                world.getBlockAt(fx, baseY + 1, fz).setType(Material.CAMPFIRE, false);
+                world.getBlockAt(fx, baseY, fz).setType(Material.STONE, false);
+            }
+        }
+    }
+
+    private void placeIslandChest(World world, int x, int baseY, int z, boolean playerTier) {
+        // Buscar superficie correcta
+        int cy = baseY + 1;
+        Block ground = world.getBlockAt(x, baseY, z);
+        if (ground.getType() == Material.AIR) return;
+        if (world.getBlockAt(x, baseY + 1, z).getType() == Material.GRASS_BLOCK) cy = baseY + 2;
+
+        Block chestBlock = world.getBlockAt(x, cy, z);
+        if (chestBlock.getType() != Material.AIR) return;
         chestBlock.setType(Material.CHEST, false);
         allChestLocations.add(chestBlock.getLocation());
         if (chestBlock.getState() instanceof Chest chest) {
-            fillPlayerChest(chest.getInventory());
-        }
-
-        // Detalles: flores, hierba
-        for (int i = 0; i < 5; i++) {
-            int fx = cx - r + 1 + random.nextInt(r * 2 - 1);
-            int fz = cz - r + 1 + random.nextInt(r * 2 - 1);
-            Block above = world.getBlockAt(fx, baseY + 1, fz);
-            Block below = world.getBlockAt(fx, baseY, fz);
-            if (above.getType() == Material.AIR && below.getType() == Material.GRASS_BLOCK) {
-                Material[] flora = {Material.SHORT_GRASS, Material.POPPY, Material.DANDELION, Material.CORNFLOWER, Material.SHORT_GRASS};
-                above.setType(flora[random.nextInt(flora.length)], false);
-            }
+            if (playerTier) fillPlayerChest(chest.getInventory());
+            else fillMidChest(chest.getInventory());
         }
     }
 
@@ -323,102 +410,163 @@ public class SkyWarsGame extends MiniGame {
         int r = CENTER_ISLAND_SIZE;
         int baseY = ISLAND_Y;
 
-        for (int x = -r; x <= r; x++) {
-            for (int z = -r; z <= r; z++) {
+        // === TERRENO PRINCIPAL ===
+        for (int x = -r - 1; x <= r + 1; x++) {
+            for (int z = -r - 1; z <= r + 1; z++) {
                 double dist = Math.sqrt(x * x + z * z);
-                if (dist > r + 0.5) continue;
-
-                double noise = Math.sin(x * 0.6) * Math.cos(z * 0.6) * 0.5;
-                if (dist > r - 0.3 && noise > 0.2) continue;
+                double edgeNoise = Math.sin(x * 0.3 + z * 0.2) * 0.8
+                        + Math.cos(x * 0.5 - z * 0.4) * 0.6;
+                double effectiveR = r + edgeNoise;
+                if (dist > effectiveR) continue;
 
                 world.getBlockAt(x, baseY, z).setType(Material.GRASS_BLOCK, false);
-                world.getBlockAt(x, baseY - 1, z).setType(Material.DIRT, false);
-                world.getBlockAt(x, baseY - 2, z).setType(Material.DIRT, false);
-                world.getBlockAt(x, baseY - 3, z).setType(Material.STONE, false);
-
-                for (int dy = 4; dy <= 8; dy++) {
-                    double coneR = r * (1.0 - (dy - 3.0) / 6.0);
+                for (int dy = 1; dy <= 3; dy++) {
+                    world.getBlockAt(x, baseY - dy, z).setType(Material.DIRT, false);
+                }
+                for (int dy = 4; dy <= 14; dy++) {
+                    double coneR = effectiveR * (1.0 - (dy - 3.0) / 12.0);
                     if (dist <= coneR) {
-                        world.getBlockAt(x, baseY - dy, z).setType(
-                                random.nextInt(3) == 0 ? Material.COBBLESTONE : Material.STONE, false);
+                        Material stoneMat = Material.STONE;
+                        if (random.nextInt(4) == 0) stoneMat = Material.COBBLESTONE;
+                        if (random.nextInt(6) == 0) stoneMat = Material.ANDESITE;
+                        if (dy >= 10 && random.nextInt(3) == 0) stoneMat = Material.DEEPSLATE;
+                        world.getBlockAt(x, baseY - dy, z).setType(stoneMat, false);
                     }
+                }
+
+                // Borde de piedra decorativo
+                if (dist > effectiveR - 2 && random.nextInt(3) == 0) {
+                    world.getBlockAt(x, baseY, z).setType(Material.COBBLESTONE, false);
                 }
             }
         }
 
-        // Mesa de encantamientos + librerías
-        world.getBlockAt(0, baseY + 1, 0).setType(Material.ENCHANTING_TABLE, false);
+        // === ESTRUCTURA CENTRAL: plataforma elevada con mesa de encantamientos ===
+        // Pequeña plataforma de piedra 5x5 elevada 1 bloque
+        for (int x = -2; x <= 2; x++) {
+            for (int z = -2; z <= 2; z++) {
+                world.getBlockAt(x, baseY + 1, z).setType(Material.STONE_BRICKS, false);
+                if (Math.abs(x) == 2 || Math.abs(z) == 2) {
+                    if (random.nextInt(3) == 0) {
+                        world.getBlockAt(x, baseY + 1, z).setType(Material.MOSSY_STONE_BRICKS, false);
+                    }
+                }
+            }
+        }
+        // Esquinas con pilares de 2 bloques
+        int[][] corners = {{-2, -2}, {2, -2}, {-2, 2}, {2, 2}};
+        for (int[] c : corners) {
+            world.getBlockAt(c[0], baseY + 2, c[1]).setType(Material.STONE_BRICK_WALL, false);
+        }
+
+        world.getBlockAt(0, baseY + 2, 0).setType(Material.ENCHANTING_TABLE, false);
+        // Librerías alrededor
         int[][] libraryPos = {{-1, -1}, {0, -1}, {1, -1}, {-1, 1}, {0, 1}, {1, 1}, {-1, 0}, {1, 0}};
         for (int[] pos : libraryPos) {
-            Block lib = world.getBlockAt(pos[0], baseY + 1, pos[1]);
-            if (lib.getType() == Material.AIR) {
-                lib.setType(Material.BOOKSHELF, false);
-            }
+            world.getBlockAt(pos[0], baseY + 2, pos[1]).setType(Material.BOOKSHELF, false);
         }
 
-        // 4 cofres épicos en la isla central
-        int[][] chestPositions = {{4, 0}, {-4, 0}, {0, 4}, {0, -4}};
+        // === 6 COFRES ÉPICOS distribuidos alrededor ===
+        int[][] chestPositions = {{6, 0}, {-6, 0}, {0, 6}, {0, -6}, {5, 5}, {-5, -5}};
         for (int[] pos : chestPositions) {
             Block chestBlock = world.getBlockAt(pos[0], baseY + 1, pos[1]);
-            chestBlock.setType(Material.CHEST, false);
-            allChestLocations.add(chestBlock.getLocation());
-            if (chestBlock.getState() instanceof Chest chest) {
-                fillCenterChest(chest.getInventory());
-            }
-        }
-
-        // Árboles decorativos
-        buildSmallTree(world, -5, baseY + 1, -5);
-        buildSmallTree(world, 5, baseY + 1, 5);
-        buildSmallTree(world, -5, baseY + 1, 4);
-        buildSmallTree(world, 5, baseY + 1, -4);
-
-        // Borde de piedra decorativo
-        for (int x = -r; x <= r; x++) {
-            for (int z = -r; z <= r; z++) {
-                double dist = Math.sqrt(x * x + z * z);
-                if (dist > r - 1 && dist <= r + 0.5) {
-                    Block b = world.getBlockAt(x, baseY, z);
-                    if (b.getType() == Material.GRASS_BLOCK && random.nextInt(3) == 0) {
-                        b.setType(Material.COBBLESTONE, false);
-                    }
+            if (chestBlock.getType() == Material.AIR) {
+                chestBlock.setType(Material.CHEST, false);
+                allChestLocations.add(chestBlock.getLocation());
+                if (chestBlock.getState() instanceof Chest chest) {
+                    fillCenterChest(chest.getInventory());
                 }
             }
         }
+
+        // === ÁRBOLES grandes en las esquinas ===
+        int[][] treePosCenter = {{-9, -8}, {9, 8}, {-8, 9}, {8, -9}, {-10, 3}, {10, -3}};
+        for (int[] tp : treePosCenter) {
+            int tx = tp[0], tz = tp[1];
+            double dist = Math.sqrt(tx * tx + tz * tz);
+            if (dist < r) {
+                buildSmallTree(world, tx, baseY + 1, tz);
+            }
+        }
+
+        // === DECORACIÓN ===
+        Material[] flora = {Material.SHORT_GRASS, Material.POPPY, Material.DANDELION, Material.FERN,
+                Material.CORNFLOWER, Material.AZURE_BLUET, Material.OXEYE_DAISY};
+        for (int i = 0; i < 30; i++) {
+            int fx = -r + 2 + random.nextInt(r * 2 - 3);
+            int fz = -r + 2 + random.nextInt(r * 2 - 3);
+            Block above = world.getBlockAt(fx, baseY + 1, fz);
+            Block below = world.getBlockAt(fx, baseY, fz);
+            if (above.getType() == Material.AIR && below.getType() == Material.GRASS_BLOCK) {
+                above.setType(flora[random.nextInt(flora.length)], false);
+            }
+        }
+
+        // Crafting tables + anvil
+        world.getBlockAt(4, baseY + 1, 3).setType(Material.CRAFTING_TABLE, false);
+        world.getBlockAt(-4, baseY + 1, -3).setType(Material.ANVIL, false);
     }
 
     private void buildMidIsland(World world, int cx, int cz) {
         int r = MID_ISLAND_SIZE;
         int baseY = ISLAND_Y;
 
-        for (int x = -r; x <= r; x++) {
-            for (int z = -r; z <= r; z++) {
+        for (int x = -r - 1; x <= r + 1; x++) {
+            for (int z = -r - 1; z <= r + 1; z++) {
                 double dist = Math.sqrt(x * x + z * z);
-                if (dist > r + 0.3) continue;
+                double edgeNoise = Math.sin(x * 0.5 + z * 0.4) * 0.5;
+                double effectiveR = r + edgeNoise;
+                if (dist > effectiveR) continue;
 
                 world.getBlockAt(cx + x, baseY, cz + z).setType(Material.GRASS_BLOCK, false);
                 world.getBlockAt(cx + x, baseY - 1, cz + z).setType(Material.DIRT, false);
-                world.getBlockAt(cx + x, baseY - 2, cz + z).setType(Material.STONE, false);
+                world.getBlockAt(cx + x, baseY - 2, cz + z).setType(Material.DIRT, false);
 
-                for (int dy = 3; dy <= 5; dy++) {
-                    double coneR = r * (1.0 - (dy - 2.0) / 4.0);
+                for (int dy = 3; dy <= 8; dy++) {
+                    double coneR = effectiveR * (1.0 - (dy - 2.0) / 7.0);
                     if (dist <= coneR) {
-                        world.getBlockAt(cx + x, baseY - dy, cz + z).setType(Material.STONE, false);
+                        Material mat = random.nextInt(4) == 0 ? Material.COBBLESTONE : Material.STONE;
+                        world.getBlockAt(cx + x, baseY - dy, cz + z).setType(mat, false);
                     }
+                }
+
+                if (dist > effectiveR - 1.5 && random.nextInt(3) == 0) {
+                    world.getBlockAt(cx + x, baseY, cz + z).setType(Material.STONE, false);
                 }
             }
         }
 
-        // 1 cofre mid-tier
-        Block chestBlock = world.getBlockAt(cx, baseY + 1, cz);
-        chestBlock.setType(Material.CHEST, false);
-        allChestLocations.add(chestBlock.getLocation());
-        if (chestBlock.getState() instanceof Chest chest) {
+        // 2 cofres mid-tier
+        Block chestBlock1 = world.getBlockAt(cx + 2, baseY + 1, cz);
+        chestBlock1.setType(Material.CHEST, false);
+        allChestLocations.add(chestBlock1.getLocation());
+        if (chestBlock1.getState() instanceof Chest chest) {
+            fillMidChest(chest.getInventory());
+        }
+        Block chestBlock2 = world.getBlockAt(cx - 2, baseY + 1, cz);
+        chestBlock2.setType(Material.CHEST, false);
+        allChestLocations.add(chestBlock2.getLocation());
+        if (chestBlock2.getState() instanceof Chest chest) {
             fillMidChest(chest.getInventory());
         }
 
-        // Detalle: crafting table
+        // Árbol
+        buildSmallTree(world, cx, baseY + 1, cz + 3);
+
+        // Detalles
         world.getBlockAt(cx + 1, baseY + 1, cz + 1).setType(Material.CRAFTING_TABLE, false);
+
+        // Flores
+        Material[] flora = {Material.SHORT_GRASS, Material.POPPY, Material.DANDELION, Material.FERN};
+        for (int i = 0; i < 8; i++) {
+            int fx = cx - r + 1 + random.nextInt(r * 2 - 1);
+            int fz = cz - r + 1 + random.nextInt(r * 2 - 1);
+            Block above = world.getBlockAt(fx, baseY + 1, fz);
+            Block below = world.getBlockAt(fx, baseY, fz);
+            if (above.getType() == Material.AIR && below.getType() == Material.GRASS_BLOCK) {
+                above.setType(flora[random.nextInt(flora.length)], false);
+            }
+        }
     }
 
     private void buildSmallTree(World world, int tx, int baseY, int tz) {
@@ -456,21 +604,23 @@ public class SkyWarsGame extends MiniGame {
     }
 
     // =========================================================
-    // JAULAS DE CRISTAL
+    // JAULAS DE CRISTAL FLOTANTES
     // =========================================================
     private void buildCages(World world, List<Location> spawns) {
         for (Location spawn : spawns) {
             int sx = spawn.getBlockX();
-            int sy = spawn.getBlockY();
+            int sy = spawn.getBlockY(); // Ya está a ISLAND_Y + 1 + CAGE_HEIGHT
             int sz = spawn.getBlockZ();
-            // Caja 3x3x3 de cristal alrededor del jugador
+            // Jaula 3x3 flotante: suelo, paredes, techo
+            // Interior libre: x=0,z=0 en y=0 y y=1 (espacio para el jugador)
             for (int x = -1; x <= 1; x++) {
-                for (int y = -1; y <= 3; y++) {
+                for (int y = -1; y <= 2; y++) {
                     for (int z = -1; z <= 1; z++) {
-                        if (x == 0 && z == 0 && y >= 0 && y <= 1) continue; // Interior libre
-                        Block b = world.getBlockAt(sx + x, sy + y, sz + z);
-                        if (b.getType() == Material.AIR || b.getType() == Material.GRASS_BLOCK
-                                || b.getType() == Material.SHORT_GRASS) {
+                        boolean isInterior = (Math.abs(x) <= 0 && Math.abs(z) <= 0 && y >= 0 && y <= 1);
+                        if (isInterior) continue;
+                        boolean isEdge = (Math.abs(x) == 1 || Math.abs(z) == 1 || y == -1 || y == 2);
+                        if (isEdge) {
+                            Block b = world.getBlockAt(sx + x, sy + y, sz + z);
                             b.setType(Material.GLASS, false);
                         }
                     }
@@ -485,7 +635,7 @@ public class SkyWarsGame extends MiniGame {
             int sy = spawn.getBlockY();
             int sz = spawn.getBlockZ();
             for (int x = -1; x <= 1; x++) {
-                for (int y = -1; y <= 3; y++) {
+                for (int y = -1; y <= 2; y++) {
                     for (int z = -1; z <= 1; z++) {
                         Block b = world.getBlockAt(sx + x, sy + y, sz + z);
                         if (b.getType() == Material.GLASS) {
@@ -506,7 +656,8 @@ public class SkyWarsGame extends MiniGame {
         int numPlayers = Math.min(players.size(), MAX_ISLANDS);
         for (int i = 0; i < numPlayers; i++) {
             Location center = islandCenters.get(i);
-            spawns.add(new Location(world, center.getBlockX() + 0.5, ISLAND_Y + 1.0, center.getBlockZ() + 0.5));
+            // Spawn DENTRO de la jaula flotante (CAGE_HEIGHT bloques sobre la isla)
+            spawns.add(new Location(world, center.getBlockX() + 0.5, ISLAND_Y + 1.0 + CAGE_HEIGHT, center.getBlockZ() + 0.5));
         }
         return spawns;
     }
