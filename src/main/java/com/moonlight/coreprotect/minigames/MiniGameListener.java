@@ -267,6 +267,14 @@ public class MiniGameListener implements Listener {
                 return; // daño normal
             }
 
+            // PASS THE BOMB: golpear = pasar la bomba (sin daño)
+            if (game instanceof PassTheBombGame ptb) {
+                event.setCancelled(true);
+                if (event.getDamager() instanceof Player attacker) {
+                    ptb.onPlayerHit(attacker, victim);
+                }
+                return;
+            }
 
             // TODOS LOS DEMÁS: sin PvP
             event.setCancelled(true);
@@ -626,17 +634,8 @@ public class MiniGameListener implements Listener {
             return;
         }
 
-        // Pass the Bomb: click derecho para pasar la bomba
-        if (game instanceof PassTheBombGame ptb) {
-            if (event.getAction() == org.bukkit.event.block.Action.RIGHT_CLICK_AIR
-                    || event.getAction() == org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK) {
-                Player player = event.getPlayer();
-                if (player.getInventory().getItemInMainHand().getType() == Material.FIRE_CHARGE) {
-                    event.setCancelled(true);
-                    ptb.onBombPass(player);
-                    return;
-                }
-            }
+        // Pass the Bomb: cancelar toda interacción (pase es por golpe, no click)
+        if (game instanceof PassTheBombGame) {
             event.setCancelled(true);
             return;
         }

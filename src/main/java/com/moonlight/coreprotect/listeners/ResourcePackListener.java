@@ -224,6 +224,7 @@ public class ResourcePackListener implements Listener {
             switch (event.getStatus()) {
                 case ACCEPTED:
                     player.sendMessage("§a§l✔ §7Descargando resource pack...");
+                    player.sendTitle("§a§lCargando...", "§7El pack de texturas se cargará pronto", 10, 70, 20);
                     break;
                 case SUCCESSFULLY_LOADED:
                     player.sendMessage("§a§l✔ §a¡Resource pack cargado! §7Disfruta de los mobs custom.");

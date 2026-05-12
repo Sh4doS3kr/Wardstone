@@ -23,8 +23,8 @@ public class PassTheBombGame extends MiniGame {
 
     private static final int ARENA_RADIUS = 8;
     private static final int ARENA_Y = 100;
-    private static final int MIN_FUSE_TICKS = 60;   // 3 segundos mínimo
-    private static final int MAX_FUSE_TICKS = 200;  // 10 segundos máximo
+    private static final int MIN_FUSE_TICKS = 40;   // 2 segundos mínimo
+    private static final int MAX_FUSE_TICKS = 140;  // 7 segundos máximo
 
     // Orden circular de jugadores (por posición en el círculo)
     private final List<UUID> circleOrder = new ArrayList<>();
@@ -40,6 +40,9 @@ public class PassTheBombGame extends MiniGame {
     private int freezeTaskId = -1;
     // Si el juego terminó
     private boolean ended = false;
+    // Cooldown de pase (evita spam)
+    private final Map<UUID, Long> passCooldown = new HashMap<>();
+    private static final long PASS_COOLDOWN_MS = 500; // 0.5s entre intentos
 
     private final Random random = new Random();
 
@@ -133,9 +136,9 @@ public class PassTheBombGame extends MiniGame {
                 p.sendMessage("");
                 p.sendMessage("§c§l💣 PASA LA BOMBA §c§l💣");
                 p.sendMessage("§7Tienes un globo que se infla. ¡Pásalo!");
-                p.sendMessage("§e▶ Click derecho §7para pasar al de tu §aIZQUIERDA§7.");
+                p.sendMessage("§e▶ GOLPEA §7al jugador de tu §aIZQUIERDA §7para pasarla.");
                 p.sendMessage("§c▶ Si explota contigo, §c§l¡ELIMINADO!");
-                p.sendMessage("§7Puedes girarte pero §cNO moverte§7.");
+                p.sendMessage("§7Puedes §agirarte §7pero §cNO moverte§7. ¡Apunta bien!");
                 p.sendMessage("");
             }
         }
@@ -152,8 +155,8 @@ public class PassTheBombGame extends MiniGame {
         bombHolder = alive.get(random.nextInt(alive.size()));
 
         // Calcular tiempo de fusible (se acorta con las rondas)
-        int maxTicks = Math.max(MIN_FUSE_TICKS, MAX_FUSE_TICKS - (round * 10));
-        int minTicks = Math.max(MIN_FUSE_TICKS, maxTicks - 80);
+        int maxTicks = Math.max(MIN_FUSE_TICKS, MAX_FUSE_TICKS - (round * 15));
+        int minTicks = Math.max(MIN_FUSE_TICKS, maxTicks - 40);
         fuseTicksRemaining = minTicks + random.nextInt(maxTicks - minTicks + 1);
 
         // Dar el globo al portador
@@ -183,11 +186,11 @@ public class PassTheBombGame extends MiniGame {
             }
         }
 
-        // Dar slime ball como "globo"
+        // Dar fire charge como "bomba"
         ItemStack bomb = new ItemStack(Material.FIRE_CHARGE);
         ItemMeta meta = bomb.getItemMeta();
-        meta.setDisplayName("§c§l💣 ¡BOMBA! §7(Click derecho para PASAR →)");
-        meta.setLore(Arrays.asList("§e¡Pásala rápido al de tu izquierda!", "§cSi explota contigo, pierdes."));
+        meta.setDisplayName("§c§l💣 ¡BOMBA! §7(¡GOLPEA al de tu izquierda!)");
+        meta.setLore(Arrays.asList("§e¡Golpea al jugador de tu izquierda para pasar!", "§cSi explota contigo, pierdes."));
         bomb.setItemMeta(meta);
         p.getInventory().setItem(0, bomb);
         p.getInventory().setHeldItemSlot(0);
@@ -197,38 +200,54 @@ public class PassTheBombGame extends MiniGame {
     }
 
     /**
-     * Llamado cuando un jugador hace click derecho con la bomba.
+     * Llamado cuando un jugador golpea a otro jugador (EntityDamageByEntity).
+     * Verifica que el atacante tenga la bomba y el target sea el de su izquierda.
      */
-    public void onBombPass(Player player) {
+    public void onPlayerHit(Player attacker, Player target) {
         if (ended) return;
-        if (!player.getUniqueId().equals(bombHolder)) return;
-        if (!alivePlayers.contains(player.getUniqueId())) return;
+        if (!attacker.getUniqueId().equals(bombHolder)) return;
+        if (!alivePlayers.contains(attacker.getUniqueId())) return;
+        if (!alivePlayers.contains(target.getUniqueId())) return;
 
-        // Encontrar el jugador a su izquierda en el círculo (siguiente en orden)
-        UUID nextPlayer = getPlayerToLeft(player.getUniqueId());
-        if (nextPlayer == null) return;
+        // Cooldown
+        long now = System.currentTimeMillis();
+        Long lastPass = passCooldown.get(attacker.getUniqueId());
+        if (lastPass != null && now - lastPass < PASS_COOLDOWN_MS) return;
+        passCooldown.put(attacker.getUniqueId(), now);
+
+        // Verificar que el target es el jugador a la izquierda
+        UUID expectedTarget = getPlayerToLeft(attacker.getUniqueId());
+        if (expectedTarget == null) return;
+
+        if (!target.getUniqueId().equals(expectedTarget)) {
+            attacker.sendMessage("§c§l✖ §7¡Ese no es el de tu izquierda! Gírate y golpea al correcto.");
+            attacker.playSound(attacker.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.8f, 1.2f);
+            return;
+        }
 
         // Transferir bomba
-        player.getInventory().clear();
-        player.playSound(player.getLocation(), Sound.ENTITY_SNOWBALL_THROW, 1.0f, 1.5f);
+        attacker.getInventory().clear();
+        attacker.playSound(attacker.getLocation(), Sound.ENTITY_SNOWBALL_THROW, 1.0f, 1.5f);
 
         // Partículas de pase
-        Location from = player.getLocation().add(0, 1, 0);
-        Player target = Bukkit.getPlayer(nextPlayer);
-        if (target != null && target.isOnline()) {
-            Location to = target.getLocation().add(0, 1, 0);
-            from.getWorld().spawnParticle(Particle.FLAME, from, 5, 0.1, 0.1, 0.1, 0.05);
-            to.getWorld().spawnParticle(Particle.FLAME, to, 5, 0.1, 0.1, 0.1, 0.05);
-        }
+        Location from = attacker.getLocation().add(0, 1, 0);
+        Location to = target.getLocation().add(0, 1, 0);
+        from.getWorld().spawnParticle(Particle.FLAME, from, 5, 0.1, 0.1, 0.1, 0.05);
+        to.getWorld().spawnParticle(Particle.FLAME, to, 5, 0.1, 0.1, 0.1, 0.05);
 
-        bombHolder = nextPlayer;
-        giveBombItem(nextPlayer);
+        bombHolder = target.getUniqueId();
+        giveBombItem(target.getUniqueId());
 
         // Mensaje
-        Player holderPlayer = Bukkit.getPlayer(bombHolder);
-        if (holderPlayer != null) {
-            holderPlayer.sendMessage("§c§l💣 §e¡Tienes la bomba! §7Pásala rápido.");
-        }
+        target.sendMessage("§c§l💣 §e¡Tienes la bomba! §7¡Golpea al de tu izquierda!");
+        target.playSound(target.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 1.0f, 0.5f);
+    }
+
+    /**
+     * Verifica si un jugador es el bomb holder (para el listener).
+     */
+    public boolean isBombHolder(UUID uuid) {
+        return uuid.equals(bombHolder);
     }
 
     /**
