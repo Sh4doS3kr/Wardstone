@@ -711,6 +711,8 @@ public class MiniGameManager {
         if (player.hasPermission("essentials.fly")) {
             player.setAllowFlight(true);
         }
+        // Siempre aterrizar al salir de un minijuego
+        player.setFlying(false);
     }
 
     private void restoreAllData() {
