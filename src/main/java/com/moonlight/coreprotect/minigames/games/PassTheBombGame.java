@@ -23,7 +23,7 @@ public class PassTheBombGame extends MiniGame {
 
     private static final int ARENA_RADIUS = 8;
     private static final int ARENA_Y = 100;
-    private static final int FUSE_TICKS = 200;       // 10 segundos para pasar
+    private static final int FUSE_TICKS = 80;        // 4 segundos para pasar
 
     // Orden circular de jugadores (por posición en el círculo)
     private final List<UUID> circleOrder = new ArrayList<>();
