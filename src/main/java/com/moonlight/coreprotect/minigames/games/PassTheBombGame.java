@@ -93,8 +93,7 @@ public class PassTheBombGame extends MiniGame {
         List<Location> spawns = new ArrayList<>();
         int playerCount = players.size();
         double angleStep = (2 * Math.PI) / playerCount;
-        double radius = Math.max(3.0, playerCount * 0.8);
-        if (radius > ARENA_RADIUS - 1) radius = ARENA_RADIUS - 1;
+        double radius = calcCircleRadius(playerCount);
 
         for (int i = 0; i < playerCount; i++) {
             double angle = angleStep * i;
@@ -107,6 +106,13 @@ public class PassTheBombGame extends MiniGame {
             spawns.add(loc);
         }
         return spawns;
+    }
+
+    private double calcCircleRadius(int playerCount) {
+        if (playerCount <= 2) return 1.2;
+        if (playerCount <= 3) return 1.5;
+        if (playerCount <= 5) return 2.5;
+        return Math.min(playerCount * 0.7, ARENA_RADIUS - 1);
     }
 
     @Override
@@ -375,8 +381,7 @@ public class PassTheBombGame extends MiniGame {
         if (playerCount <= 1) return;
 
         double angleStep = (2 * Math.PI) / playerCount;
-        double radius = Math.max(3.0, playerCount * 0.8);
-        if (radius > ARENA_RADIUS - 1) radius = ARENA_RADIUS - 1;
+        double radius = calcCircleRadius(playerCount);
 
         for (int i = 0; i < playerCount; i++) {
             double angle = angleStep * i;
