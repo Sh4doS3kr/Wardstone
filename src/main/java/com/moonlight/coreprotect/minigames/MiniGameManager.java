@@ -646,7 +646,10 @@ public class MiniGameManager {
             Location returnLoc = returnLocations.remove(player.getUniqueId());
             Location safeLoc = getSafeReturn(returnLoc);
             player.teleport(safeLoc);
-            // restorePlayerData ya restaura el gamemode guardado
+            // Forzar survival después del TP (por si restorePlayerData no se ejecutó)
+            if (player.getGameMode() == GameMode.SPECTATOR) {
+                player.setGameMode(GameMode.SURVIVAL);
+            }
             restoreFlightIfPermitted(player);
 
             // Verificar condición de victoria (si no quedan jugadores, terminar)
@@ -690,7 +693,10 @@ public class MiniGameManager {
         player.setSaturation(data.saturation);
         player.setExp(data.exp);
         player.setLevel(data.level);
-        player.setGameMode(data.gameMode);
+        // Restaurar gamemode guardado, pero NUNCA espectador (puede quedar de un minijuego)
+        GameMode restoredMode = data.gameMode;
+        if (restoredMode == GameMode.SPECTATOR) restoredMode = GameMode.SURVIVAL;
+        player.setGameMode(restoredMode);
         player.getActivePotionEffects().forEach(e -> player.removePotionEffect(e.getType()));
         data.effects.forEach(e -> player.addPotionEffect(e));
         player.setAllowFlight(data.allowFlight);
