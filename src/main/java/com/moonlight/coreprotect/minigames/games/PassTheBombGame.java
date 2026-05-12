@@ -23,8 +23,8 @@ public class PassTheBombGame extends MiniGame {
 
     private static final int ARENA_RADIUS = 8;
     private static final int ARENA_Y = 100;
-    private static final int MIN_FUSE_TICKS = 40;   // 2 segundos mínimo
-    private static final int MAX_FUSE_TICKS = 140;  // 7 segundos máximo
+    private static final int MIN_FUSE_TICKS = 30;   // 1.5 segundos mínimo
+    private static final int MAX_FUSE_TICKS = 100;  // 5 segundos máximo
 
     // Orden circular de jugadores (por posición en el círculo)
     private final List<UUID> circleOrder = new ArrayList<>();
@@ -160,10 +160,8 @@ public class PassTheBombGame extends MiniGame {
         List<UUID> alive = new ArrayList<>(alivePlayers);
         bombHolder = alive.get(random.nextInt(alive.size()));
 
-        // Calcular tiempo de fusible (se acorta con las rondas)
-        int maxTicks = Math.max(MIN_FUSE_TICKS, MAX_FUSE_TICKS - (round * 15));
-        int minTicks = Math.max(MIN_FUSE_TICKS, maxTicks - 40);
-        fuseTicksRemaining = minTicks + random.nextInt(maxTicks - minTicks + 1);
+        // Timer completamente aleatorio e impredecible cada ronda
+        fuseTicksRemaining = MIN_FUSE_TICKS + random.nextInt(MAX_FUSE_TICKS - MIN_FUSE_TICKS + 1);
 
         // Dar el globo al portador
         giveBombItem(bombHolder);
