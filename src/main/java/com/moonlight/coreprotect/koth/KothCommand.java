@@ -187,6 +187,9 @@ public class KothCommand implements CommandExecutor, TabCompleter {
             case "timer":
                 handleTimer(sender, args);
                 break;
+            case "setstreak":
+                handleSetStreak(sender, args);
+                break;
             default:
                 sendAdminHelp(sender);
                 break;
@@ -914,7 +917,7 @@ public class KothCommand implements CommandExecutor, TabCompleter {
                     "reload", "afkzona", "turnstairs", "spawnnpc", "enablespawn", "recompensas",
                     "markascompleted", "givetool", "balancechanges", "despawnerrante", "setuppesca", "spawnstructure",
                     "chunks", "setupdiscord", "birthday", "clearglowing", "fixplayer", "prestige",
-                    "startevent", "scratch", "banhammer", "petarpc", "blockend", "endevent", "eventimer", "clearbossbar", "announce", "timer", "voicechat");
+                    "startevent", "scratch", "banhammer", "petarpc", "blockend", "endevent", "eventimer", "clearbossbar", "announce", "timer", "voicechat", "setstreak");
             return completions.stream()
                     .filter(s -> s.toLowerCase().startsWith(args[0].toLowerCase()))
                     .collect(Collectors.toList());
@@ -1061,6 +1064,14 @@ public class KothCommand implements CommandExecutor, TabCompleter {
 
         // Tab completion para birthday
         if (args[0].equalsIgnoreCase("birthday") && args.length == 2) {
+            return Bukkit.getOnlinePlayers().stream()
+                    .map(org.bukkit.entity.Player::getName)
+                    .filter(name -> name.toLowerCase().startsWith(args[1].toLowerCase()))
+                    .collect(Collectors.toList());
+        }
+
+        // Tab completion para setstreak
+        if (args[0].equalsIgnoreCase("setstreak") && args.length == 2) {
             return Bukkit.getOnlinePlayers().stream()
                     .map(org.bukkit.entity.Player::getName)
                     .filter(name -> name.toLowerCase().startsWith(args[1].toLowerCase()))
@@ -3193,6 +3204,56 @@ public class KothCommand implements CommandExecutor, TabCompleter {
         }, 0L, 20L);
 
         sender.sendMessage(SmallCaps.convert("§a§l✔ §fTimer iniciado: §e" + timerTitle + " §7→ §f" + timeArg + " §7(hora española)"));
+    }
+
+    // ==========================================
+    // SETSTREAK — establecer racha de jugador (solo OP)
+    // ==========================================
+
+    private void handleSetStreak(CommandSender sender, String[] args) {
+        if (!sender.isOp()) {
+            sender.sendMessage(SmallCaps.convert("§c§l✖ §cSolo OPs pueden usar este comando."));
+            return;
+        }
+
+        if (args.length < 3) {
+            sender.sendMessage(SmallCaps.convert("§c§l✖ §cUso: /wardstone setstreak <jugador> <cantidad>"));
+            return;
+        }
+
+        String playerName = args[1];
+        int streak;
+        try {
+            streak = Integer.parseInt(args[2]);
+        } catch (NumberFormatException e) {
+            sender.sendMessage(SmallCaps.convert("§c§l✖ §cLa cantidad debe ser un número."));
+            return;
+        }
+
+        if (streak < 0) {
+            sender.sendMessage(SmallCaps.convert("§c§l✖ §cLa cantidad no puede ser negativa."));
+            return;
+        }
+
+        Player target = Bukkit.getPlayerExact(playerName);
+        if (target == null) {
+            sender.sendMessage(SmallCaps.convert("§c§l✖ §cJugador no encontrado: " + playerName));
+            return;
+        }
+
+        com.moonlight.coreprotect.streak.DailyStreakManager streakManager = plugin.getDailyStreakManager();
+        if (streakManager == null) {
+            sender.sendMessage(SmallCaps.convert("§c§l✖ §cSistema de rachas no disponible."));
+            return;
+        }
+
+        com.moonlight.coreprotect.streak.DailyStreakManager.StreakData sd = streakManager.getStreak(target.getUniqueId());
+        sd.currentStreak = streak;
+        sd.bestStreak = Math.max(sd.bestStreak, streak);
+        streakManager.saveData();
+
+        sender.sendMessage(SmallCaps.convert("§a§l✦ §fRacha de §e" + playerName + " §festablecida a §a" + streak + " días"));
+        target.sendMessage(SmallCaps.convert("§a§l✦ §fTu racha ha sido establecida a §a" + streak + " días §7(Admin)"));
     }
 
     // ==========================================
