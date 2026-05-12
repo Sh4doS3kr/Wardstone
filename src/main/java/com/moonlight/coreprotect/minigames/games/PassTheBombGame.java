@@ -23,8 +23,7 @@ public class PassTheBombGame extends MiniGame {
 
     private static final int ARENA_RADIUS = 8;
     private static final int ARENA_Y = 100;
-    private static final int MIN_FUSE_TICKS = 10;   // 0.5 segundos mínimo
-    private static final int MAX_FUSE_TICKS = 60;   // 3 segundos máximo
+    private static final int FUSE_TICKS = 200;       // 10 segundos para pasar
 
     // Orden circular de jugadores (por posición en el círculo)
     private final List<UUID> circleOrder = new ArrayList<>();
@@ -162,8 +161,8 @@ public class PassTheBombGame extends MiniGame {
         List<UUID> alive = new ArrayList<>(alivePlayers);
         bombHolder = alive.get(random.nextInt(alive.size()));
 
-        // Timer completamente aleatorio e impredecible cada ronda
-        fuseTicksRemaining = MIN_FUSE_TICKS + random.nextInt(MAX_FUSE_TICKS - MIN_FUSE_TICKS + 1);
+        // 10 segundos fijos para pasar
+        fuseTicksRemaining = FUSE_TICKS;
 
         // Dar el globo al portador
         giveBombItem(bombHolder);
@@ -237,10 +236,11 @@ public class PassTheBombGame extends MiniGame {
         to.getWorld().spawnParticle(Particle.FLAME, to, 5, 0.1, 0.1, 0.1, 0.05);
 
         bombHolder = target.getUniqueId();
+        fuseTicksRemaining = FUSE_TICKS; // Reset 10s para el nuevo portador
         giveBombItem(target.getUniqueId());
 
         // Mensaje
-        target.sendMessage("§c§l💣 §e¡Tienes la bomba! §7¡Golpea al de tu izquierda!");
+        target.sendMessage("§c§l💣 §e¡Tienes la bomba! §7¡Tienes 10s! ¡Golpea al de tu izquierda!");
     }
 
     /**
