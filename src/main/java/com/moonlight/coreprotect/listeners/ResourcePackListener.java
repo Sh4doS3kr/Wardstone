@@ -156,6 +156,13 @@ public class ResourcePackListener implements Listener {
             return;
         }
 
+        // Mostrar title de carga inmediatamente al entrar
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            if (player.isOnline()) {
+                player.sendTitle("§a§lCargando...", "§7El pack de texturas se cargará pronto", 10, 70, 20);
+            }
+        }, 5L);
+
         // Delay 5s para asegurar que el cliente haya terminado de cargar
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             try {
