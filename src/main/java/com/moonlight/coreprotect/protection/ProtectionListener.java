@@ -739,6 +739,11 @@ public class ProtectionListener implements Listener {
     public void onZombieInSpawnCore(org.bukkit.event.entity.EntitySpawnEvent event) {
         if (event.getEntity() instanceof org.bukkit.entity.Zombie) {
             if (plugin.getProtectionManager().isSpawnCore(event.getLocation())) {
+                // Don't remove quest mobs
+                if (plugin.getShadowHunterManager() != null
+                        && plugin.getShadowHunterManager().isMissionMob(event.getEntity().getUniqueId())) {
+                    return;
+                }
                 event.getEntity().remove();
             }
         }
@@ -750,6 +755,13 @@ public class ProtectionListener implements Listener {
             if (!world.getName().equals("world")) continue;
             
             for (org.bukkit.entity.Entity entity : world.getEntities()) {
+                // Never remove mobs that belong to an active Errante mission
+                if (entity instanceof org.bukkit.entity.LivingEntity
+                        && plugin.getShadowHunterManager() != null
+                        && plugin.getShadowHunterManager().isMissionMob(entity.getUniqueId())) {
+                    continue;
+                }
+
                 if (entity instanceof org.bukkit.entity.Zombie) {
                     if (plugin.getProtectionManager().isSpawnCore(entity.getLocation())) {
                         entity.remove();
