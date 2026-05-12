@@ -23,8 +23,8 @@ public class PassTheBombGame extends MiniGame {
 
     private static final int ARENA_RADIUS = 8;
     private static final int ARENA_Y = 100;
-    private static final int MIN_FUSE_TICKS = 30;   // 1.5 segundos mínimo
-    private static final int MAX_FUSE_TICKS = 100;  // 5 segundos máximo
+    private static final int MIN_FUSE_TICKS = 10;   // 0.5 segundos mínimo
+    private static final int MAX_FUSE_TICKS = 60;   // 3 segundos máximo
 
     // Orden circular de jugadores (por posición en el círculo)
     private final List<UUID> circleOrder = new ArrayList<>();
@@ -111,8 +111,10 @@ public class PassTheBombGame extends MiniGame {
     private double calcCircleRadius(int playerCount) {
         if (playerCount <= 2) return 1.2;
         if (playerCount <= 3) return 1.5;
-        if (playerCount <= 5) return 2.5;
-        return Math.min(playerCount * 0.7, ARENA_RADIUS - 1);
+        if (playerCount <= 4) return 1.8;
+        if (playerCount <= 6) return 2.2;
+        if (playerCount <= 10) return 2.8;
+        return Math.min(playerCount * 0.4, ARENA_RADIUS - 1);
     }
 
     @Override
@@ -173,7 +175,6 @@ public class PassTheBombGame extends MiniGame {
                 Player holder = Bukkit.getPlayer(bombHolder);
                 String holderName = holder != null ? holder.getName() : "???";
                 p.sendTitle("§c§lRonda " + round, "§e" + holderName + " §7tiene la bomba!", 5, 30, 5);
-                p.playSound(p.getLocation(), Sound.ENTITY_TNT_PRIMED, 0.7f, 1.2f);
             }
         }
     }
@@ -199,8 +200,6 @@ public class PassTheBombGame extends MiniGame {
         p.getInventory().setItem(0, bomb);
         p.getInventory().setHeldItemSlot(0);
 
-        // Efecto visual
-        p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 1.0f, 0.5f);
     }
 
     /**
@@ -225,13 +224,11 @@ public class PassTheBombGame extends MiniGame {
 
         if (!target.getUniqueId().equals(expectedTarget)) {
             attacker.sendMessage("§c§l✖ §7¡Ese no es el de tu izquierda! Gírate y golpea al correcto.");
-            attacker.playSound(attacker.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.8f, 1.2f);
             return;
         }
 
         // Transferir bomba
         attacker.getInventory().clear();
-        attacker.playSound(attacker.getLocation(), Sound.ENTITY_SNOWBALL_THROW, 1.0f, 1.5f);
 
         // Partículas de pase
         Location from = attacker.getLocation().add(0, 1, 0);
@@ -244,7 +241,6 @@ public class PassTheBombGame extends MiniGame {
 
         // Mensaje
         target.sendMessage("§c§l💣 §e¡Tienes la bomba! §7¡Golpea al de tu izquierda!");
-        target.playSound(target.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 1.0f, 0.5f);
     }
 
     /**
@@ -281,33 +277,10 @@ public class PassTheBombGame extends MiniGame {
 
         fuseTicksRemaining--;
 
-        // Efecto de ticking para todos
-        float pitch = 1.0f + (1.5f * (1.0f - (float) fuseTicksRemaining / MAX_FUSE_TICKS));
-        for (UUID uuid : alivePlayers) {
-            Player p = Bukkit.getPlayer(uuid);
-            if (p != null && p.isOnline()) {
-                if (fuseTicksRemaining <= 5) {
-                    p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, 2.0f);
-                } else if (fuseTicksRemaining <= 20) {
-                    p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_HAT, 0.8f, pitch);
-                } else if (gameTime % 2 == 0) {
-                    p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_HAT, 0.4f, pitch);
-                }
-            }
-        }
-
-        // Mostrar action bar al portador
+        // Sin sonidos - solo partículas silenciosas en el portador
         Player holder = Bukkit.getPlayer(bombHolder);
         if (holder != null && holder.isOnline()) {
-            int bars = Math.max(0, (fuseTicksRemaining * 20) / MAX_FUSE_TICKS);
-            StringBuilder barStr = new StringBuilder("§c💣 ");
-            for (int i = 0; i < 20; i++) {
-                barStr.append(i < bars ? "§a█" : "§4█");
-            }
-            barStr.append(" §c💣");
-            holder.sendActionBar(barStr.toString());
-
-            // Partículas en el portador
+            // Partículas en el portador (sin sonido)
             holder.getWorld().spawnParticle(Particle.SMOKE, holder.getLocation().add(0, 2.2, 0),
                     2, 0.1, 0.05, 0.1, 0.01);
         }
