@@ -23,14 +23,20 @@ public class PassTheBombGame extends MiniGame {
 
     private static final int ARENA_RADIUS = 8;
     private static final int ARENA_Y = 100;
-    private static final int FUSE_SECONDS = 10;      // 10 segundos para pasar
+    private static final int PASS_TIME = 10;          // 10 segundos para pasar cada jugador
+    private static final int MIN_BOMB_TIME = 10;      // mínimo 10s para la bomba
+    private static final int MAX_BOMB_TIME = 30;      // máximo 30s para la bomba
 
     // Orden circular de jugadores (por posición en el círculo)
     private final List<UUID> circleOrder = new ArrayList<>();
     // Quién tiene el globo actualmente
     private UUID bombHolder = null;
-    // Ticks restantes para la explosión
-    private int fuseTicksRemaining = 0;
+    // Timer de explosión de la bomba (no se reinicia al pasar)
+    private int bombTimeRemaining = 0;
+    // Timer total de la bomba (para calcular porcentaje del sonido)
+    private int bombTimeTotal = 0;
+    // Timer individual de pase (cada jugador tiene 10s)
+    private int passTimeRemaining = 0;
     // Ronda actual
     private int round = 0;
     // Posiciones fijas de spawn (para congelar jugadores)
@@ -161,8 +167,11 @@ public class PassTheBombGame extends MiniGame {
         List<UUID> alive = new ArrayList<>(alivePlayers);
         bombHolder = alive.get(random.nextInt(alive.size()));
 
-        // 4 segundos fijos para pasar
-        fuseTicksRemaining = FUSE_SECONDS;
+        // Timer aleatorio de explosión (10-30s)
+        bombTimeTotal = MIN_BOMB_TIME + random.nextInt(MAX_BOMB_TIME - MIN_BOMB_TIME + 1);
+        bombTimeRemaining = bombTimeTotal;
+        // Timer de pase individual
+        passTimeRemaining = PASS_TIME;
 
         // Dar el globo al portador
         giveBombItem(bombHolder);
@@ -236,10 +245,11 @@ public class PassTheBombGame extends MiniGame {
         to.getWorld().spawnParticle(Particle.FLAME, to, 5, 0.1, 0.1, 0.1, 0.05);
 
         bombHolder = target.getUniqueId();
+        passTimeRemaining = PASS_TIME; // Reset timer de pase para el nuevo portador
         giveBombItem(target.getUniqueId());
 
         // Mensaje
-        target.sendMessage("§c§l💣 §e¡Tienes la bomba! §7¡Golpea al de tu izquierda!");
+        target.sendMessage("§c§l💣 §e¡Tienes la bomba! §7¡Tienes " + PASS_TIME + "s! ¡Golpea al de tu izquierda!");
     }
 
     /**
@@ -313,22 +323,53 @@ public class PassTheBombGame extends MiniGame {
     public void onTick() {
         if (ended || bombHolder == null) return;
 
-        fuseTicksRemaining--;
+        bombTimeRemaining--;
+        passTimeRemaining--;
+
+        // Sonido de tick que se acelera conforme la bomba está por explotar
+        float progress = 1.0f - ((float) bombTimeRemaining / bombTimeTotal);
+        // Cuanto más cerca de explotar, más frecuente el sonido
+        boolean playSound;
+        if (progress >= 0.9f) {
+            playSound = true; // cada segundo (ultra rápido)
+        } else if (progress >= 0.7f) {
+            playSound = true; // cada segundo
+        } else if (progress >= 0.5f) {
+            playSound = (gameTime % 2 == 0); // cada 2s
+        } else {
+            playSound = (gameTime % 3 == 0); // cada 3s
+        }
+
+        float pitch = 0.8f + (progress * 1.2f); // sube de 0.8 a 2.0
+        if (playSound) {
+            for (UUID uuid : alivePlayers) {
+                Player p = Bukkit.getPlayer(uuid);
+                if (p != null && p.isOnline()) {
+                    p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_HAT, 0.6f, pitch);
+                }
+            }
+        }
 
         Player holder = Bukkit.getPlayer(bombHolder);
         if (holder != null && holder.isOnline()) {
             // Partículas en el portador
             holder.getWorld().spawnParticle(Particle.SMOKE, holder.getLocation().add(0, 2.2, 0),
                     2, 0.1, 0.05, 0.1, 0.01);
-            // Title con cuenta atrás siempre visible
-            if (fuseTicksRemaining > 0) {
-                String color = fuseTicksRemaining <= 3 ? "§c§l" : fuseTicksRemaining <= 5 ? "§6§l" : "§e§l";
-                holder.sendTitle(color + fuseTicksRemaining + "s", "§7¡Golpea al de tu izquierda!", 0, 21, 0);
+            // Title con timer de pase individual
+            if (passTimeRemaining > 0) {
+                String color = passTimeRemaining <= 3 ? "§c§l" : passTimeRemaining <= 5 ? "§6§l" : "§e§l";
+                holder.sendTitle(color + passTimeRemaining + "s", "§7¡Golpea al de tu izquierda!", 0, 21, 0);
             }
         }
 
-        // ¿Explotó?
-        if (fuseTicksRemaining <= 0) {
+        // ¿Se le acabó el tiempo de pase? Eliminar al holder
+        if (passTimeRemaining <= 0) {
+            explodeBomb();
+            return;
+        }
+
+        // ¿Explotó la bomba? (timer global)
+        if (bombTimeRemaining <= 0) {
             explodeBomb();
         }
     }
