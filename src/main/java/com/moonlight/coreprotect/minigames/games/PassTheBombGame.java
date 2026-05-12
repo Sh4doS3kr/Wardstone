@@ -236,11 +236,10 @@ public class PassTheBombGame extends MiniGame {
         to.getWorld().spawnParticle(Particle.FLAME, to, 5, 0.1, 0.1, 0.1, 0.05);
 
         bombHolder = target.getUniqueId();
-        fuseTicksRemaining = FUSE_SECONDS; // Reset 4s para el nuevo portador
         giveBombItem(target.getUniqueId());
 
         // Mensaje
-        target.sendMessage("§c§l💣 §e¡Tienes la bomba! §7¡Tienes " + FUSE_SECONDS + "s! ¡Golpea al de tu izquierda!");
+        target.sendMessage("§c§l💣 §e¡Tienes la bomba! §7¡Golpea al de tu izquierda!");
     }
 
     /**
