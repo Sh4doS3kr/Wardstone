@@ -642,13 +642,10 @@ public class MiniGameManager {
             if (savedInventories.containsKey(player.getUniqueId())) {
                 restorePlayerData(player);
             }
-            // Teleportar de vuelta
-            if (returnLocations.containsKey(player.getUniqueId())) {
-                player.teleport(returnLocations.remove(player.getUniqueId()));
-            } else {
-                // Fallback: spawn del mundo principal
-                player.teleport(Bukkit.getWorlds().get(0).getSpawnLocation());
-            }
+            // Teleportar de vuelta (con validación para evitar vacío)
+            Location returnLoc = returnLocations.remove(player.getUniqueId());
+            Location safeLoc = getSafeReturn(returnLoc);
+            player.teleport(safeLoc);
             // restorePlayerData ya restaura el gamemode guardado
             restoreFlightIfPermitted(player);
 
@@ -715,13 +712,40 @@ public class MiniGameManager {
         player.setFlying(false);
     }
 
+    /**
+     * Devuelve una ubicación segura para teleportar al jugador.
+     * Si la ubicación guardada es inválida o está en el vacío, usa el spawn principal.
+     */
+    private Location getSafeReturn(Location loc) {
+        Location fallback = Bukkit.getWorlds().get(0).getSpawnLocation();
+        if (loc == null) return fallback;
+        if (loc.getWorld() == null) return fallback;
+        // Si está en el mundo de minijuegos, usar fallback
+        if (loc.getWorld().getName().equals(MiniGameWorld.getWorldName())) return fallback;
+        // Si está en el vacío (Y < 0 o bloque debajo es aire hasta Y=0)
+        if (loc.getY() < -60) return fallback;
+        // Validar que haya suelo debajo (buscar hasta 10 bloques abajo)
+        Location check = loc.clone();
+        boolean hasSolid = false;
+        for (int y = 0; y < 20; y++) {
+            check.setY(loc.getY() - y);
+            if (check.getY() < -64) break;
+            if (check.getBlock().getType().isSolid()) {
+                hasSolid = true;
+                break;
+            }
+        }
+        if (!hasSolid) return fallback;
+        return loc;
+    }
+
     private void restoreAllData() {
         for (UUID uuid : new HashSet<>(savedInventories.keySet())) {
             Player p = Bukkit.getPlayer(uuid);
             if (p != null && p.isOnline()) {
                 restorePlayerData(p);
                 Location ret = returnLocations.remove(uuid);
-                if (ret != null) p.teleport(ret);
+                p.teleport(getSafeReturn(ret));
             }
         }
     }
