@@ -316,12 +316,15 @@ public class PassTheBombGame extends MiniGame {
 
         fuseTicksRemaining--;
 
-        // Sin sonidos - solo partículas silenciosas en el portador
         Player holder = Bukkit.getPlayer(bombHolder);
         if (holder != null && holder.isOnline()) {
-            // Partículas en el portador (sin sonido)
+            // Partículas en el portador
             holder.getWorld().spawnParticle(Particle.SMOKE, holder.getLocation().add(0, 2.2, 0),
                     2, 0.1, 0.05, 0.1, 0.01);
+            // Aviso por title cuando quedan 5s o menos
+            if (fuseTicksRemaining <= 5 && fuseTicksRemaining > 0) {
+                holder.sendTitle("§c§l" + fuseTicksRemaining + "s", "§7¡Pasa la bomba!", 0, 21, 0);
+            }
         }
 
         // ¿Explotó?
