@@ -89,13 +89,6 @@ public class MiniGameListener implements Listener {
             }
             return;
         }
-        // SKYWARS: permitir PvP solo si NO hay gracia
-        if (game instanceof SkyWarsGame skyGame) {
-            if (!skyGame.isGraceActive()) {
-                event.setCancelled(false);
-            }
-            return;
-        }
 
         // Murder Mystery y Beast Escape tienen su propia lógica (gestionada en HIGH)
         // No interferir: dejar que el handler HIGH decida
@@ -120,12 +113,10 @@ public class MiniGameListener implements Listener {
                 && !(mgr.getCurrentGame() instanceof BlackHoleGame)
                 && !(mgr.getCurrentGame() instanceof FakeDeathmatchGame)
                 && !(mgr.getCurrentGame() instanceof EyeOfStormGame)
-                && !(mgr.getCurrentGame() instanceof SkyWarsGame)) return;
+                ) return;
 
         // EYE OF STORM: respetar gracia (no forzar PvP si hay gracia)
         if (mgr.getCurrentGame() instanceof EyeOfStormGame eyeGame && eyeGame.isGraceActive()) return;
-        // SKYWARS: respetar gracia
-        if (mgr.getCurrentGame() instanceof SkyWarsGame skyGame && skyGame.isGraceActive()) return;
 
         // Detectar si el daño viene de un jugador (directo o proyectil)
         Player attacker = null;
@@ -276,17 +267,6 @@ public class MiniGameListener implements Listener {
                 return; // daño normal
             }
 
-            // SKYWARS: PvP permitido SOLO si no hay gracia
-            if (game instanceof SkyWarsGame skyGame) {
-                if (skyGame.isGraceActive()) {
-                    event.setCancelled(true);
-                    if (event.getDamager() instanceof Player attacker) {
-                        attacker.sendMessage("§e§l⏳ §7PvP desactivado durante la gracia. ¡Lootea tu isla!");
-                    }
-                    return;
-                }
-                return; // daño normal
-            }
 
             // TODOS LOS DEMÁS: sin PvP
             event.setCancelled(true);
@@ -323,15 +303,6 @@ public class MiniGameListener implements Listener {
                 return;
             }
 
-            // SKYWARS: proyectil solo si no hay gracia
-            if (game instanceof SkyWarsGame skyGame) {
-                if (skyGame.isGraceActive()) {
-                    event.setCancelled(true);
-                    shooter.sendMessage("§e§l⏳ §7PvP desactivado durante la gracia.");
-                    return;
-                }
-                return;
-            }
 
             if (game instanceof OITCGame) {
                 OITCGame oitc = (OITCGame) game;
@@ -445,15 +416,6 @@ public class MiniGameListener implements Listener {
             if (game instanceof EyeOfStormGame) {
                 return;
             }
-            // SkyWars: permitir romper bloques CON drops, pero NO cristal durante gracia
-            if (game instanceof SkyWarsGame skyGame) {
-                if (skyGame.isGraceActive() && event.getBlock().getType() == Material.GLASS) {
-                    event.setCancelled(true);
-                    event.getPlayer().sendMessage("§c§l✖ §7No puedes romper la jaula.");
-                    return;
-                }
-                return;
-            }
             // Fake Deathmatch: permitir romper bloques
             if (game instanceof FakeDeathmatchGame) {
                 event.setDropItems(false);
@@ -475,8 +437,8 @@ public class MiniGameListener implements Listener {
         MiniGameManager mgr = getManager();
         MiniGame game = mgr.getCurrentGame();
 
-        // Eye of Storm / SkyWars: dropear items del jugador al morir
-        if (game instanceof EyeOfStormGame || game instanceof SkyWarsGame) {
+        // Eye of Storm: dropear items del jugador al morir
+        if (game instanceof EyeOfStormGame) {
             event.setKeepInventory(false);
             event.setDroppedExp(0);
             event.setKeepLevel(true);
@@ -580,8 +542,7 @@ public class MiniGameListener implements Listener {
                     && (mgr.getCurrentGame() instanceof PillarsOfFortuneGame
                         || mgr.getCurrentGame() instanceof BlackHoleGame
                         || mgr.getCurrentGame() instanceof FakeDeathmatchGame
-                        || mgr.getCurrentGame() instanceof EyeOfStormGame
-                        || mgr.getCurrentGame() instanceof SkyWarsGame)) {
+                        || mgr.getCurrentGame() instanceof EyeOfStormGame)) {
                 return;
             }
             event.setCancelled(true);
@@ -611,8 +572,8 @@ public class MiniGameListener implements Listener {
             } else {
                 event.setCancelled(true);
             }
-        } else if (game instanceof PillarsOfFortuneGame || game instanceof BlackHoleGame || game instanceof FakeDeathmatchGame || game instanceof EyeOfStormGame || game instanceof SkyWarsGame) {
-            // Pilares / Black Hole / Fake Deathmatch / Eye of Storm / SkyWars: permitir recoger items
+        } else if (game instanceof PillarsOfFortuneGame || game instanceof BlackHoleGame || game instanceof FakeDeathmatchGame || game instanceof EyeOfStormGame) {
+            // Pilares / Black Hole / Fake Deathmatch / Eye of Storm: permitir recoger items
             return;
         } else {
             // Bloquear recolección en otros minijuegos
@@ -629,8 +590,7 @@ public class MiniGameListener implements Listener {
                     && (mgr.getCurrentGame() instanceof PillarsOfFortuneGame
                         || mgr.getCurrentGame() instanceof BlackHoleGame
                         || mgr.getCurrentGame() instanceof FakeDeathmatchGame
-                        || mgr.getCurrentGame() instanceof EyeOfStormGame
-                        || mgr.getCurrentGame() instanceof SkyWarsGame)) {
+                        || mgr.getCurrentGame() instanceof EyeOfStormGame)) {
                 return;
             }
             event.setCancelled(true);
@@ -666,8 +626,18 @@ public class MiniGameListener implements Listener {
             return;
         }
 
-        // SkyWars: permitir abrir cofres y toda interacción
-        if (game instanceof SkyWarsGame) {
+        // Pass the Bomb: click derecho para pasar la bomba
+        if (game instanceof PassTheBombGame ptb) {
+            if (event.getAction() == org.bukkit.event.block.Action.RIGHT_CLICK_AIR
+                    || event.getAction() == org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK) {
+                Player player = event.getPlayer();
+                if (player.getInventory().getItemInMainHand().getType() == Material.FIRE_CHARGE) {
+                    event.setCancelled(true);
+                    ptb.onBombPass(player);
+                    return;
+                }
+            }
+            event.setCancelled(true);
             return;
         }
 
@@ -1161,26 +1131,6 @@ public class MiniGameListener implements Listener {
                 }
                 return;
             }
-            // SkyWars: permitir colocar bloques (con restricciones) — obsidiana permitida
-            if (mgr != null && mgr.isGameActive() && mgr.getCurrentGame() instanceof SkyWarsGame) {
-                org.bukkit.Material placed = event.getBlock().getType();
-                if (placed == org.bukkit.Material.END_PORTAL_FRAME
-                        || placed == org.bukkit.Material.RESPAWN_ANCHOR
-                        || placed == org.bukkit.Material.BEDROCK
-                        || placed == org.bukkit.Material.COMMAND_BLOCK
-                        || placed == org.bukkit.Material.CHAIN_COMMAND_BLOCK
-                        || placed == org.bukkit.Material.REPEATING_COMMAND_BLOCK
-                        || placed == org.bukkit.Material.STRUCTURE_BLOCK) {
-                    event.setCancelled(true);
-                    return;
-                }
-                if (event.getBlock().getY() > 150) {
-                    event.setCancelled(true);
-                    event.getPlayer().sendMessage("§c§l✖ §cNo puedes construir tan alto.");
-                    return;
-                }
-                return;
-            }
             // Fake Deathmatch: permitir colocar bloques (con restricciones)
             if (mgr != null && mgr.isGameActive() && mgr.getCurrentGame() instanceof FakeDeathmatchGame) {
                 org.bukkit.Material placed = event.getBlock().getType();
@@ -1266,10 +1216,6 @@ public class MiniGameListener implements Listener {
         }
         // Eye of Storm: permitir mover items (cofres incluidos)
         if (mgr != null && mgr.isGameActive() && mgr.getCurrentGame() instanceof EyeOfStormGame) {
-            return;
-        }
-        // SkyWars: permitir mover items (cofres incluidos)
-        if (mgr != null && mgr.isGameActive() && mgr.getCurrentGame() instanceof SkyWarsGame) {
             return;
         }
         // Build Battle Classic: permitir mover items durante construcción + handle vote GUI
