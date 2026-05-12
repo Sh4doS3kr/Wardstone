@@ -607,11 +607,17 @@ public class MiniGameManager {
         UUID uid = player.getUniqueId();
 
         // Bloquear salida si el jugador está vivo en una partida activa (no espectando)
+        // Excepción: en Pasa la Bomba se permite salir (cuenta como eliminación)
         if (gameActive && currentGame != null
                 && currentGame.getAlivePlayers().contains(uid)
                 && !currentGame.getSpectators().contains(uid)) {
-            player.sendMessage(SmallCaps.convert("§c§l✖ §cNo puedes salir mientras estés vivo en un minijuego."));
-            return;
+            if (currentGame instanceof com.moonlight.coreprotect.minigames.games.PassTheBombGame ptb) {
+                // Eliminar al jugador que se sale
+                ptb.onPlayerLeave(uid);
+            } else {
+                player.sendMessage(SmallCaps.convert("§c§l✖ §cNo puedes salir mientras estés vivo en un minijuego."));
+                return;
+            }
         }
 
         if (joinedPlayers.remove(uid)) {

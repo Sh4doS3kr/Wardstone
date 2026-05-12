@@ -244,6 +244,45 @@ public class PassTheBombGame extends MiniGame {
     }
 
     /**
+     * Llamado cuando un jugador abandona la partida voluntariamente.
+     * Cuenta como eliminación.
+     */
+    public void onPlayerLeave(UUID uuid) {
+        if (ended) return;
+        if (!alivePlayers.contains(uuid)) return;
+
+        // Si tenía la bomba, pasarla al siguiente antes de eliminarlo
+        if (uuid.equals(bombHolder)) {
+            UUID next = getPlayerToLeft(uuid);
+            bombHolder = next;
+            if (next != null) {
+                giveBombItem(next);
+            }
+        }
+
+        // Anunciar
+        Player leaver = Bukkit.getPlayer(uuid);
+        String name = leaver != null ? leaver.getName() : "???";
+        for (UUID alive : alivePlayers) {
+            Player p = Bukkit.getPlayer(alive);
+            if (p != null && p.isOnline()) {
+                p.sendMessage("§c§l✖ §e" + name + " §7abandonó la partida. §c§lELIMINADO");
+            }
+        }
+
+        // Eliminar
+        eliminatePlayer(uuid);
+        fixedPositions.remove(uuid);
+
+        if (alivePlayers.size() <= 1) {
+            ended = true;
+            checkWinCondition();
+            return;
+        }
+        recalculateCirclePositions();
+    }
+
+    /**
      * Verifica si un jugador es el bomb holder (para el listener).
      */
     public boolean isBombHolder(UUID uuid) {
