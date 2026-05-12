@@ -23,7 +23,7 @@ public class PassTheBombGame extends MiniGame {
 
     private static final int ARENA_RADIUS = 8;
     private static final int ARENA_Y = 100;
-    private static final int FUSE_SECONDS = 4;       // 4 segundos para pasar
+    private static final int FUSE_SECONDS = 10;      // 10 segundos para pasar
 
     // Orden circular de jugadores (por posición en el círculo)
     private final List<UUID> circleOrder = new ArrayList<>();
@@ -321,9 +321,10 @@ public class PassTheBombGame extends MiniGame {
             // Partículas en el portador
             holder.getWorld().spawnParticle(Particle.SMOKE, holder.getLocation().add(0, 2.2, 0),
                     2, 0.1, 0.05, 0.1, 0.01);
-            // Aviso por title cuando quedan 5s o menos
-            if (fuseTicksRemaining <= 5 && fuseTicksRemaining > 0) {
-                holder.sendTitle("§c§l" + fuseTicksRemaining + "s", "§7¡Pasa la bomba!", 0, 21, 0);
+            // Title con cuenta atrás siempre visible
+            if (fuseTicksRemaining > 0) {
+                String color = fuseTicksRemaining <= 3 ? "§c§l" : fuseTicksRemaining <= 5 ? "§6§l" : "§e§l";
+                holder.sendTitle(color + fuseTicksRemaining + "s", "§7¡Golpea al de tu izquierda!", 0, 21, 0);
             }
         }
 
