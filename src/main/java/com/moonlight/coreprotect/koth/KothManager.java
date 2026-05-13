@@ -1550,6 +1550,11 @@ public class KothManager {
             return false;
         }
 
+        if (postKothMode) {
+            player.sendMessage(SmallCaps.convert("§c§l✖ §cEl KOTH ha terminado. Espera a la limpieza."));
+            return false;
+        }
+
         // Bloquear jugadores nuevos con protección PvP (< 3h de juego)
         int NEW_PLAYER_TICKS = 3 * 60 * 60 * 20; // 3 horas en ticks
         int playtime = player.getStatistic(org.bukkit.Statistic.PLAY_ONE_MINUTE);
@@ -1788,6 +1793,23 @@ public class KothManager {
         if (bossBar != null && active) {
             bossBar.addPlayer(player);
         }
+    }
+
+    public boolean isPostKothMode() {
+        return postKothMode;
+    }
+
+    /**
+     * Expulsa a un jugador que reconectó en el mundo KOTH cuando no debería estar ahí.
+     */
+    public void kickIfNotAllowed(Player player) {
+        if (!player.getWorld().getName().equals(KothWorld.getWorldName())) return;
+        if (active && !postKothMode) return; // KOTH activo y no en post-mode, permitido
+        // Está en el mundo KOTH pero no debería: expulsar
+        Location returnLoc = returnLocations.remove(player.getUniqueId());
+        Location safe = (returnLoc != null && returnLoc.getWorld() != null) ? returnLoc : Bukkit.getWorlds().get(0).getSpawnLocation();
+        player.teleport(safe);
+        player.sendMessage(SmallCaps.convert("§c§l⚠ §cEl KOTH ha terminado. Has sido expulsado."));
     }
 
     /**

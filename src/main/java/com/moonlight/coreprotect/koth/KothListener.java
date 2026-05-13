@@ -388,6 +388,15 @@ public class KothListener implements Listener {
         if (manager.isActive()) {
             manager.addPlayerToBossBar(event.getPlayer());
         }
+        // Expulsar jugadores que reconectan en el mundo KOTH cuando no deberían
+        new org.bukkit.scheduler.BukkitRunnable() {
+            @Override
+            public void run() {
+                if (event.getPlayer().isOnline()) {
+                    plugin.getKothManager().kickIfNotAllowed(event.getPlayer());
+                }
+            }
+        }.runTaskLater(plugin, 5L);
     }
 
     /**
