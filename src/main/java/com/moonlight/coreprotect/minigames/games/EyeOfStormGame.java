@@ -40,12 +40,12 @@ import java.util.*;
 public class EyeOfStormGame extends MiniGame {
 
     // === ARENA ===
-    private static final int ARENA_RADIUS = 800;
+    private static final int ARENA_RADIUS = 500;
     private static final int ARENA_Y = 70;
     private static final int ROWS_PER_TICK = 3; // Filas de terreno por tick (lento, sin lag)
 
     // === STORM (Fortnite-style shrinking border) ===
-    private static final double STORM_INITIAL_RADIUS = 850.0; // Empieza MÁS GRANDE que el mapa (radio 800)
+    private static final double STORM_INITIAL_RADIUS = 550.0; // Empieza MÁS GRANDE que el mapa (radio 500)
     private static final double STORM_MIN_RADIUS = 5.0;
     private static final int STORM_START = 60; // Segundos hasta que empieza a cerrar
     private static final double STORM_DAMAGE_BASE = 1.5;
@@ -53,9 +53,9 @@ public class EyeOfStormGame extends MiniGame {
 
     // === PHASES (storm shrinks in stages like Fortnite) ===
     // Fase 1: 0-60s = loot libre, borde enorme
-    // Fase 2: 60-150s = borde cierra hasta r160
-    // Fase 3: 150-240s = borde cierra hasta r80
-    // Fase 4: 240-320s = borde cierra hasta r25
+    // Fase 2: 60-150s = borde cierra hasta r250
+    // Fase 3: 150-240s = borde cierra hasta r110
+    // Fase 4: 240-320s = borde cierra hasta r30
     // Fase 5: 320s+ = borde cierra hasta r5
     private static final int PHASE_2_TIME = 120;   // 2:00 de loot libre
     private static final int PHASE_3_TIME = 600;   // 10:00
@@ -898,9 +898,9 @@ public class EyeOfStormGame extends MiniGame {
             double targetRadius;
             int shrinkDuration;
             switch (currentPhase) {
-                case 2: targetRadius = 400; shrinkDuration = 420; break;  // cierra a 400 en 7:00
-                case 3: targetRadius = 180; shrinkDuration = 360; break;  // cierra a 180 en 6:00
-                case 4: targetRadius = 50; shrinkDuration = 300; break;   // cierra a 50 en 5:00
+                case 2: targetRadius = 250; shrinkDuration = 420; break;  // cierra a 250 en 7:00
+                case 3: targetRadius = 110; shrinkDuration = 360; break;  // cierra a 110 en 6:00
+                case 4: targetRadius = 30; shrinkDuration = 300; break;   // cierra a 30 en 5:00
                 case 5: targetRadius = STORM_MIN_RADIUS; shrinkDuration = 240; break; // cierra a 5 en 4:00
                 default: targetRadius = STORM_INITIAL_RADIUS; shrinkDuration = 90; break;
             }
