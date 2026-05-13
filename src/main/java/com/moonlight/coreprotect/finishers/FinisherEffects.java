@@ -123,6 +123,15 @@ public class FinisherEffects {
     private Location vLoc(Player v) { return v.isOnline() ? v.getLocation() : null; }
     private ThreadLocalRandom rng() { return ThreadLocalRandom.current(); }
     private Material rm(Material[] m) { return m[rng().nextInt(m.length)]; }
+    @SuppressWarnings("unchecked")
+    private <T> void sp(World w, Particle p, Location l, int count, double dx, double dy, double dz, double extra) {
+        try { w.spawnParticle(p, l, count, dx, dy, dz, extra); }
+        catch (IllegalArgumentException e) { try { w.spawnParticle(p, l, count, dx, dy, dz, extra, (T)(Object)1.0f); } catch (Exception ignored) {} }
+    }
+    private void sp(World w, Particle p, Location l, int count) {
+        try { w.spawnParticle(p, l, count); }
+        catch (IllegalArgumentException e) { try { w.spawnParticle(p, l, count, 0, 0, 0, 0, 1.0f); } catch (Exception ignored) {} }
+    }
 
     private FallingBlock gb(World w, Location l, Material m, double vx, double vy, double vz, int life) {
         FallingBlock fb = w.spawnFallingBlock(l, m.createBlockData());
@@ -173,7 +182,7 @@ public class FinisherEffects {
         new BukkitRunnable(){public void run(){
             Location l=vLoc(victim);if(l==null)return;for(int i=0;i<6;i++)w.strikeLightningEffect(l);
             w.spawnParticle(Particle.ELECTRIC_SPARK,l.clone().add(0,0.5,0),600,6,3,6,0.25);w.spawnParticle(Particle.CLOUD,l,150,4,2,4,0.1);
-            w.spawnParticle(Particle.EXPLOSION_EMITTER,l,8);w.spawnParticle(Particle.END_ROD,l,5);
+            w.spawnParticle(Particle.EXPLOSION_EMITTER,l,8);sp(w,Particle.END_ROD,l,5);
             w.playSound(l,Sound.ENTITY_LIGHTNING_BOLT_THUNDER,2.0f,0.3f);w.playSound(l,Sound.ENTITY_GENERIC_EXPLODE,2.0f,0.6f);
             for(int b=0;b<50;b++){double a=(Math.PI*2/50)*b;double sp=0.7+rng().nextDouble(1.0);ge(w,l.clone().add(0,0.5,0),rm(bm),Math.cos(a)*sp,rng().nextDouble(0.15,0.6),Math.sin(a)*sp,48+rng().nextInt(22));}
         }}.runTaskLater(plugin,165);
@@ -189,7 +198,7 @@ public class FinisherEffects {
         new BukkitRunnable(){int t=0;public void run(){
             if(t>=50||!victim.isOnline()){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}
             double r=0.5+t*0.09;
-            for(int i=0;i<24;i++){double a=(Math.PI*2/24)*i+t*0.15;w.spawnParticle(Particle.DRAGON_BREATH,l.clone().add(Math.cos(a)*r,0.1,Math.sin(a)*r),3,0,0,0,0);w.spawnParticle(Particle.SQUID_INK,l.clone().add(Math.cos(a)*r*0.5,0.15,Math.sin(a)*r*0.5),2);}
+            for(int i=0;i<24;i++){double a=(Math.PI*2/24)*i+t*0.15;sp(w,Particle.DRAGON_BREATH,l.clone().add(Math.cos(a)*r,0.1,Math.sin(a)*r),3,0,0,0,0);w.spawnParticle(Particle.SQUID_INK,l.clone().add(Math.cos(a)*r*0.5,0.15,Math.sin(a)*r*0.5),2);}
             w.spawnParticle(Particle.PORTAL,l.clone().add(0,0.3,0),20,r*0.4,0.1,r*0.4,0.6);
             if(t%8==0){w.playSound(l,Sound.BLOCK_PORTAL_AMBIENT,0.7f,0.3f+t*0.02f);for(int b=0;b<3;b++){double a2=rng().nextDouble(Math.PI*2);gf(w,l.clone().add(Math.cos(a2)*r,0.1,Math.sin(a2)*r),rm(bm),0,0,0,60);}}
             t+=2;
@@ -197,7 +206,7 @@ public class FinisherEffects {
         new BukkitRunnable(){int t=0;float speed=12f;float cumYaw=victim.getLocation().getYaw();public void run(){if(t>=155||!victim.isOnline()){cancel();return;}speed=Math.min(speed+0.9f,100f);cumYaw+=speed;Location l=victim.getLocation();l.setYaw(cumYaw%360f);victim.teleport(l);if(t%3==0)w.spawnParticle(Particle.PORTAL,l.clone().add(0,1,0),12,0.3,0.5,0.3,0.7);t++;}}.runTaskTimer(plugin,28,1);
         new BukkitRunnable(){int t=0;public void run(){
             if(t>=135||!victim.isOnline()){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}
-            for(int arm=0;arm<8;arm++){double a=t*0.55+arm*Math.PI/4;double maxR=4.0-t*0.025;if(maxR<0.3)maxR=0.3;for(double d=0.3;d<maxR;d+=0.45)w.spawnParticle(Particle.DRAGON_BREATH,l.clone().add(Math.cos(a+d*0.3)*d,0.12,Math.sin(a+d*0.3)*d),2,0.02,0.02,0.02,0.0);}
+            for(int arm=0;arm<8;arm++){double a=t*0.55+arm*Math.PI/4;double maxR=4.0-t*0.025;if(maxR<0.3)maxR=0.3;for(double d=0.3;d<maxR;d+=0.45)sp(w,Particle.DRAGON_BREATH,l.clone().add(Math.cos(a+d*0.3)*d,0.12,Math.sin(a+d*0.3)*d),2,0.02,0.02,0.02,0.0);}
             w.spawnParticle(Particle.SQUID_INK,l.clone().add(0,0.5,0),12,0.1,0.1,0.1,0.0);
             if(t%6==0)for(int b=0;b<6;b++){double a2=rng().nextDouble(Math.PI*2);double dist=3.5+rng().nextDouble(3);gb(w,l.clone().add(Math.cos(a2)*dist,0.5,Math.sin(a2)*dist),rm(bm),-Math.cos(a2)*0.25,rng().nextDouble(0.05,0.18),-Math.sin(a2)*0.25,30+rng().nextInt(15));}
             if(t%14==0){w.playSound(l,Sound.ENTITY_WARDEN_HEARTBEAT,1.0f,0.4f);w.spawnParticle(Particle.SONIC_BOOM,l,1,0.0,0.0,0.0,0.0);}
@@ -205,7 +214,7 @@ public class FinisherEffects {
         }}.runTaskTimer(plugin,35,2);
         new BukkitRunnable(){public void run(){
             Location l=vLoc(victim);if(l==null)return;
-            w.spawnParticle(Particle.SQUID_INK,l,400);w.spawnParticle(Particle.DRAGON_BREATH,l,300,0,0,0,0);w.spawnParticle(Particle.PORTAL,l,600,6,3,6,2.5);
+            w.spawnParticle(Particle.SQUID_INK,l,400);sp(w,Particle.DRAGON_BREATH,l,300,0,0,0,0);w.spawnParticle(Particle.PORTAL,l,600,6,3,6,2.5);
             w.spawnParticle(Particle.EXPLOSION_EMITTER,l,6);w.spawnParticle(Particle.SONIC_BOOM,l,4);
             w.playSound(l,Sound.ENTITY_WARDEN_SONIC_BOOM,1.5f,0.3f);w.playSound(l,Sound.ENTITY_GENERIC_EXPLODE,1.5f,0.4f);
             for(int b=0;b<50;b++){double a=(Math.PI*2/50)*b;double sp=rng().nextDouble(0.5,1.4);ge(w,l.clone().add(0,0.5,0),rm(bm),Math.cos(a)*sp,rng().nextDouble(0.1,0.5),Math.sin(a)*sp,48+rng().nextInt(22));}
@@ -251,24 +260,24 @@ public class FinisherEffects {
             if(t>=80||!victim.isOnline()){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}
             if(t%4==0){double yy=(t/4)*1.0;if(yy>5)yy=5;for(int p=0;p<6;p++){double a=(Math.PI*2/6)*p;gf(w,l.clone().add(Math.cos(a)*2.2,yy,Math.sin(a)*2.2),rm(bm),0,0,0,140);if(yy>1.5){double a2=a+Math.PI/6;gf(w,l.clone().add(Math.cos(a2)*1.9,yy-1.0,Math.sin(a2)*1.9),rm(bm),0,0,0,140);}}}
             for(int ring=0;ring<4;ring++){int pts=10+ring*3;for(int i=0;i<pts;i++){double a=(Math.PI*2/pts)*i+t*(0.12+ring*0.06);double r=2.4-ring*0.25;w.spawnParticle(Particle.DUST,l.clone().add(Math.cos(a)*r,ring*0.6+0.2,Math.sin(a)*r),2,0.05,0.06,0.05,new Particle.DustOptions(Color.fromRGB(163,73,223),1.8f));}}
-            if(t%8==0){w.playSound(l,Sound.BLOCK_AMETHYST_BLOCK_CHIME,0.8f,0.5f+t*0.012f);w.spawnParticle(Particle.END_ROD,l.clone().add(0,1,0),8,1.2,1.0,1.2,0.03);}t+=2;
+            if(t%8==0){w.playSound(l,Sound.BLOCK_AMETHYST_BLOCK_CHIME,0.8f,0.5f+t*0.012f);sp(w,Particle.END_ROD,l.clone().add(0,1,0),8,1.2,1.0,1.2,0.03);}t+=2;
         }}.runTaskTimer(plugin,0,2);
         new BukkitRunnable(){int t=0;public void run(){
             if(t>=75||!victim.isOnline()){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}
             double r=2.2-t*0.018;if(r<0.6)r=0.6;
             for(int i=0;i<30;i++){double a=(Math.PI*2/30)*i+t*0.08;double y=(i%8)*0.5;w.spawnParticle(Particle.DUST,l.clone().add(Math.cos(a)*r,y,Math.sin(a)*r),3,0.03,0.03,0.03,new Particle.DustOptions(Color.fromRGB(200,150,255),1.6f));}
-            w.spawnParticle(Particle.END_ROD,l.clone().add(0,1,0),8,0.5,0.8,0.5,0.03);
+            sp(w,Particle.END_ROD,l.clone().add(0,1,0),8,0.5,0.8,0.5,0.03);
             if(t%10==0)for(int b=0;b<3;b++)gf(w,l.clone().add(rng().nextDouble(-1,1),rng().nextDouble(0.5,3),rng().nextDouble(-1,1)),Material.AMETHYST_CLUSTER,0,0.02,0,55);
             if(t%6==0)w.playSound(l,Sound.BLOCK_AMETHYST_CLUSTER_STEP,0.7f,0.8f+t*0.012f);t+=2;
         }}.runTaskTimer(plugin,80,2);
         new BukkitRunnable(){public void run(){
             Location l=vLoc(victim);if(l==null)return;Location c=l.clone().add(0,1,0);
             w.spawnParticle(Particle.DUST,c,500,6,6,6,new Particle.DustOptions(Color.fromRGB(163,73,223),3.5f));w.spawnParticle(Particle.DUST,c,300,5,5,5,new Particle.DustOptions(Color.fromRGB(200,150,255),2.8f));
-            w.spawnParticle(Particle.END_ROD,c,150,4,4,4,0.25);w.spawnParticle(Particle.EXPLOSION_EMITTER,c,5);w.spawnParticle(Particle.END_ROD,c,4);
+            sp(w,Particle.END_ROD,c,150,4,4,4,0.25);w.spawnParticle(Particle.EXPLOSION_EMITTER,c,5);sp(w,Particle.END_ROD,c,4);
             w.playSound(l,Sound.BLOCK_GLASS_BREAK,2.0f,0.3f);w.playSound(l,Sound.BLOCK_AMETHYST_BLOCK_BREAK,2.0f,0.4f);w.playSound(l,Sound.ENTITY_GENERIC_EXPLODE,1.2f,1.5f);
             for(int b=0;b<55;b++){double a=(Math.PI*2/55)*b;double sp=0.6+rng().nextDouble(1.2);ge(w,c,rm(bm),Math.cos(a)*sp,rng().nextDouble(0.2,1.5),Math.sin(a)*sp,46+rng().nextInt(25));}
         }}.runTaskLater(plugin,158);
-        new BukkitRunnable(){int t=0;public void run(){if(t>=35){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}w.spawnParticle(Particle.DUST,l.clone().add(0,1,0),30-t,4,4,4,new Particle.DustOptions(Color.fromRGB(200,150,255),1.0f));w.spawnParticle(Particle.END_ROD,l.clone().add(0,1,0),8,3,3,3,0.03);if(t%8==0)w.playSound(l,Sound.BLOCK_AMETHYST_BLOCK_CHIME,0.4f,1.5f);t+=3;}}.runTaskTimer(plugin,163,3);
+        new BukkitRunnable(){int t=0;public void run(){if(t>=35){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}w.spawnParticle(Particle.DUST,l.clone().add(0,1,0),30-t,4,4,4,new Particle.DustOptions(Color.fromRGB(200,150,255),1.0f));sp(w,Particle.END_ROD,l.clone().add(0,1,0),8,3,3,3,0.03);if(t%8==0)w.playSound(l,Sound.BLOCK_AMETHYST_BLOCK_CHIME,0.4f,1.5f);t+=3;}}.runTaskTimer(plugin,163,3);
         return D;
     }
 
@@ -276,12 +285,12 @@ public class FinisherEffects {
     private int playOrbital(Player victim) {
         final int D=240; Location o=victim.getLocation().clone(); World w=o.getWorld(); if(w==null)return 20;
         Material[] bm={Material.GLOWSTONE,Material.SEA_LANTERN,Material.GOLD_BLOCK,Material.QUARTZ_BLOCK,Material.WHITE_CONCRETE,Material.YELLOW_CONCRETE};
-        new BukkitRunnable(){int t=0;public void run(){if(t>=70||!victim.isOnline()){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}double r=3.5-t*0.03;for(int arm=0;arm<8;arm++){double a=(Math.PI/4)*arm+t*0.12;for(double d=0.3;d<r;d+=0.35)w.spawnParticle(Particle.DUST,l.clone().add(Math.cos(a)*d,0.1,Math.sin(a)*d),2,0.03,0.01,0.03,new Particle.DustOptions(Color.RED,1.3f));}w.spawnParticle(Particle.END_ROD,l.clone().add(0,0.3,0),6,0.2,0.05,0.2,0.01);w.spawnParticle(Particle.DUST,l.clone().add(0,0.2,0),10,0.4,0.05,0.4,new Particle.DustOptions(Color.ORANGE,1.8f));if(t%12==0){w.playSound(l,Sound.BLOCK_BEACON_AMBIENT,0.7f,1.0f+t*0.02f);w.playSound(l,Sound.BLOCK_NOTE_BLOCK_PLING,0.4f,1.5f+t*0.01f);}t+=2;}}.runTaskTimer(plugin,0,2);
-        new BukkitRunnable(){int t=0;public void run(){if(t>=60||!victim.isOnline()){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}double maxY=15+t*0.5;for(double y=0;y<maxY;y+=0.8){double wb=Math.sin((y+t)*0.4)*0.12;w.spawnParticle(Particle.END_ROD,l.clone().add(wb,y,wb),2,0.04,0.1,0.04,0.003);}if(t%6==0)for(int b=0;b<3;b++)gb(w,l.clone().add(rng().nextDouble(-1,1),0,rng().nextDouble(-1,1)),rm(bm),0,rng().nextDouble(0.4,1.0),0,55);if(t%8==0)w.playSound(l,Sound.BLOCK_BEACON_ACTIVATE,0.5f,1.5f+t*0.01f);t+=2;}}.runTaskTimer(plugin,40,2);
-        new BukkitRunnable(){public void run(){if(!victim.isOnline())return;victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION,160,2,false,false,false));Location l=vLoc(victim);if(l!=null){w.playSound(l,Sound.ITEM_TRIDENT_THUNDER,1.0f,1.5f);w.spawnParticle(Particle.END_ROD,l,3);}}}.runTaskLater(plugin,70);
-        new BukkitRunnable(){int t=0;public void run(){if(t>=100||!victim.isOnline()){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}for(double y=-2;y<35;y+=0.5){double wb=Math.sin((y+t)*0.25)*0.15;w.spawnParticle(Particle.END_ROD,l.clone().add(wb,y,wb),3,0.12,0.08,0.12,0.005);if(y<5&&t%2==0)w.spawnParticle(Particle.DUST,l.clone().add(0,y,0),3,0.25,0.08,0.25,new Particle.DustOptions(Color.WHITE,2.5f));}if(t%4==0){double a=t*0.3;for(int b=0;b<4;b++){double ba=a+b*Math.PI/2;gf(w,l.clone().add(Math.cos(ba)*2.5,1+Math.sin(t*0.1)*0.5,Math.sin(ba)*2.5),rm(bm),0,0.02,0,20);}}if(t%8==0)for(int b=0;b<2;b++)gb(w,l.clone().add(rng().nextDouble(-2,2),-1,rng().nextDouble(-2,2)),rm(bm),0,rng().nextDouble(0.5,1.2),0,50);if(t%6==0)w.playSound(l,Sound.BLOCK_BEACON_AMBIENT,0.8f,2.0f);t+=2;}}.runTaskTimer(plugin,100,2);
-        new BukkitRunnable(){public void run(){Location l=vLoc(victim);if(l==null)return;w.spawnParticle(Particle.EXPLOSION_EMITTER,l,10);w.spawnParticle(Particle.END_ROD,l,500,7,7,7,0.3);w.spawnParticle(Particle.END_ROD,l,8);w.spawnParticle(Particle.DUST,l,300,6,6,6,new Particle.DustOptions(Color.WHITE,3.5f));w.spawnParticle(Particle.DUST,l,200,5,5,5,new Particle.DustOptions(Color.YELLOW,2.8f));w.playSound(l,Sound.ENTITY_GENERIC_EXPLODE,2.0f,0.5f);w.playSound(l,Sound.ITEM_TRIDENT_THUNDER,2.0f,0.4f);for(int b=0;b<50;b++)ge(w,l.clone().add(0,1.5,0),rm(bm),rng().nextDouble(-2.2,2.2),rng().nextDouble(0.5,2.8),rng().nextDouble(-2.2,2.2),52+rng().nextInt(25));}}.runTaskLater(plugin,205);
-        new BukkitRunnable(){int t=0;public void run(){if(t>=28){cancel();return;}Location l=vLoc(victim);if(l==null)l=o.clone().add(0,4,0);for(int f=0;f<4;f++){Location fl=l.clone().add(rng().nextDouble(-5,5),rng().nextDouble(-1,6),rng().nextDouble(-5,5));w.spawnParticle(Particle.END_ROD,fl,25,1,1,1,0.12);}if(t%3==0){w.playSound(l,Sound.ENTITY_FIREWORK_ROCKET_BLAST,0.8f,0.8f+t*0.03f);w.playSound(l,Sound.ENTITY_FIREWORK_ROCKET_TWINKLE,0.6f,1.0f+t*0.02f);}t+=3;}}.runTaskTimer(plugin,210,3);
+        new BukkitRunnable(){int t=0;public void run(){if(t>=70||!victim.isOnline()){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}double r=3.5-t*0.03;for(int arm=0;arm<8;arm++){double a=(Math.PI/4)*arm+t*0.12;for(double d=0.3;d<r;d+=0.35)w.spawnParticle(Particle.DUST,l.clone().add(Math.cos(a)*d,0.1,Math.sin(a)*d),2,0.03,0.01,0.03,new Particle.DustOptions(Color.RED,1.3f));}sp(w,Particle.END_ROD,l.clone().add(0,0.3,0),6,0.2,0.05,0.2,0.01);w.spawnParticle(Particle.DUST,l.clone().add(0,0.2,0),10,0.4,0.05,0.4,new Particle.DustOptions(Color.ORANGE,1.8f));if(t%12==0){w.playSound(l,Sound.BLOCK_BEACON_AMBIENT,0.7f,1.0f+t*0.02f);w.playSound(l,Sound.BLOCK_NOTE_BLOCK_PLING,0.4f,1.5f+t*0.01f);}t+=2;}}.runTaskTimer(plugin,0,2);
+        new BukkitRunnable(){int t=0;public void run(){if(t>=60||!victim.isOnline()){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}double maxY=15+t*0.5;for(double y=0;y<maxY;y+=0.8){double wb=Math.sin((y+t)*0.4)*0.12;sp(w,Particle.END_ROD,l.clone().add(wb,y,wb),2,0.04,0.1,0.04,0.003);}if(t%6==0)for(int b=0;b<3;b++)gb(w,l.clone().add(rng().nextDouble(-1,1),0,rng().nextDouble(-1,1)),rm(bm),0,rng().nextDouble(0.4,1.0),0,55);if(t%8==0)w.playSound(l,Sound.BLOCK_BEACON_ACTIVATE,0.5f,1.5f+t*0.01f);t+=2;}}.runTaskTimer(plugin,40,2);
+        new BukkitRunnable(){public void run(){if(!victim.isOnline())return;victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION,160,2,false,false,false));Location l=vLoc(victim);if(l!=null){w.playSound(l,Sound.ITEM_TRIDENT_THUNDER,1.0f,1.5f);sp(w,Particle.END_ROD,l,3);}}}.runTaskLater(plugin,70);
+        new BukkitRunnable(){int t=0;public void run(){if(t>=100||!victim.isOnline()){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}for(double y=-2;y<35;y+=0.5){double wb=Math.sin((y+t)*0.25)*0.15;sp(w,Particle.END_ROD,l.clone().add(wb,y,wb),3,0.12,0.08,0.12,0.005);if(y<5&&t%2==0)w.spawnParticle(Particle.DUST,l.clone().add(0,y,0),3,0.25,0.08,0.25,new Particle.DustOptions(Color.WHITE,2.5f));}if(t%4==0){double a=t*0.3;for(int b=0;b<4;b++){double ba=a+b*Math.PI/2;gf(w,l.clone().add(Math.cos(ba)*2.5,1+Math.sin(t*0.1)*0.5,Math.sin(ba)*2.5),rm(bm),0,0.02,0,20);}}if(t%8==0)for(int b=0;b<2;b++)gb(w,l.clone().add(rng().nextDouble(-2,2),-1,rng().nextDouble(-2,2)),rm(bm),0,rng().nextDouble(0.5,1.2),0,50);if(t%6==0)w.playSound(l,Sound.BLOCK_BEACON_AMBIENT,0.8f,2.0f);t+=2;}}.runTaskTimer(plugin,100,2);
+        new BukkitRunnable(){public void run(){Location l=vLoc(victim);if(l==null)return;w.spawnParticle(Particle.EXPLOSION_EMITTER,l,10);sp(w,Particle.END_ROD,l,500,7,7,7,0.3);sp(w,Particle.END_ROD,l,8);w.spawnParticle(Particle.DUST,l,300,6,6,6,new Particle.DustOptions(Color.WHITE,3.5f));w.spawnParticle(Particle.DUST,l,200,5,5,5,new Particle.DustOptions(Color.YELLOW,2.8f));w.playSound(l,Sound.ENTITY_GENERIC_EXPLODE,2.0f,0.5f);w.playSound(l,Sound.ITEM_TRIDENT_THUNDER,2.0f,0.4f);for(int b=0;b<50;b++)ge(w,l.clone().add(0,1.5,0),rm(bm),rng().nextDouble(-2.2,2.2),rng().nextDouble(0.5,2.8),rng().nextDouble(-2.2,2.2),52+rng().nextInt(25));}}.runTaskLater(plugin,205);
+        new BukkitRunnable(){int t=0;public void run(){if(t>=28){cancel();return;}Location l=vLoc(victim);if(l==null)l=o.clone().add(0,4,0);for(int f=0;f<4;f++){Location fl=l.clone().add(rng().nextDouble(-5,5),rng().nextDouble(-1,6),rng().nextDouble(-5,5));sp(w,Particle.END_ROD,fl,25,1,1,1,0.12);}if(t%3==0){w.playSound(l,Sound.ENTITY_FIREWORK_ROCKET_BLAST,0.8f,0.8f+t*0.03f);w.playSound(l,Sound.ENTITY_FIREWORK_ROCKET_TWINKLE,0.6f,1.0f+t*0.02f);}t+=3;}}.runTaskTimer(plugin,210,3);
         return D;
     }
 
@@ -313,7 +322,7 @@ public class FinisherEffects {
         // Phase 3: Particle shimmer on spikes (80-150t)
         new BukkitRunnable(){int t=0;public void run(){if(t>=70||!victim.isOnline()){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}for(int s=0;s<8;s++){double a=(Math.PI*2/8)*s;for(int d=1;d<5;d++){double dist=0.8+d*1.0;double h=d;w.spawnParticle(Particle.DUST,l.clone().add(Math.cos(a)*dist,h*0.5+Math.sin(t*0.15)*0.2,Math.sin(a)*dist),1,0.08,0.1,0.08,new Particle.DustOptions(Color.fromRGB(180,235,255),1.5f));}}t+=3;}}.runTaskTimer(plugin,80,3);
         // Phase 4: Shatter — spikes explode outward (tick 155)
-        new BukkitRunnable(){public void run(){Location l=vLoc(victim);if(l==null)return;w.playSound(l,Sound.BLOCK_GLASS_BREAK,2.0f,0.3f);w.playSound(l,Sound.ENTITY_GENERIC_EXPLODE,1.2f,1.8f);w.spawnParticle(Particle.SNOWFLAKE,l,200,5,2,5,0.15);w.spawnParticle(Particle.DUST,l,200,5,2,5,new Particle.DustOptions(Color.fromRGB(150,220,255),2.5f));w.spawnParticle(Particle.EXPLOSION_EMITTER,l,3,1,0.3,1,0);for(int s=0;s<8;s++){double a=(Math.PI*2/8)*s;for(int b=0;b<4;b++){double sp=0.6+rng().nextDouble(0.8);ge(w,l.clone().add(Math.cos(a)*2,0.5+b*0.5,Math.sin(a)*2),rm(bm),Math.cos(a)*sp,rng().nextDouble(0.1,0.4),Math.sin(a)*sp,40+rng().nextInt(15));}}w.spawnParticle(Particle.END_ROD,l,40,4,1,4,0.1);}}.runTaskLater(plugin,155);
+        new BukkitRunnable(){public void run(){Location l=vLoc(victim);if(l==null)return;w.playSound(l,Sound.BLOCK_GLASS_BREAK,2.0f,0.3f);w.playSound(l,Sound.ENTITY_GENERIC_EXPLODE,1.2f,1.8f);w.spawnParticle(Particle.SNOWFLAKE,l,200,5,2,5,0.15);w.spawnParticle(Particle.DUST,l,200,5,2,5,new Particle.DustOptions(Color.fromRGB(150,220,255),2.5f));w.spawnParticle(Particle.EXPLOSION_EMITTER,l,3,1,0.3,1,0);for(int s=0;s<8;s++){double a=(Math.PI*2/8)*s;for(int b=0;b<4;b++){double sp=0.6+rng().nextDouble(0.8);ge(w,l.clone().add(Math.cos(a)*2,0.5+b*0.5,Math.sin(a)*2),rm(bm),Math.cos(a)*sp,rng().nextDouble(0.1,0.4),Math.sin(a)*sp,40+rng().nextInt(15));}}sp(w,Particle.END_ROD,l,40,4,1,4,0.1);}}.runTaskLater(plugin,155);
         return D;
     }
 
@@ -322,11 +331,11 @@ public class FinisherEffects {
         final int D=240; Location o=victim.getLocation().clone(); World w=o.getWorld(); if(w==null)return 20;
         victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION,200,2,false,false,false));w.playSound(o,Sound.ENTITY_ENDER_DRAGON_GROWL,1.5f,0.5f);
         Material[] bm={Material.END_STONE,Material.END_STONE_BRICKS,Material.PURPUR_BLOCK,Material.PURPUR_PILLAR,Material.PURPLE_CONCRETE,Material.OBSIDIAN,Material.CRYING_OBSIDIAN};
-        new BukkitRunnable(){int t=0;public void run(){if(t>=70||!victim.isOnline()){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}double r=3.5-t*0.03;for(int i=0;i<20;i++){double a=(Math.PI*2/20)*i+t*0.08;w.spawnParticle(Particle.DRAGON_BREATH,l.clone().add(Math.cos(a)*r,0.2,Math.sin(a)*r),4,0.05,0.06,0.05,0.004);w.spawnParticle(Particle.DUST,l.clone().add(Math.cos(a)*r*0.6,0.3,Math.sin(a)*r*0.6),3,0.06,0.03,0.06,0,new Particle.DustOptions(Color.fromRGB(120,0,180),2.0f));}if(t%6==0)for(int b=0;b<4;b++){double a=rng().nextDouble(Math.PI*2);double r2=1+rng().nextDouble(2.5);gb(w,l.clone().add(Math.cos(a)*r2,-0.5,Math.sin(a)*r2),rm(bm),0,rng().nextDouble(0.3,0.7),0,65);}if(t%10==0)w.playSound(l,Sound.ENTITY_ENDER_DRAGON_FLAP,0.6f,0.5f);t+=2;}}.runTaskTimer(plugin,0,2);
-        new BukkitRunnable(){int t=0;public void run(){if(t>=140||!victim.isOnline()){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}for(int arm=0;arm<4;arm++){double a=t*0.35+arm*Math.PI/2;double r=2.2-t*0.008;if(r<0.5)r=0.5;for(double y=0;y<4;y+=0.35)w.spawnParticle(Particle.DRAGON_BREATH,l.clone().add(Math.cos(a+y*0.6)*r,y-0.5,Math.sin(a+y*0.6)*r),4,0.04,0.05,0.04,0.003);}w.spawnParticle(Particle.DUST,l,14,0.5,1.5,0.5,0,new Particle.DustOptions(Color.fromRGB(150,0,220),2.2f));w.spawnParticle(Particle.END_ROD,l.clone().add(0,1,0),5,0.3,0.6,0.3,0.02);if(t%6==0)for(int b=0;b<3;b++){double a=t*0.4+b*Math.PI*2/3;double r=1.5+Math.sin(t*0.1)*0.5;gb(w,l.clone().add(Math.cos(a)*r,-1,Math.sin(a)*r),rm(bm),-Math.cos(a)*0.05,rng().nextDouble(0.3,0.8),-Math.sin(a)*0.05,45);}if(t%14==0){w.playSound(l,Sound.ENTITY_ENDER_DRAGON_GROWL,0.4f,0.8f+t*0.005f);w.spawnParticle(Particle.SONIC_BOOM,l,1,0,0,0,0);}t+=2;}}.runTaskTimer(plugin,50,2);
+        new BukkitRunnable(){int t=0;public void run(){if(t>=70||!victim.isOnline()){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}double r=3.5-t*0.03;for(int i=0;i<20;i++){double a=(Math.PI*2/20)*i+t*0.08;sp(w,Particle.DRAGON_BREATH,l.clone().add(Math.cos(a)*r,0.2,Math.sin(a)*r),4,0.05,0.06,0.05,0.004);w.spawnParticle(Particle.DUST,l.clone().add(Math.cos(a)*r*0.6,0.3,Math.sin(a)*r*0.6),3,0.06,0.03,0.06,0,new Particle.DustOptions(Color.fromRGB(120,0,180),2.0f));}if(t%6==0)for(int b=0;b<4;b++){double a=rng().nextDouble(Math.PI*2);double r2=1+rng().nextDouble(2.5);gb(w,l.clone().add(Math.cos(a)*r2,-0.5,Math.sin(a)*r2),rm(bm),0,rng().nextDouble(0.3,0.7),0,65);}if(t%10==0)w.playSound(l,Sound.ENTITY_ENDER_DRAGON_FLAP,0.6f,0.5f);t+=2;}}.runTaskTimer(plugin,0,2);
+        new BukkitRunnable(){int t=0;public void run(){if(t>=140||!victim.isOnline()){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}for(int arm=0;arm<4;arm++){double a=t*0.35+arm*Math.PI/2;double r=2.2-t*0.008;if(r<0.5)r=0.5;for(double y=0;y<4;y+=0.35)sp(w,Particle.DRAGON_BREATH,l.clone().add(Math.cos(a+y*0.6)*r,y-0.5,Math.sin(a+y*0.6)*r),4,0.04,0.05,0.04,0.003);}w.spawnParticle(Particle.DUST,l,14,0.5,1.5,0.5,0,new Particle.DustOptions(Color.fromRGB(150,0,220),2.2f));sp(w,Particle.END_ROD,l.clone().add(0,1,0),5,0.3,0.6,0.3,0.02);if(t%6==0)for(int b=0;b<3;b++){double a=t*0.4+b*Math.PI*2/3;double r=1.5+Math.sin(t*0.1)*0.5;gb(w,l.clone().add(Math.cos(a)*r,-1,Math.sin(a)*r),rm(bm),-Math.cos(a)*0.05,rng().nextDouble(0.3,0.8),-Math.sin(a)*0.05,45);}if(t%14==0){w.playSound(l,Sound.ENTITY_ENDER_DRAGON_GROWL,0.4f,0.8f+t*0.005f);w.spawnParticle(Particle.SONIC_BOOM,l,1,0,0,0,0);}t+=2;}}.runTaskTimer(plugin,50,2);
         new BukkitRunnable(){public void run(){if(!victim.isOnline())return;victim.removePotionEffect(PotionEffectType.LEVITATION);victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION,100,4,false,false,false));}}.runTaskLater(plugin,100);
-        new BukkitRunnable(){public void run(){Location l=vLoc(victim);if(l==null)return;w.spawnParticle(Particle.DRAGON_BREATH,l,500,7,7,7,0.15);w.spawnParticle(Particle.DUST,l,350,6,6,6,0,new Particle.DustOptions(Color.fromRGB(150,0,220),3.5f));w.spawnParticle(Particle.DUST,l,250,5,5,5,0,new Particle.DustOptions(Color.fromRGB(200,100,255),2.8f));w.spawnParticle(Particle.END_ROD,l,150,5,5,5,0.25);w.spawnParticle(Particle.EXPLOSION_EMITTER,l,8,2.5,2.5,2.5,0);w.spawnParticle(Particle.SONIC_BOOM,l,4,1.5,1.5,1.5,0);w.playSound(l,Sound.ENTITY_ENDER_DRAGON_DEATH,1.5f,0.8f);w.playSound(l,Sound.ENTITY_GENERIC_EXPLODE,2.0f,0.4f);for(int b=0;b<55;b++)ge(w,l.clone().add(0,1,0),rm(bm),rng().nextDouble(-2.2,2.2),rng().nextDouble(0.5,2.8),rng().nextDouble(-2.2,2.2),52+rng().nextInt(25));}}.runTaskLater(plugin,200);
-        new BukkitRunnable(){int t=0;public void run(){if(t>=30){cancel();return;}Location l=vLoc(victim);if(l==null)l=o.clone().add(0,5,0);w.spawnParticle(Particle.DRAGON_BREATH,l,25-t,4,4,4,0.03);w.spawnParticle(Particle.END_ROD,l,6,2.5,2.5,2.5,0.02);if(t%8==0)w.playSound(l,Sound.ENTITY_ENDER_DRAGON_FLAP,0.4f,1.2f);t+=3;}}.runTaskTimer(plugin,205,3);
+        new BukkitRunnable(){public void run(){Location l=vLoc(victim);if(l==null)return;sp(w,Particle.DRAGON_BREATH,l,500,7,7,7,0.15);w.spawnParticle(Particle.DUST,l,350,6,6,6,0,new Particle.DustOptions(Color.fromRGB(150,0,220),3.5f));w.spawnParticle(Particle.DUST,l,250,5,5,5,0,new Particle.DustOptions(Color.fromRGB(200,100,255),2.8f));sp(w,Particle.END_ROD,l,150,5,5,5,0.25);w.spawnParticle(Particle.EXPLOSION_EMITTER,l,8,2.5,2.5,2.5,0);w.spawnParticle(Particle.SONIC_BOOM,l,4,1.5,1.5,1.5,0);w.playSound(l,Sound.ENTITY_ENDER_DRAGON_DEATH,1.5f,0.8f);w.playSound(l,Sound.ENTITY_GENERIC_EXPLODE,2.0f,0.4f);for(int b=0;b<55;b++)ge(w,l.clone().add(0,1,0),rm(bm),rng().nextDouble(-2.2,2.2),rng().nextDouble(0.5,2.8),rng().nextDouble(-2.2,2.2),52+rng().nextInt(25));}}.runTaskLater(plugin,200);
+        new BukkitRunnable(){int t=0;public void run(){if(t>=30){cancel();return;}Location l=vLoc(victim);if(l==null)l=o.clone().add(0,5,0);sp(w,Particle.DRAGON_BREATH,l,25-t,4,4,4,0.03);sp(w,Particle.END_ROD,l,6,2.5,2.5,2.5,0.02);if(t%8==0)w.playSound(l,Sound.ENTITY_ENDER_DRAGON_FLAP,0.4f,1.2f);t+=3;}}.runTaskTimer(plugin,205,3);
         return D;
     }
 
@@ -389,10 +398,10 @@ public class FinisherEffects {
             Location l=vLoc(victim);if(l==null){cancel(); return;}
             double len=0.5+t*0.14;
             for(int cr=0;cr<8;cr++){double a=(Math.PI*2/8)*cr+Math.sin(t*0.05)*0.1;
-                for(double d=0.3;d<len;d+=0.35){w.spawnParticle(Particle.DUST,l.clone().add(Math.cos(a)*d,0.06,Math.sin(a)*d),3,0.04,0.01,0.04,new Particle.DustOptions(Color.fromRGB(255,200,0),2.5f));w.spawnParticle(Particle.END_ROD,l.clone().add(Math.cos(a)*d,0.1,Math.sin(a)*d),1,0.02,0.02,0.02,0.005);}
+                for(double d=0.3;d<len;d+=0.35){w.spawnParticle(Particle.DUST,l.clone().add(Math.cos(a)*d,0.06,Math.sin(a)*d),3,0.04,0.01,0.04,new Particle.DustOptions(Color.fromRGB(255,200,0),2.5f));sp(w,Particle.END_ROD,l.clone().add(Math.cos(a)*d,0.1,Math.sin(a)*d),1,0.02,0.02,0.02,0.005);}
                 if(t%6==0){double tip=len-rng().nextDouble(0.3);if(tip<0.3)tip=0.3;gf(w,l.clone().add(Math.cos(a)*tip,-0.1,Math.sin(a)*tip),rm(pm),0,0,0,140);}
             }
-            w.spawnParticle(Particle.END_ROD,l,1);
+            sp(w,Particle.END_ROD,l,1);
             if(t%4==0){w.playSound(l,Sound.ENTITY_LIGHTNING_BOLT_IMPACT,0.5f,0.4f+t*0.02f);w.spawnParticle(Particle.ELECTRIC_SPARK,l.clone().add(0,0.2,0),20,len*0.4,0.1,len*0.4,0.04);}
             if(t%8==0)w.strikeLightningEffect(l.clone().add(rng().nextDouble(-3,3),0,rng().nextDouble(-3,3)));
             t+=2;
@@ -425,7 +434,7 @@ public class FinisherEffects {
         BukkitRunnable phase3 = new BukkitRunnable(){public void run(){
             if(!victim.isOnline()||!((CoreProtectPlugin)plugin).getFinisherListener().isBeingFinished(victimUuid)){cancel(); return;}
             victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION,190,2,false,false,false));
-            Location l=vLoc(victim);if(l!=null){w.playSound(l,Sound.ITEM_TRIDENT_THUNDER,1.5f,1.2f);w.spawnParticle(Particle.END_ROD,l,5);w.spawnParticle(Particle.END_ROD,l,80,0.5,0.5,0.5,0.15);}
+            Location l=vLoc(victim);if(l!=null){w.playSound(l,Sound.ITEM_TRIDENT_THUNDER,1.5f,1.2f);sp(w,Particle.END_ROD,l,5);sp(w,Particle.END_ROD,l,80,0.5,0.5,0.5,0.15);}
         }}; phase3.runTaskLater(plugin,65);
         
         // Phase 4: Golden beacon + energy rings ascending (70-200)
@@ -435,7 +444,7 @@ public class FinisherEffects {
             }
             Location l=vLoc(victim);if(l==null){cancel(); return;}
             // Thick golden beam
-            for(double y=-3;y<40;y+=0.4){double wb=Math.sin((y+t)*0.3)*0.12;w.spawnParticle(Particle.DUST,l.clone().add(wb,y,wb),3,0.15,0.06,0.15,new Particle.DustOptions(Color.fromRGB(255,200,50),2.5f));if(y<8)w.spawnParticle(Particle.END_ROD,l.clone().add(wb*0.5,y,wb*0.5),1,0.08,0.04,0.08,0.003);}
+            for(double y=-3;y<40;y+=0.4){double wb=Math.sin((y+t)*0.3)*0.12;w.spawnParticle(Particle.DUST,l.clone().add(wb,y,wb),3,0.15,0.06,0.15,new Particle.DustOptions(Color.fromRGB(255,200,50),2.5f));if(y<8)sp(w,Particle.END_ROD,l.clone().add(wb*0.5,y,wb*0.5),1,0.08,0.04,0.08,0.003);}
             // 3 ascending energy rings at different speeds
             for(int ring=0;ring<3;ring++){double ry=(t*(0.6+ring*0.3)+ring*8)%35;int pts=16+ring*4;double rr=1.5+ring*0.8;Color rc=ring==0?Color.fromRGB(255,215,0):ring==1?Color.fromRGB(255,100,50):Color.fromRGB(100,200,255);
                 for(int i=0;i<pts;i++){double a=(Math.PI*2/pts)*i+t*(0.15+ring*0.08);w.spawnParticle(Particle.DUST,l.clone().add(Math.cos(a)*rr,ry,Math.sin(a)*rr),2,0.04,0.04,0.04,new Particle.DustOptions(rc,1.8f));}}
@@ -456,7 +465,7 @@ public class FinisherEffects {
             // Outer ring — slow, widest, highest
             if(t%5==0)for(int b=0;b<5;b++){double a=t*0.2+b*Math.PI*2/5;double r=4.5;gf(w,l.clone().add(Math.cos(a)*r,2+Math.sin(t*0.04+b)*3,Math.sin(a)*r),rm(pm),0,0.025,0,22);}
             // Particle tornado trails
-            for(int arm=0;arm<6;arm++){double a=t*0.45+arm*Math.PI/3;for(double y=0;y<6;y+=0.5){double r=1.5+y*0.5;w.spawnParticle(Particle.END_ROD,l.clone().add(Math.cos(a+y*0.4)*r,y-1,Math.sin(a+y*0.4)*r),1,0.03,0.03,0.03,0.003);}}
+            for(int arm=0;arm<6;arm++){double a=t*0.45+arm*Math.PI/3;for(double y=0;y<6;y+=0.5){double r=1.5+y*0.5;sp(w,Particle.END_ROD,l.clone().add(Math.cos(a+y*0.4)*r,y-1,Math.sin(a+y*0.4)*r),1,0.03,0.03,0.03,0.003);}}
             // Blocks ascending through beam
             if(t%8==0)for(int b=0;b<2;b++)gb(w,l.clone().add(rng().nextDouble(-1.5,1.5),-2,rng().nextDouble(-1.5,1.5)),rm(pm),0,rng().nextDouble(0.5,1.3),0,55);
             if(t%6==0)w.playSound(l,Sound.ENTITY_ENDER_DRAGON_FLAP,0.5f,1.0f+t*0.005f);
@@ -480,11 +489,11 @@ public class FinisherEffects {
             // Sphere of blocks
             if(t%3==0)for(int b=0;b<6;b++){double phi=rng().nextDouble(Math.PI);double theta=rng().nextDouble(Math.PI*2);double x=Math.sin(phi)*Math.cos(theta)*sR;double y2=Math.cos(phi)*sR;double z=Math.sin(phi)*Math.sin(theta)*sR;gf(w,l.clone().add(x,y2,z),rm(pm),0,0,0,50-t/2);}
             // ALL particle types
-            w.spawnParticle(Particle.END_ROD,l,12,sR*0.6,sR*0.6,sR*0.6,0.03);
+            sp(w,Particle.END_ROD,l,12,sR*0.6,sR*0.6,sR*0.6,0.03);
             w.spawnParticle(Particle.DUST,l,15,sR*0.5,sR*0.5,sR*0.5,0,new Particle.DustOptions(Color.fromRGB(255,200,50),2.2f));
             w.spawnParticle(Particle.FLAME,l,8,sR*0.4,sR*0.4,sR*0.4,0.02);
             w.spawnParticle(Particle.SOUL_FIRE_FLAME,l,6,sR*0.4,sR*0.4,sR*0.4,0.02);
-            w.spawnParticle(Particle.DRAGON_BREATH,l,8,sR*0.4,sR*0.4,sR*0.4,0.01);
+            sp(w,Particle.DRAGON_BREATH,l,8,sR*0.4,sR*0.4,sR*0.4,0.01);
             w.spawnParticle(Particle.ELECTRIC_SPARK,l,10,sR*0.5,sR*0.5,sR*0.5,0.05);
             if(t%4==0){w.spawnParticle(Particle.SONIC_BOOM,l,1,0,0,0,0);w.playSound(l,Sound.ENTITY_WARDEN_HEARTBEAT,1.0f,0.5f+t*0.015f);}
             if(t%8==0)w.strikeLightningEffect(l.clone().add(rng().nextDouble(-2,2),0,rng().nextDouble(-2,2)));
@@ -496,17 +505,17 @@ public class FinisherEffects {
             if(!victim.isOnline()||!((CoreProtectPlugin)plugin).getFinisherListener().isBeingFinished(victimUuid)){cancel(); immediateGhostCleanup(vLoc(victim)); return;}
             Location l=vLoc(victim);if(l==null){cancel(); return;}
             // Particles — EVERYTHING
-            w.spawnParticle(Particle.END_ROD,l,600,8,8,8,0.4);
+            sp(w,Particle.END_ROD,l,600,8,8,8,0.4);
             w.spawnParticle(Particle.DUST,l,500,7,7,7,0,new Particle.DustOptions(Color.fromRGB(255,215,0),4.0f));
             w.spawnParticle(Particle.DUST,l,400,6,6,6,0,new Particle.DustOptions(Color.WHITE,3.5f));
             w.spawnParticle(Particle.DUST,l,300,6,6,6,0,new Particle.DustOptions(Color.fromRGB(255,50,0),3.0f));
             w.spawnParticle(Particle.FLAME,l,200,6,6,6,0.15);
             w.spawnParticle(Particle.SOUL_FIRE_FLAME,l,150,5,5,5,0.12);
-            w.spawnParticle(Particle.DRAGON_BREATH,l,150,5,5,5,0.1);
+            sp(w,Particle.DRAGON_BREATH,l,150,5,5,5,0.1);
             w.spawnParticle(Particle.ELECTRIC_SPARK,l,200,6,6,6,0.2);
             w.spawnParticle(Particle.SNOWFLAKE,l,100,5,5,5,0.1);
             w.spawnParticle(Particle.EXPLOSION_EMITTER,l,12);
-            w.spawnParticle(Particle.END_ROD,l,10);
+            sp(w,Particle.END_ROD,l,10);
             w.spawnParticle(Particle.SONIC_BOOM,l,5);
             w.spawnParticle(Particle.TOTEM_OF_UNDYING,l,200,5,5,5,0.5);
             // Sounds — EVERYTHING
@@ -531,11 +540,11 @@ public class FinisherEffects {
             // Firework bursts
             for(int f=0;f<6;f++){Location fl=l.clone().add(rng().nextDouble(-7,7),rng().nextDouble(-2,8),rng().nextDouble(-7,7));
                 Color[] cs={Color.YELLOW,Color.RED,Color.AQUA,Color.FUCHSIA,Color.WHITE,Color.ORANGE};Color c=cs[rng().nextInt(cs.length)];
-                w.spawnParticle(Particle.DUST,fl,20,1.2,1.2,1.2,0,new Particle.DustOptions(c,2.5f));w.spawnParticle(Particle.END_ROD,fl,15,0.8,0.8,0.8,0.1);}
+                w.spawnParticle(Particle.DUST,fl,20,1.2,1.2,1.2,0,new Particle.DustOptions(c,2.5f));sp(w,Particle.END_ROD,fl,15,0.8,0.8,0.8,0.1);}
             if(t%3==0){w.playSound(l,Sound.ENTITY_FIREWORK_ROCKET_BLAST,1.0f,0.6f+t*0.03f);w.playSound(l,Sound.ENTITY_FIREWORK_ROCKET_TWINKLE,0.8f,0.8f+t*0.02f);}
             // Lingering golden dust
             w.spawnParticle(Particle.DUST,l,40-t,6,6,6,0,new Particle.DustOptions(Color.fromRGB(255,200,50),1.5f));
-            w.spawnParticle(Particle.END_ROD,l,15-t/3,4,4,4,0.04);
+            sp(w,Particle.END_ROD,l,15-t/3,4,4,4,0.04);
             if(t%6==0&&t<20)gb(w,l.clone().add(rng().nextDouble(-3,3),rng().nextDouble(-1,3),rng().nextDouble(-3,3)),rm(pm),rng().nextDouble(-0.5,0.5),rng().nextDouble(0.2,0.8),rng().nextDouble(-0.5,0.5),35);
             t+=2;
         }}; phase9.runTaskTimer(plugin,220,2);
@@ -544,14 +553,14 @@ public class FinisherEffects {
     }
 
     // === TOTEM ===
-    public void playTotemExplosion(Location loc) { World w=loc.getWorld();if(w==null)return;w.spawnParticle(Particle.EXPLOSION_EMITTER,loc.clone().add(0,1,0),1);w.spawnParticle(Particle.TOTEM_OF_UNDYING,loc.clone().add(0,1,0),100,1,1,1,0.5);w.spawnParticle(Particle.END_ROD,loc.clone().add(0,1,0),3);w.playSound(loc,Sound.ENTITY_GENERIC_EXPLODE,1.0f,1.5f);w.playSound(loc,Sound.ITEM_TOTEM_USE,1.0f,1.0f); }
+    public void playTotemExplosion(Location loc) { World w=loc.getWorld();if(w==null)return;w.spawnParticle(Particle.EXPLOSION_EMITTER,loc.clone().add(0,1,0),1);w.spawnParticle(Particle.TOTEM_OF_UNDYING,loc.clone().add(0,1,0),100,1,1,1,0.5);sp(w,Particle.END_ROD,loc.clone().add(0,1,0),3);w.playSound(loc,Sound.ENTITY_GENERIC_EXPLODE,1.0f,1.5f);w.playSound(loc,Sound.ITEM_TOTEM_USE,1.0f,1.0f); }
     public int playTotemCounter(Player victim, Player killer) {
         final int D=100;Location o=victim.getLocation().clone();World w=o.getWorld();if(w==null)return 20;
-        w.spawnParticle(Particle.TOTEM_OF_UNDYING,o.clone().add(0,1,0),150,1,1.5,1,0.5);w.spawnParticle(Particle.END_ROD,o.clone().add(0,1,0),3);w.playSound(o,Sound.ITEM_TOTEM_USE,1.2f,1.0f);
+        w.spawnParticle(Particle.TOTEM_OF_UNDYING,o.clone().add(0,1,0),150,1,1.5,1,0.5);sp(w,Particle.END_ROD,o.clone().add(0,1,0),3);w.playSound(o,Sound.ITEM_TOTEM_USE,1.2f,1.0f);
         new BukkitRunnable(){int t=0;public void run(){if(t>=20||!victim.isOnline()){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}double r=1.2+t*0.05;for(int i=0;i<16;i++){double a=(Math.PI*2/16)*i+t*0.2;w.spawnParticle(Particle.DUST,l.clone().add(Math.cos(a)*r,0.5+t*0.1,Math.sin(a)*r),1,0,0,0,0,new Particle.DustOptions(Color.fromRGB(255,223,50),1.5f));}if(t%5==0)w.playSound(l,Sound.BLOCK_AMETHYST_BLOCK_CHIME,0.5f,1.5f);t+=2;}}.runTaskTimer(plugin,15,2);
         new BukkitRunnable(){int t=0;public void run(){if(t>=30||!victim.isOnline()||!killer.isOnline()){cancel();return;}Location vl=victim.getLocation();Location kl=killer.getLocation();Vector dir=vl.toVector().subtract(kl.toVector()).normalize();for(double d=0;d<vl.distance(kl)&&d<6;d+=1.0){Location pt=kl.clone().add(dir.clone().multiply(d)).add(0,1,0);w.spawnParticle(Particle.DUST,pt,2,0.1,0.1,0.1,0,new Particle.DustOptions(Color.RED,1.5f));}Vector rev=kl.toVector().subtract(vl.toVector()).normalize();for(double d=0;d<3;d+=0.8){Location pt=vl.clone().add(rev.clone().multiply(d)).add(0,1,0);w.spawnParticle(Particle.DUST,pt,2,0.1,0.1,0.1,0,new Particle.DustOptions(Color.fromRGB(255,215,0),1.5f));}Location mid=vl.clone().add(kl).multiply(0.5).add(0,1,0);w.spawnParticle(Particle.ELECTRIC_SPARK,mid,10,0.3,0.3,0.3,0.1);if(t%6==0)w.playSound(mid,Sound.ENTITY_WARDEN_SONIC_BOOM,0.5f,1.5f);t+=3;}}.runTaskTimer(plugin,35,3);
-        new BukkitRunnable(){public void run(){Location l=vLoc(victim);if(l==null)return;w.spawnParticle(Particle.TOTEM_OF_UNDYING,l.clone().add(0,1,0),200,3,2,3,0.3);w.spawnParticle(Particle.END_ROD,l.clone().add(0,1,0),2);w.playSound(l,Sound.ENTITY_GENERIC_EXPLODE,1.2f,1.2f);for(int i=0;i<32;i++){double a=(Math.PI*2/32)*i;w.spawnParticle(Particle.END_ROD,l.clone().add(Math.cos(a)*2,0.5,Math.sin(a)*2),2,0,0,0,0.1);}}}.runTaskLater(plugin,65);
-        new BukkitRunnable(){int t=0;public void run(){if(t>=15||!victim.isOnline()){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}w.spawnParticle(Particle.HEART,l.clone().add(0,2,0),2,0.3,0.2,0.3,0);w.spawnParticle(Particle.END_ROD,l.clone().add(0,1,0),3,0.5,1,0.5,0.05);t+=3;}}.runTaskTimer(plugin,85,3);
+        new BukkitRunnable(){public void run(){Location l=vLoc(victim);if(l==null)return;w.spawnParticle(Particle.TOTEM_OF_UNDYING,l.clone().add(0,1,0),200,3,2,3,0.3);sp(w,Particle.END_ROD,l.clone().add(0,1,0),2);w.playSound(l,Sound.ENTITY_GENERIC_EXPLODE,1.2f,1.2f);for(int i=0;i<32;i++){double a=(Math.PI*2/32)*i;sp(w,Particle.END_ROD,l.clone().add(Math.cos(a)*2,0.5,Math.sin(a)*2),2,0,0,0,0.1);}}}.runTaskLater(plugin,65);
+        new BukkitRunnable(){int t=0;public void run(){if(t>=15||!victim.isOnline()){cancel();return;}Location l=vLoc(victim);if(l==null){cancel();return;}w.spawnParticle(Particle.HEART,l.clone().add(0,2,0),2,0.3,0.2,0.3,0);sp(w,Particle.END_ROD,l.clone().add(0,1,0),3,0.5,1,0.5,0.05);t+=3;}}.runTaskTimer(plugin,85,3);
         return D;
     }
 }

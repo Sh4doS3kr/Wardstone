@@ -603,11 +603,18 @@ public class TradeCommand implements CommandExecutor, TabCompleter, Listener {
     }
 
     private void giveItems(Player player, List<ItemStack> items) {
+        boolean dropped = false;
         for (ItemStack item : items) {
             HashMap<Integer, ItemStack> leftover = player.getInventory().addItem(item);
             for (ItemStack drop : leftover.values()) {
                 player.getWorld().dropItemNaturally(player.getLocation(), drop);
+                dropped = true;
             }
+        }
+        if (dropped) {
+            player.sendMessage(sc("§e§l⚠ §cTu inventario estaba lleno. Algunos ítems se han tirado al suelo."));
+            player.sendMessage(sc("§7¡Recógelos antes de que desaparezcan!"));
+            player.playSound(player.getLocation(), Sound.ENTITY_ITEM_PICKUP, 1.0f, 0.5f);
         }
     }
 
