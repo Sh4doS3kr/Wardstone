@@ -180,6 +180,25 @@ public class PrivateVaultManager {
     }
 
     /**
+     * Comprueba rango para jugador OFFLINE (vaults 2-5).
+     * Como no podemos verificar permisos de un jugador offline sin LuckPerms API,
+     * por seguridad retornamos TRUE (asumir que tiene el rango) para NUNCA borrar
+     * datos cuando no podemos confirmar. Solo se borran cuando el jugador esté online.
+     */
+    private boolean hasRankForVaultOffline(UUID uuid, int vaultNumber) {
+        // Intentar via Bukkit OfflinePlayer (no funciona para permisos, pero por si acaso)
+        try {
+            org.bukkit.OfflinePlayer offp = Bukkit.getOfflinePlayer(uuid);
+            Player online = offp.getPlayer();
+            if (online != null) {
+                return hasRankForVault(online, vaultNumber);
+            }
+        } catch (Exception ignored) {}
+        // No podemos verificar offline → asumir que SÍ tiene rango (seguro, no borrar)
+        return true;
+    }
+
+    /**
      * Abre el menú selector de vaults para el jugador (estilo /ah).
      */
     // Slot mapping por sección — usado también en el listener
@@ -677,14 +696,19 @@ public class PrivateVaultManager {
         for (UUID uuid : expired) {
             org.bukkit.OfflinePlayer offp = Bukkit.getOfflinePlayer(uuid);
             Player online = offp.isOnline() ? offp.getPlayer() : null;
-            // Verificar vaults de rango (2-5)
+            // Verificar vaults de rango (2-5) — SOLO limpiar si podemos confirmar que NO tiene rango
             for (int v = 2; v <= 5; v++) {
                 if (online != null && !hasRankForVault(online, v) && vaultHasItems(uuid, v)) {
                     clearVault(uuid, v);
                     plugin.getLogger().info("[PV] Vault #" + v + " de " + uuid + " vaciado por deadline expirada (rango).");
                 } else if (online == null && vaultHasItems(uuid, v)) {
+                    // Jugador offline: intentar verificar rango via LuckPerms
+                    if (hasRankForVaultOffline(uuid, v)) {
+                        // Tiene el rango, NO borrar — su deadline era por otro vault
+                        continue;
+                    }
                     clearVault(uuid, v);
-                    plugin.getLogger().info("[PV] Vault #" + v + " de " + uuid + " vaciado por deadline expirada (offline).");
+                    plugin.getLogger().info("[PV] Vault #" + v + " de " + uuid + " vaciado por deadline expirada (offline, sin rango confirmado).");
                 }
             }
             // Verificar vaults de esencias (6-10) — requieren prestigio
