@@ -59,6 +59,11 @@ public class JoinQuitMessageListener implements Listener {
         if (prestige > 0) {
             Bukkit.getScheduler().runTaskLater(plugin, () -> spawnLoginEffect(player, prestige), 10L);
         }
+
+        // Core maintenance notifications
+        if (plugin.getCoreMaintenanceManager() != null) {
+            plugin.getCoreMaintenanceManager().onPlayerJoin(player);
+        }
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)

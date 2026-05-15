@@ -163,6 +163,53 @@ levels:
     size: 256
     vip-rank: "moonlord"
 
+# === NUCLEOS DE PRESTIGIO ===
+# Requieren haber hecho prestige al menos X veces
+# Permiso: wardstone.prestige.<nivel>
+# Son nucleos endgame con areas masivas
+  25:
+    material: SCULK_CATALYST
+    name: "&8&lNucleo &4&lInfernal"
+    price: 15000000
+    size: 300
+    prestige-required: 1
+    global-prestige-required: 10
+  26:
+    material: SCULK_SHRIEKER
+    name: "&8&lNucleo &c&lAbismal"
+    price: 25000000
+    size: 350
+    prestige-required: 1
+    global-prestige-required: 10
+  27:
+    material: RESPAWN_ANCHOR
+    name: "&6&lNucleo &e&lCelestial"
+    price: 40000000
+    size: 400
+    prestige-required: 2
+    global-prestige-required: 20
+  28:
+    material: CONDUIT
+    name: "&b&lNucleo &3&lAtlantis"
+    price: 65000000
+    size: 475
+    prestige-required: 2
+    global-prestige-required: 20
+  29:
+    material: DRAGON_EGG
+    name: "&5&lNucleo &d&lDragon"
+    price: 100000000
+    size: 550
+    prestige-required: 3
+    global-prestige-required: 30
+  30:
+    material: BEACON
+    name: "&6&l✦ &e&lNucleo &f&lDivino &6&l✦"
+    price: 200000000
+    size: 650
+    prestige-required: 3
+    global-prestige-required: 30
+
 # Death Finishers - Precios
 finishers:
   prices:

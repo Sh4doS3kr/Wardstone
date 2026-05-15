@@ -50,7 +50,7 @@ public class ShopGUI {
         // Indice para recorrer validSlots
         int slotIndex = 0;
 
-        for (int level = startLevel; level <= Math.min(startLevel + itemsPerPage - 1, 24); level++) {
+        for (int level = startLevel; level <= Math.min(startLevel + itemsPerPage - 1, 30); level++) {
             // Seguridad para no salir del array
             if (slotIndex >= validSlots.length)
                 break;
@@ -84,7 +84,7 @@ public class ShopGUI {
         ItemStack info = createInfoItem();
         inventory.setItem(49, info);
 
-        int maxLevel = 24;
+        int maxLevel = 30;
         int totalPages = (int) Math.ceil(maxLevel / (double) itemsPerPage);
         if (page < totalPages) {
             ItemStack nextPage = createItem(Material.ARROW, ChatColor.GREEN + "Pagina Siguiente");

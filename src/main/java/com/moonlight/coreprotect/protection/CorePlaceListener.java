@@ -63,6 +63,58 @@ public class CorePlaceListener implements Listener {
             return;
         }
 
+        // Core limit check
+        if (plugin.getCoreMaintenanceManager() != null && !player.hasPermission("coreprotect.admin")) {
+            if (!plugin.getCoreMaintenanceManager().canPlaceCore(player)) {
+                int max = plugin.getCoreMaintenanceManager().getMaxCores(player);
+                int current = plugin.getCoreMaintenanceManager().getCoreCount(player.getUniqueId());
+                player.sendMessage(SmallCaps.convert("§c§l✖ §cHas alcanzado el límite de cores: §e" + current + "/" + max));
+                String rank = plugin.getCoreMaintenanceManager().getRankName(player);
+                if (rank == null) {
+                    player.sendMessage(SmallCaps.convert("§7Consigue un rango para aumentar tu límite. §e/tienda"));
+                } else {
+                    player.sendMessage(SmallCaps.convert("§7Tu rango §f" + rank.toUpperCase() + " §7te permite §e" + max + " §7cores."));
+                }
+                SoundManager.playProtectionDenied(player.getLocation());
+                event.setCancelled(true);
+                return;
+            }
+        }
+
+        // Prestige requirement check
+        if (coreLevel.requiresPrestige()) {
+            java.util.List<ProtectedRegion> owned = plugin.getProtectionManager().getRegionsByOwner(player.getUniqueId());
+            int playerPrestige = 0;
+            for (ProtectedRegion r : owned) {
+                if (r.getPrestige() > playerPrestige) playerPrestige = r.getPrestige();
+            }
+            if (playerPrestige < coreLevel.getPrestigeRequired()) {
+                player.sendMessage(org.bukkit.ChatColor.RED + "Necesitas " + org.bukkit.ChatColor.DARK_RED +
+                        org.bukkit.ChatColor.BOLD + "Prestigio Core " + coreLevel.getPrestigeRomanNumeral() +
+                        org.bukkit.ChatColor.RED + " para colocar este núcleo.");
+                SoundManager.playProtectionDenied(player.getLocation());
+                event.setCancelled(true);
+                return;
+            }
+        }
+
+        // Global prestige requirement check (/prestige)
+        if (coreLevel.requiresGlobalPrestige()) {
+            int playerGlobalPrestige = 0;
+            if (plugin.getPrestigeManager() != null) {
+                playerGlobalPrestige = plugin.getPrestigeManager().getPrestige(player.getUniqueId());
+            }
+            if (playerGlobalPrestige < coreLevel.getGlobalPrestigeRequired()) {
+                player.sendMessage(org.bukkit.ChatColor.LIGHT_PURPLE + "Necesitas " +
+                        coreLevel.getGlobalPrestigeGlyph() +
+                        org.bukkit.ChatColor.LIGHT_PURPLE + " para colocar este núcleo.");
+                player.sendMessage(SmallCaps.convert(org.bukkit.ChatColor.GRAY + "Usa /prestige para subir de prestigio."));
+                SoundManager.playProtectionDenied(player.getLocation());
+                event.setCancelled(true);
+                return;
+            }
+        }
+
         // VIP permission check (wardstone.vip.X, group.X, or essentials.kits.X)
         if (coreLevel.isVip() && !player.hasPermission(coreLevel.getVipPermission())
                 && !player.hasPermission("group." + coreLevel.getVipRank())
@@ -139,6 +191,16 @@ public class CorePlaceListener implements Listener {
                 if (parts.length >= 14) {
                     region.setAntiPhantom(parts[13].equals("1"));
                 }
+                if (parts.length >= 22) {
+                    region.setXpBoostLevel(Integer.parseInt(parts[14]));
+                    region.setCropGrowthLevel(Integer.parseInt(parts[15]));
+                    region.setFlyZone(parts[16].equals("1"));
+                    region.setAutoReplant(parts[17].equals("1"));
+                    region.setLuckyMiningLevel(Integer.parseInt(parts[18]));
+                    region.setBeaconAura(parts[19].equals("1"));
+                    region.setAntiFireSpread(parts[20].equals("1"));
+                    region.setMobRepeller(parts[21].equals("1"));
+                }
             } catch (Exception ignored) {
             }
         }
@@ -169,11 +231,12 @@ public class CorePlaceListener implements Listener {
             }
         };
 
-        // Use VIP animation if it's a VIP core, otherwise standard
-        if (coreLevel.isVip()) {
+        // Use VIP animation if it's a VIP or Prestige core, otherwise standard
+        if (coreLevel.isVip() || coreLevel.requiresPrestige()) {
             VipAnimation vipAnim = new VipAnimation(plugin);
+            String animRank = coreLevel.getVipRank() != null ? coreLevel.getVipRank() : "moonlord";
             vipAnim.playVipPlacement(event.getBlock().getLocation(), coreLevel.getMaterial(),
-                    coreLevel.getVipRank(), onAnimationDone);
+                    animRank, onAnimationDone);
         } else {
             CoreAnimation animation = new CoreAnimation(plugin);
             animation.playActivationAnimation(

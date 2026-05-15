@@ -235,7 +235,15 @@ public class ProtectionListener implements Listener {
                     data.append(coreRegion.getFixedTime()).append(",");
                     data.append(coreRegion.isCoreTeleport() ? "1" : "0").append(",");
                     data.append(coreRegion.isNoHunger() ? "1" : "0").append(",");
-                    data.append(coreRegion.isAntiPhantom() ? "1" : "0");
+                    data.append(coreRegion.isAntiPhantom() ? "1" : "0").append(",");
+                    data.append(coreRegion.getXpBoostLevel()).append(",");
+                    data.append(coreRegion.getCropGrowthLevel()).append(",");
+                    data.append(coreRegion.isFlyZone() ? "1" : "0").append(",");
+                    data.append(coreRegion.isAutoReplant() ? "1" : "0").append(",");
+                    data.append(coreRegion.getLuckyMiningLevel()).append(",");
+                    data.append(coreRegion.isBeaconAura() ? "1" : "0").append(",");
+                    data.append(coreRegion.isAntiFireSpread() ? "1" : "0").append(",");
+                    data.append(coreRegion.isMobRepeller() ? "1" : "0");
                     pdc.set(key, org.bukkit.persistence.PersistentDataType.STRING, data.toString());
 
                     // Store members
@@ -460,7 +468,7 @@ public class ProtectionListener implements Listener {
         }
         event.blockList().removeIf(block -> {
             ProtectedRegion region = plugin.getProtectionManager().getRegionAt(block.getLocation());
-            return region != null;
+            return region != null && !region.isAllowExplosions();
         });
     }
 
@@ -474,7 +482,7 @@ public class ProtectionListener implements Listener {
         }
         event.blockList().removeIf(block -> {
             ProtectedRegion region = plugin.getProtectionManager().getRegionAt(block.getLocation());
-            return region != null;
+            return region != null && !region.isAllowExplosions();
         });
     }
 
@@ -619,8 +627,13 @@ public class ProtectionListener implements Listener {
         ProtectedRegion victimRegion = plugin.getProtectionManager().getRegionAt(victim.getLocation());
         ProtectedRegion attackerRegion = plugin.getProtectionManager().getRegionAt(attacker.getLocation());
 
-        // PvP SIEMPRE DESACTIVADO en cualquier protección — sin excepciones
-        if (victimRegion != null || attackerRegion != null) {
+        // PvP check based on advanced flags — default is OFF (blocked)
+        if (victimRegion != null && !victimRegion.isAllowPvP()) {
+            event.setCancelled(true);
+            plugin.getMessageManager().send(attacker, "upgrades.no-pvp-zone");
+            return;
+        }
+        if (attackerRegion != null && !attackerRegion.isAllowPvP()) {
             event.setCancelled(true);
             plugin.getMessageManager().send(attacker, "upgrades.no-pvp-zone");
             return;
@@ -660,13 +673,14 @@ public class ProtectionListener implements Listener {
         if (!region.canAccess(player.getUniqueId()))
             return;
 
-        // No fall damage
-        if (event.getCause() == EntityDamageEvent.DamageCause.FALL && region.isNoFallDamage()) {
+        // No fall damage (upgrade OR advanced flag)
+        if (event.getCause() == EntityDamageEvent.DamageCause.FALL
+                && (region.isNoFallDamage() || !region.isAllowFallDamage())) {
             event.setCancelled(true);
         }
 
-        // No explosion damage to members
-        if (region.isNoExplosion() &&
+        // No explosion damage (upgrade OR advanced flag)
+        if ((region.isNoExplosion() || !region.isAllowExplosions()) &&
                 (event.getCause() == EntityDamageEvent.DamageCause.ENTITY_EXPLOSION ||
                         event.getCause() == EntityDamageEvent.DamageCause.BLOCK_EXPLOSION)) {
             event.setCancelled(true);
@@ -728,7 +742,8 @@ public class ProtectionListener implements Listener {
             return;
         }
 
-        if (event.getEntity() instanceof org.bukkit.entity.Monster && region.isNoMobSpawn()
+        if (event.getEntity() instanceof org.bukkit.entity.Monster
+                && (region.isNoMobSpawn() || !region.isAllowMobSpawn())
                 && event.getEntityType() != EntityType.WANDERING_TRADER) {
             event.setCancelled(true);
         }
@@ -777,10 +792,10 @@ public class ProtectionListener implements Listener {
                         continue;
                     }
                 }
-                // Remove hostile mobs that wander into protected regions with anti-mob upgrade
+                // Remove hostile mobs that wander into protected regions with anti-mob upgrade/flag
                 if (entity instanceof org.bukkit.entity.Monster) {
                     ProtectedRegion region = plugin.getProtectionManager().getRegionAt(entity.getLocation());
-                    if (region != null && region.isNoMobSpawn()) {
+                    if (region != null && (region.isNoMobSpawn() || !region.isAllowMobSpawn())) {
                         entity.remove();
                     }
                 }
@@ -795,7 +810,7 @@ public class ProtectionListener implements Listener {
         if (!(event.getTarget() instanceof Player)) return;
 
         ProtectedRegion region = plugin.getProtectionManager().getRegionAt(event.getTarget().getLocation());
-        if (region != null && region.isNoMobSpawn()) {
+        if (region != null && (region.isNoMobSpawn() || !region.isAllowMobSpawn())) {
             event.setCancelled(true);
         }
     }
@@ -819,7 +834,7 @@ public class ProtectionListener implements Listener {
         Player player = (Player) event.getEntity();
         if (event.getFoodLevel() < player.getFoodLevel()) {
             ProtectedRegion region = plugin.getProtectionManager().getRegionAt(player.getLocation());
-            if (region != null && region.isNoHunger() && region.canAccess(player.getUniqueId())) {
+            if (region != null && (region.isNoHunger() || !region.isAllowHunger()) && region.canAccess(player.getUniqueId())) {
                 event.setCancelled(true);
             }
         }

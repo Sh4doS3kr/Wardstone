@@ -90,17 +90,39 @@ public class MiniGameWorld {
             }
         });
 
-        // Recoger todos los chunks cargados que tengan bloques
+        // Recoger todos los bloques no-aire (top to bottom)
         Chunk[] loadedChunks = world.getLoadedChunks();
         if (loadedChunks.length == 0) return;
 
-        final int CHUNKS_PER_TICK = 16; // Limpiar 16 chunks por tick (rápido para mapas grandes)
-        final java.util.List<Chunk> chunksToClean = new java.util.ArrayList<>();
+        plugin.getLogger().info("[MiniGames] Recopilando bloques para limpieza lenta...");
+
+        // Collect all non-air blocks sorted by Y descending (top → bottom dissolution)
+        final java.util.List<org.bukkit.block.Block> blocksToRemove = new java.util.ArrayList<>();
         for (Chunk chunk : loadedChunks) {
-            chunksToClean.add(chunk);
+            if (!chunk.isLoaded()) continue;
+            for (int y = 200; y >= 0; y--) {
+                for (int x = 0; x < 16; x++) {
+                    for (int z = 0; z < 16; z++) {
+                        org.bukkit.block.Block block = chunk.getBlock(x, y, z);
+                        if (block.getType() != Material.AIR) {
+                            blocksToRemove.add(block);
+                        }
+                    }
+                }
+            }
         }
 
-        plugin.getLogger().info("[MiniGames] Limpieza async: " + chunksToClean.size() + " chunks por limpiar.");
+        if (blocksToRemove.isEmpty()) {
+            plugin.getLogger().info("[MiniGames] No hay bloques que limpiar.");
+            for (Chunk c : world.getLoadedChunks()) c.setForceLoaded(false);
+            return;
+        }
+
+        plugin.getLogger().info("[MiniGames] Limpieza lenta: " + blocksToRemove.size() + " bloques por eliminar.");
+
+        // Remove blocks gradually: BLOCKS_PER_TICK blocks every 1 tick
+        // Ajustar velocidad: más bloques por tick = más rápido
+        final int BLOCKS_PER_TICK = Math.max(50, blocksToRemove.size() / 200); // ~10 seconds total
 
         new org.bukkit.scheduler.BukkitRunnable() {
             int index = 0;
@@ -110,34 +132,24 @@ public class MiniGameWorld {
                 World w = getWorld();
                 if (w == null) { cancel(); return; }
 
-                int cleaned = 0;
-                while (index < chunksToClean.size() && cleaned < CHUNKS_PER_TICK) {
-                    Chunk chunk = chunksToClean.get(index);
+                int removed = 0;
+                while (index < blocksToRemove.size() && removed < BLOCKS_PER_TICK) {
+                    org.bukkit.block.Block block = blocksToRemove.get(index);
                     index++;
-                    cleaned++;
 
-                    if (!chunk.isLoaded()) continue;
-
-                    int baseX = chunk.getX() * 16;
-                    int baseZ = chunk.getZ() * 16;
-
-                    // Solo escanear rango Y con posibles bloques (0 a 200, suficiente para cualquier arena)
-                    for (int x = 0; x < 16; x++) {
-                        for (int z = 0; z < 16; z++) {
-                            for (int y = 0; y <= 200; y++) {
-                                org.bukkit.block.Block block = chunk.getBlock(x, y, z);
-                                if (block.getType() != Material.AIR) {
-                                    block.setType(Material.AIR, false);
-                                }
-                            }
-                        }
+                    if (block.getType() != Material.AIR) {
+                        // Spawn particle at the block location
+                        Location loc = block.getLocation().add(0.5, 0.5, 0.5);
+                        try {
+                            w.spawnParticle(Particle.SMOKE, loc, 2, 0.2, 0.2, 0.2, 0.01);
+                        } catch (Exception ignored) {}
+                        block.setType(Material.AIR, false);
+                        removed++;
                     }
-
-                    chunk.setForceLoaded(false);
                 }
 
-                // Eliminar entidades que hayan aparecido mientras tanto
-                if (index % 20 == 0) {
+                // Periodically remove entities
+                if (index % (BLOCKS_PER_TICK * 20) == 0) {
                     w.getEntities().forEach(entity -> {
                         if (!(entity instanceof org.bukkit.entity.Player)) {
                             entity.remove();
@@ -145,8 +157,8 @@ public class MiniGameWorld {
                     });
                 }
 
-                if (index >= chunksToClean.size()) {
-                    // Última pasada: eliminar entidades y descargar chunks
+                if (index >= blocksToRemove.size()) {
+                    // Final cleanup
                     w.getEntities().forEach(entity -> {
                         if (!(entity instanceof org.bukkit.entity.Player)) {
                             entity.remove();
@@ -155,7 +167,7 @@ public class MiniGameWorld {
                     for (Chunk c : w.getLoadedChunks()) {
                         c.setForceLoaded(false);
                     }
-                    plugin.getLogger().info("[MiniGames] Limpieza async completada: " + chunksToClean.size() + " chunks limpiados.");
+                    plugin.getLogger().info("[MiniGames] Limpieza lenta completada: " + blocksToRemove.size() + " bloques eliminados.");
                     cancel();
                 }
             }

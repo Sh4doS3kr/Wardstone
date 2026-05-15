@@ -124,6 +124,7 @@ public class CoreProtectPlugin extends JavaPlugin {
     private com.moonlight.coreprotect.voicechat.ProxiChatManager proxiChatManager;
     private com.moonlight.coreprotect.rewards.PendingRewardsManager pendingRewardsManager;
     private com.moonlight.coreprotect.rewards.PlaytimeRouletteManager playtimeRouletteManager;
+    private com.moonlight.coreprotect.core.CoreMaintenanceManager coreMaintenanceManager;
 
     @Override
     public void onEnable() {
@@ -172,6 +173,9 @@ public class CoreProtectPlugin extends JavaPlugin {
             return;
         }
 
+        // Inicializar sistema de mantenimiento de cores
+        coreMaintenanceManager = new com.moonlight.coreprotect.core.CoreMaintenanceManager(this);
+
         // Inicializar achievements
         achievementManager = new AchievementManager(this);
         achievementManager.loadPlayerData();
@@ -191,6 +195,8 @@ public class CoreProtectPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(this.protectionListener, this);
         getServer().getPluginManager().registerEvents(new CorePlaceListener(this), this);
         getServer().getPluginManager().registerEvents(new WindChargeListener(this), this);
+        getServer().getPluginManager().registerEvents(new com.moonlight.coreprotect.protection.CoreUpgradeEffectsListener(this), this);
+        getServer().getPluginManager().registerEvents(new com.moonlight.coreprotect.protection.CoreSettingsChatListener(this), this);
         getServer().getPluginManager().registerEvents(spawnCollisionManager, this);
         getServer().getPluginManager().registerEvents(achievementListener, this);
         getServer().getPluginManager().registerEvents(finisherListener, this);
@@ -686,6 +692,9 @@ public class CoreProtectPlugin extends JavaPlugin {
         if (prestigeWeeklyManager != null) {
             prestigeWeeklyManager.saveData();
         }
+        if (coreMaintenanceManager != null) {
+            coreMaintenanceManager.savePaymentData();
+        }
         if (tipsManager != null) {
             tipsManager.shutdown();
         }
@@ -882,6 +891,10 @@ public class CoreProtectPlugin extends JavaPlugin {
 
     public com.moonlight.coreprotect.core.CorePrestigeManager getCorePrestigeManager() {
         return corePrestigeManager;
+    }
+
+    public com.moonlight.coreprotect.core.CoreMaintenanceManager getCoreMaintenanceManager() {
+        return coreMaintenanceManager;
     }
 
     public com.moonlight.coreprotect.streak.DailyStreakManager getDailyStreakManager() {

@@ -13,8 +13,10 @@ public class CoreLevel {
     private final int size;
     private final Particle particle;
     private final String vipRank; // null = no VIP required
+    private final int prestigeRequired; // 0 = no prestige needed (core prestige)
+    private final int globalPrestigeRequired; // 0 = no global prestige needed (/prestige)
 
-    public CoreLevel(int level, Material material, String name, double price, int size, String vipRank) {
+    public CoreLevel(int level, Material material, String name, double price, int size, String vipRank, int prestigeRequired, int globalPrestigeRequired) {
         this.level = level;
         this.material = material;
         this.name = name;
@@ -22,6 +24,8 @@ public class CoreLevel {
         this.size = size;
         this.particle = getParticleForLevel(level);
         this.vipRank = vipRank;
+        this.prestigeRequired = prestigeRequired;
+        this.globalPrestigeRequired = globalPrestigeRequired;
     }
 
     public static CoreLevel fromConfig(FileConfiguration config, int level) {
@@ -32,7 +36,9 @@ public class CoreLevel {
         double price = config.getDouble(path + "price", 1000);
         int size = config.getInt(path + "size", 10);
         String vipRank = config.getString(path + "vip-rank", null);
-        return new CoreLevel(level, material, name, price, size, vipRank);
+        int prestigeRequired = config.getInt(path + "prestige-required", 0);
+        int globalPrestigeRequired = config.getInt(path + "global-prestige-required", 0);
+        return new CoreLevel(level, material, name, price, size, vipRank, prestigeRequired, globalPrestigeRequired);
     }
 
     private Particle getParticleForLevel(int level) {
@@ -55,6 +61,13 @@ public class CoreLevel {
         if (level == 22) return Particle.FIREWORK;         // Nova - golden star bursts
         if (level == 23) return Particle.DRAGON_BREATH;    // Eclipse - dark cosmic
         if (level == 24) return Particle.TOTEM_OF_UNDYING;  // MoonLord - divine
+        // Prestige particles
+        if (level == 25) return Particle.SOUL_FIRE_FLAME;   // Infernal
+        if (level == 26) return Particle.SCULK_SOUL;        // Abismal
+        if (level == 27) return Particle.FIREWORK;          // Celestial
+        if (level == 28) return Particle.BUBBLE_POP;        // Atlantis
+        if (level == 29) return Particle.DRAGON_BREATH;     // Dragon
+        if (level == 30) return Particle.TOTEM_OF_UNDYING;  // Divino
         return Particle.SOUL_FIRE_FLAME;
     }
 
@@ -94,6 +107,14 @@ public class CoreLevel {
         return vipRank != null ? "wardstone.vip." + vipRank : null;
     }
 
+    public int getPrestigeRequired() {
+        return prestigeRequired;
+    }
+
+    public boolean requiresPrestige() {
+        return prestigeRequired > 0;
+    }
+
     public String getFormattedPrice() {
         if (price >= 1000000) {
             return String.format("%.1fM", price / 1000000);
@@ -121,6 +142,15 @@ public class CoreLevel {
             lore.add("");
             lore.add(org.bukkit.ChatColor.GRAY + "Exclusivo rango " + translateColors(getVipGradientName()) );
             lore.add(org.bukkit.ChatColor.DARK_GRAY + "moonlightmc.tebex.io");
+        }
+        if (requiresPrestige()) {
+            lore.add("");
+            lore.add(org.bukkit.ChatColor.DARK_RED + "" + org.bukkit.ChatColor.BOLD + "★ " + org.bukkit.ChatColor.RED + "Requiere Prestigio Core " + getPrestigeRomanNumeral());
+            lore.add(org.bukkit.ChatColor.DARK_GRAY + "Alcanza nivel 20 y prestigia " + prestigeRequired + "x");
+        }
+        if (requiresGlobalPrestige()) {
+            lore.add("");
+            lore.add(org.bukkit.ChatColor.LIGHT_PURPLE + "" + org.bukkit.ChatColor.BOLD + "✦ " + org.bukkit.ChatColor.LIGHT_PURPLE + "Requiere " + getGlobalPrestigeGlyph());
         }
         lore.add("");
         lore.add(org.bukkit.ChatColor.YELLOW + "Click para comprar");
@@ -151,6 +181,31 @@ public class CoreLevel {
             default:
                 return vipRank;
         }
+    }
+
+    public String getPrestigeRomanNumeral() {
+        switch (prestigeRequired) {
+            case 1: return "I";
+            case 2: return "II";
+            case 3: return "III";
+            default: return String.valueOf(prestigeRequired);
+        }
+    }
+
+    /**
+     * Returns the Nexo glyph tag for the required global prestige level.
+     * Nexo replaces <glyph:rankN> in packets with the visual icon.
+     */
+    public String getGlobalPrestigeGlyph() {
+        return "<glyph:rank" + globalPrestigeRequired + ">";
+    }
+
+    public boolean requiresGlobalPrestige() {
+        return globalPrestigeRequired > 0;
+    }
+
+    public int getGlobalPrestigeRequired() {
+        return globalPrestigeRequired;
     }
 
     private static String gradientText(String text, String[] colors) {

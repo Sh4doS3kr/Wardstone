@@ -25,7 +25,7 @@ public class CorePrestigeManager {
 
     private final CoreProtectPlugin plugin;
     public static final int MAX_PRESTIGE = 3;
-    public static final int PRESTIGE_REQUIRED_LEVEL = 24;
+    public static final int PRESTIGE_REQUIRED_LEVEL = 20;
 
     // Prestige costs (in-game currency)
     private static final double[] PRESTIGE_COSTS = {
@@ -86,9 +86,9 @@ public class CorePrestigeManager {
      */
     public static String getPrestigeBonus(int prestige) {
         switch (prestige) {
-            case 1: return "§7+5% tamaño de zona + aura plateada";
-            case 2: return "§6+10% tamaño de zona + aura dorada";
-            case 3: return "§b+15% tamaño de zona + aura de diamante";
+            case 1: return "§7+5% zona + aura plateada + §4Núcleos Infernal/Abismal";
+            case 2: return "§6+10% zona + aura dorada + §eNúcleos Celestial/Atlantis";
+            case 3: return "§b+15% zona + aura diamante + §dNúcleos Dragon/Divino";
             default: return "§7Ninguno";
         }
     }

@@ -96,6 +96,30 @@ public class DataManager {
                         noMobSpawn, autoHeal, speedBoost, noFallDamage,
                         antiEnderman, resourceGenerator, fixedTime, coreTeleport, noHunger, antiPhantom);
 
+                // Load new upgrades (Huge Update)
+                region.setXpBoostLevel(regionSection.getInt("upgrades.xpBoostLevel", 0));
+                region.setCropGrowthLevel(regionSection.getInt("upgrades.cropGrowthLevel", 0));
+                region.setFlyZone(regionSection.getBoolean("upgrades.flyZone", false));
+                region.setAutoReplant(regionSection.getBoolean("upgrades.autoReplant", false));
+                region.setLuckyMiningLevel(regionSection.getInt("upgrades.luckyMiningLevel", 0));
+                region.setBeaconAura(regionSection.getBoolean("upgrades.beaconAura", false));
+                region.setAntiFireSpread(regionSection.getBoolean("upgrades.antiFireSpread", false));
+                region.setMobRepeller(regionSection.getBoolean("upgrades.mobRepeller", false));
+
+                // Load core settings
+                region.setCoreName(regionSection.getString("settings.name", null));
+                region.setEntryMode(regionSection.getInt("settings.entryMode", 0));
+                region.setWelcomeMessage(regionSection.getString("settings.welcomeMessage", null));
+
+                // Load advanced flags
+                region.setAllowPvP(regionSection.getBoolean("flags.allowPvP", false));
+                region.setAllowExplosions(regionSection.getBoolean("flags.allowExplosions", false));
+                region.setAllowMobSpawn(regionSection.getBoolean("flags.allowMobSpawn", true));
+                region.setAllowFallDamage(regionSection.getBoolean("flags.allowFallDamage", true));
+                region.setAllowHunger(regionSection.getBoolean("flags.allowHunger", true));
+                region.setAllowFireSpread(regionSection.getBoolean("flags.allowFireSpread", true));
+                region.setAllowAbilities(regionSection.getBoolean("flags.allowAbilities", true));
+
                 // Load prestige
                 int prestige = regionSection.getInt("prestige", 0);
                 region.setPrestige(prestige);
@@ -191,6 +215,30 @@ public class DataManager {
             dataConfig.set(path + ".upgrades.antiPhantom", region.isAntiPhantom());
             dataConfig.set(path + ".upgrades.unlocked", new ArrayList<>(region.getUnlockedUpgrades()));
 
+            // Save new upgrades (Huge Update)
+            dataConfig.set(path + ".upgrades.xpBoostLevel", region.getXpBoostLevel());
+            dataConfig.set(path + ".upgrades.cropGrowthLevel", region.getCropGrowthLevel());
+            dataConfig.set(path + ".upgrades.flyZone", region.isFlyZone());
+            dataConfig.set(path + ".upgrades.autoReplant", region.isAutoReplant());
+            dataConfig.set(path + ".upgrades.luckyMiningLevel", region.getLuckyMiningLevel());
+            dataConfig.set(path + ".upgrades.beaconAura", region.isBeaconAura());
+            dataConfig.set(path + ".upgrades.antiFireSpread", region.isAntiFireSpread());
+            dataConfig.set(path + ".upgrades.mobRepeller", region.isMobRepeller());
+
+            // Save core settings
+            if (region.getCoreName() != null) dataConfig.set(path + ".settings.name", region.getCoreName());
+            dataConfig.set(path + ".settings.entryMode", region.getEntryMode());
+            if (region.getWelcomeMessage() != null) dataConfig.set(path + ".settings.welcomeMessage", region.getWelcomeMessage());
+
+            // Save advanced flags
+            dataConfig.set(path + ".flags.allowPvP", region.isAllowPvP());
+            dataConfig.set(path + ".flags.allowExplosions", region.isAllowExplosions());
+            dataConfig.set(path + ".flags.allowMobSpawn", region.isAllowMobSpawn());
+            dataConfig.set(path + ".flags.allowFallDamage", region.isAllowFallDamage());
+            dataConfig.set(path + ".flags.allowHunger", region.isAllowHunger());
+            dataConfig.set(path + ".flags.allowFireSpread", region.isAllowFireSpread());
+            dataConfig.set(path + ".flags.allowAbilities", region.isAllowAbilities());
+
             // Save prestige
             dataConfig.set(path + ".prestige", region.getPrestige());
 
@@ -206,6 +254,11 @@ public class DataManager {
         dataConfig.set("homes", null);
         for (Map.Entry<UUID, UUID> entry : playerHomes.entrySet()) {
             dataConfig.set("homes." + entry.getKey().toString(), entry.getValue().toString());
+        }
+
+        // Save maintenance data
+        if (plugin.getCoreMaintenanceManager() != null) {
+            plugin.getCoreMaintenanceManager().savePaymentData();
         }
 
         try {
@@ -225,5 +278,9 @@ public class DataManager {
 
     public void removePlayerHome(UUID playerId) {
         playerHomes.remove(playerId);
+    }
+
+    public FileConfiguration getDataConfig() {
+        return dataConfig;
     }
 }

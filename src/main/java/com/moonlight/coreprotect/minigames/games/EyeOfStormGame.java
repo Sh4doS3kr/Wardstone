@@ -57,11 +57,11 @@ public class EyeOfStormGame extends MiniGame {
     // Fase 3: 150-240s = borde cierra hasta r110
     // Fase 4: 240-320s = borde cierra hasta r30
     // Fase 5: 320s+ = borde cierra hasta r5
-    private static final int PHASE_2_TIME = 120;   // 2:00 de loot libre
-    private static final int PHASE_3_TIME = 600;   // 10:00
-    private static final int PHASE_4_TIME = 1020;  // 17:00
-    private static final int PHASE_5_TIME = 1380;  // 23:00
-    private static final int CRUSH_TIME = 1680;    // 28:00 = aplastamiento
+    private static final int PHASE_2_TIME = 30;    // 0:30 de loot libre (muy rápido)
+    private static final int PHASE_3_TIME = 120;   // 2:00 (muy rápido)
+    private static final int PHASE_4_TIME = 200;   // 3:20 (muy rápido)
+    private static final int PHASE_5_TIME = 280;   // 4:40 (muy rápido)
+    private static final int CRUSH_TIME = 360;     // 6:00 = aplastamiento (muy rápido)
 
     // === STATE ===
     private BossBar stormBar;
@@ -1098,11 +1098,20 @@ public class EyeOfStormGame extends MiniGame {
             Location loc = p.getLocation();
 
             // Usar isInside() del WorldBorder — coincide EXACTAMENTE con el borde visual
+            // Calcular distancia al borde para advertencia
+            double dx = Math.abs(loc.getX() - centerX);
+            double dz = Math.abs(loc.getZ() - centerZ);
+            double halfSize = stormRadius;
+            double distToBorder = halfSize - Math.max(dx, dz);
+
+            // Title warning si la tormenta está a menos de 10 bloques
+            if (distToBorder < 10 && distToBorder > -20) {
+                p.sendTitle("§c§l⚠ ¡CORRE!", "§7La tormenta te alcanza...", 5, 15, 5);
+                p.playSound(p.getLocation(), Sound.ENTITY_WARDEN_SONIC_BOOM, 0.5f, 1.5f);
+            }
+
             if (!border.isInside(loc)) {
                 // Calcular distancia fuera del borde (WorldBorder es cuadrado)
-                double dx = Math.abs(loc.getX() - centerX);
-                double dz = Math.abs(loc.getZ() - centerZ);
-                double halfSize = stormRadius;
                 double outsideX = Math.max(0, dx - halfSize);
                 double outsideZ = Math.max(0, dz - halfSize);
                 double extraDist = Math.max(outsideX, outsideZ);

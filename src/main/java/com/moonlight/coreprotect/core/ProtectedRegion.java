@@ -13,7 +13,7 @@ import java.util.UUID;
 public class ProtectedRegion {
 
     private final UUID id;
-    private final UUID owner;
+    private UUID owner;
     private final String worldName;
     private final int coreX;
     private final int coreY;
@@ -43,6 +43,30 @@ public class ProtectedRegion {
     private boolean noHunger;
     private boolean antiPhantom;
 
+    // === NEW UPGRADES (Huge Update) ===
+    private int xpBoostLevel; // 0-5, each +10% XP
+    private int cropGrowthLevel; // 0-3, each +25% faster crops
+    private boolean flyZone; // Members can fly inside
+    private boolean autoReplant; // Crops auto-replant on harvest
+    private int luckyMiningLevel; // 0-3, each +10% double drop chance
+    private boolean beaconAura; // Night Vision + Haste for members
+    private boolean antiFireSpread; // Fire cannot spread
+    private boolean mobRepeller; // Hostile mobs pushed out of boundaries
+
+    // === CORE SETTINGS ===
+    private String coreName; // Custom name for the core/territory
+    private int entryMode; // 0=open, 1=members-only, 2=banned-only (block banned)
+    private String welcomeMessage; // Custom welcome message shown on entry
+
+    // === ADVANCED FLAGS (owner-toggleable) ===
+    private boolean allowPvP = false;      // PvP OFF by default
+    private boolean allowExplosions = false; // Explosions OFF by default
+    private boolean allowMobSpawn = true;   // Mobs spawn by default (until anti-mob upgrade)
+    private boolean allowFallDamage = true;  // Fall damage ON by default
+    private boolean allowHunger = true;      // Hunger ON by default
+    private boolean allowFireSpread = true;  // Fire spreads by default
+    private boolean allowAbilities = true;   // Players can use abilities by default
+
     // Prestige system (post level 24)
     private int prestige = 0; // 0 = no prestige, 1 = Prestige I, 2 = Prestige II, etc.
 
@@ -59,7 +83,7 @@ public class ProtectedRegion {
         this.bannedPlayers = new ArrayList<>();
         this.createdAt = System.currentTimeMillis();
         this.noExplosion = false;
-        this.noPvP = false;
+        this.noPvP = true; // PvP OFF by default
         this.damageBoostLevel = 0;
         this.healthBoostLevel = 0;
         this.noMobSpawn = false;
@@ -72,6 +96,19 @@ public class ProtectedRegion {
         this.coreTeleport = false;
         this.noHunger = false;
         this.antiPhantom = false;
+        // New upgrades
+        this.xpBoostLevel = 0;
+        this.cropGrowthLevel = 0;
+        this.flyZone = false;
+        this.autoReplant = false;
+        this.luckyMiningLevel = 0;
+        this.beaconAura = false;
+        this.antiFireSpread = false;
+        this.mobRepeller = false;
+        // Settings
+        this.coreName = null;
+        this.entryMode = 0;
+        this.welcomeMessage = null;
     }
 
     public ProtectedRegion(UUID id, UUID owner, String worldName, int coreX, int coreY, int coreZ,
@@ -299,6 +336,67 @@ public class ProtectedRegion {
     public boolean isAntiPhantom() { return antiPhantom; }
     public void setAntiPhantom(boolean antiPhantom) { this.antiPhantom = antiPhantom; }
 
+    // === NEW UPGRADE GETTERS/SETTERS ===
+    public int getXpBoostLevel() { return xpBoostLevel; }
+    public void setXpBoostLevel(int level) { this.xpBoostLevel = Math.min(level, 5); }
+    public double getXpBoostMultiplier() { return 1.0 + (xpBoostLevel * 0.10); }
+
+    public int getCropGrowthLevel() { return cropGrowthLevel; }
+    public void setCropGrowthLevel(int level) { this.cropGrowthLevel = Math.min(level, 3); }
+    public double getCropGrowthMultiplier() { return 1.0 + (cropGrowthLevel * 0.25); }
+
+    public boolean isFlyZone() { return flyZone; }
+    public void setFlyZone(boolean flyZone) { this.flyZone = flyZone; }
+
+    public boolean isAutoReplant() { return autoReplant; }
+    public void setAutoReplant(boolean autoReplant) { this.autoReplant = autoReplant; }
+
+    public int getLuckyMiningLevel() { return luckyMiningLevel; }
+    public void setLuckyMiningLevel(int level) { this.luckyMiningLevel = Math.min(level, 3); }
+    public double getLuckyMiningChance() { return luckyMiningLevel * 0.10; } // 10% per level
+
+    public boolean isBeaconAura() { return beaconAura; }
+    public void setBeaconAura(boolean beaconAura) { this.beaconAura = beaconAura; }
+
+    public boolean isAntiFireSpread() { return antiFireSpread; }
+    public void setAntiFireSpread(boolean antiFireSpread) { this.antiFireSpread = antiFireSpread; }
+
+    public boolean isMobRepeller() { return mobRepeller; }
+    public void setMobRepeller(boolean mobRepeller) { this.mobRepeller = mobRepeller; }
+
+    // === CORE SETTINGS GETTERS/SETTERS ===
+    public String getCoreName() { return coreName; }
+    public void setCoreName(String name) { this.coreName = name; }
+    public String getDisplayName() { return coreName != null ? coreName : "Núcleo Nv." + level; }
+
+    public int getEntryMode() { return entryMode; }
+    public void setEntryMode(int mode) { this.entryMode = Math.max(0, Math.min(mode, 2)); }
+
+    public String getWelcomeMessage() { return welcomeMessage; }
+    public void setWelcomeMessage(String msg) { this.welcomeMessage = msg; }
+
+    // === ADVANCED FLAGS GETTERS/SETTERS ===
+    public boolean isAllowPvP() { return allowPvP; }
+    public void setAllowPvP(boolean v) { this.allowPvP = v; }
+
+    public boolean isAllowExplosions() { return allowExplosions; }
+    public void setAllowExplosions(boolean v) { this.allowExplosions = v; }
+
+    public boolean isAllowMobSpawn() { return allowMobSpawn; }
+    public void setAllowMobSpawn(boolean v) { this.allowMobSpawn = v; }
+
+    public boolean isAllowFallDamage() { return allowFallDamage; }
+    public void setAllowFallDamage(boolean v) { this.allowFallDamage = v; }
+
+    public boolean isAllowHunger() { return allowHunger; }
+    public void setAllowHunger(boolean v) { this.allowHunger = v; }
+
+    public boolean isAllowFireSpread() { return allowFireSpread; }
+    public void setAllowFireSpread(boolean v) { this.allowFireSpread = v; }
+
+    public boolean isAllowAbilities() { return allowAbilities; }
+    public void setAllowAbilities(boolean v) { this.allowAbilities = v; }
+
     public boolean isUnlocked(String upgradeId) { return unlockedUpgrades.contains(upgradeId); }
     public void unlockUpgrade(String upgradeId) { unlockedUpgrades.add(upgradeId); }
     public Set<String> getUnlockedUpgrades() { return new HashSet<>(unlockedUpgrades); }
@@ -320,8 +418,19 @@ public class ProtectedRegion {
         if (coreTeleport) count++;
         if (noHunger) count++;
         if (antiPhantom) count++;
+        // New upgrades
+        if (xpBoostLevel > 0) count++;
+        if (cropGrowthLevel > 0) count++;
+        if (flyZone) count++;
+        if (autoReplant) count++;
+        if (luckyMiningLevel > 0) count++;
+        if (beaconAura) count++;
+        if (antiFireSpread) count++;
+        if (mobRepeller) count++;
         return count;
     }
+
+    public int getTotalUpgradeCount() { return 22; } // Total available upgrades
 
     public UUID getId() {
         return id;
@@ -329,6 +438,10 @@ public class ProtectedRegion {
 
     public UUID getOwner() {
         return owner;
+    }
+
+    public void setOwner(UUID owner) {
+        this.owner = owner;
     }
 
     public String getWorldName() {
