@@ -1,0 +1,119 @@
+# ===== SECRETOS / CREDENCIALES (NUNCA SUBIR) =====
+.env
+.env.*
+*.env
+secrets.yml
+secrets.yaml
+credentials.json
+credentials.yml
+*.pem
+*.key
+*.p12
+*.keystore
+*.jks
+*.ppk
+id_rsa
+id_ed25519
+*.token
+token.txt
+tokens.txt
+config.local.yml
+config-prod.yml
+config.prod.yml
+discord_config.yml
+
+# (los .java del plugin no son secretos aunque su nombre lleve "Secret")
+
+# ===== SOLO SUBIR EL PLUGIN (src/main + build files) =====
+
+# Build output
+build/
+target/
+*.jar
+*.class
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs y archivos temporales
+*.log
+*.txt
+err.txt
+
+# Dependencies
+libs/
+lib/
+org/
+
+# Gradle
+.gradle/
+
+# Node / Web
+node_modules/
+web/
+
+# Misc
+*.bak
+*.tmp
+*.mp3
+*.csv
+*.cmd
+
+# ===== CONFIGS DE SERVIDOR (NO SUBIR) =====
+ModelEngine/
+MythicMobs/
+!MythicMobs/mobs/mice_mob.yml
+!MythicMobs/randomspawns/cubees_spawns.yml
+!MythicMobs/skills/mice_skills.yml
+!MythicMobs/items/mice_items.yml
+Nexo/
+!Nexo/items/mice_pack.yml
+MCPets/
+ExcellentCrates/
+MicePack/
+!MicePack/mobs/mice_mob.yml
+!MicePack/skills/mice_skills.yml
+skeleton_mobs-amonde/
+Rank Icons/
+bolsa-web/
+discord_bot/
+holograms.yml
+discord_config_example.yml
+
+# ===== DOCS/GUIAS (NO SUBIR) =====
+ANUNCIO_EL_ERRANTE.md
+BUG_FIXES_SUMMARY.md
+CHANGELOG.md
+CHANGELOG_COMUNIDAD.md
+DISCORD_BOT_SETUP.md
+GUIA_DISCORD_BOT.md
+HUGE_UPDATE_v2.1.md
+MISION3_ARQUITECTO.md
+MISION_DESPERTAR_ABISMO.md
+TUTORIAL.md
+UPDATE_v2.0.md
+historias_misiones.md
+
+# ===== SCRIPTS DE BUILD (NO SUBIR) =====
+build_*.ps1
+build_*.log
+build_*.txt
+build_mg_test.ps1
+build_minigames_fix.ps1
+build_safe.ps1
+build_shaded.ps1
+fix_*.ps1
+download_spigot.ps1
+temp_*.java
+spigot-metadata.xml
